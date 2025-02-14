@@ -94,6 +94,12 @@
 			<version>2.5.4</version>
 		</dependency>
 
+		<!-- Sonarcloud -->
+		<properties>
+		  	<sonar.organization>safetypin-official</sonar.organization>
+		  	<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		</properties>
+
 	</dependencies>
 
 	<build>
