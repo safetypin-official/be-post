@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.model.Post;
+import com.safetypin.post.model.UserLocation;
 import com.safetypin.post.repository.PostRepository;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -19,11 +20,13 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final GeometryFactory geometryFactory;
+    private final UserLocationService userLocationService;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, GeometryFactory geometryFactory) {
+    public PostServiceImpl(PostRepository postRepository, GeometryFactory geometryFactory, UserLocationService userLocationService) {
         this.postRepository = postRepository;
         this.geometryFactory = geometryFactory;
+        this.userLocationService = userLocationService;
     }
 
     @Override
@@ -63,7 +66,7 @@ public class PostServiceImpl implements PostService {
     public Page<Post> searchPostsWithinRadius(Point center, Double radius, Pageable pageable) {
         // Implementation depends on your repository capabilities
         // This is a placeholder
-        return postRepository.findWithinRadius(center, radius, pageable);
+        return postRepository.findPostsWithinPointAndRadius(center, radius, pageable);
     }
 
     @Override
@@ -92,17 +95,31 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
                                     String category, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Post> allPosts = postRepository.findAll();
-        return allPosts.stream()
+        List<Post> candidatePosts;
+        
+        // Use the appropriate repository method based on which filters are provided
+        if (category != null && startDate != null && endDate != null) {
+            // Use the specialized repository method for both category and date range
+            candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
+        } else if (category != null) {
+            // Only category filter
+            candidatePosts = postRepository.findByCategory(category);
+        } else if (startDate != null && endDate != null) {
+            // Only date range filter
+            candidatePosts = postRepository.findByCreatedAtBetween(startDate, endDate);
+        } else {
+            // No category or date filters
+            candidatePosts = postRepository.findAll();
+        }
+        
+        // Always apply distance filter (since radius is always provided)
+        return candidatePosts.stream()
                 .filter(post -> {
                     if (post.getLocation() == null) return false;
                     double distance = calculateDistance(latitude, longitude, 
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
-                .filter(post -> category == null || category.equals(post.getCategory()))
-                .filter(post -> startDate == null || !post.getCreatedAt().isBefore(startDate))
-                .filter(post -> endDate == null || !post.getCreatedAt().isAfter(endDate))
                 .collect(Collectors.toList());
     }
 
@@ -123,6 +140,11 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<Post> getPostsSortedByProximity() {
+        // Get the current user location
+        UserLocation userLocation = userLocationService.getCurrentUserLocation();
+        double userLat = userLocation.getLatitude();
+        double userLon = userLocation.getLongitude();
+        
         // Retrieve all posts that have a non-null location
         List<Post> postsWithLocation = postRepository.findAll().stream()
                 .filter(post -> post.getLocation() != null)
@@ -132,27 +154,24 @@ public class PostServiceImpl implements PostService {
             return postsWithLocation;
         }
         
-        // Calculate the centroid of all posts as the average of latitudes and longitudes
-        double averageLat = postsWithLocation.stream()
-                .mapToDouble(post -> post.getLocation().getY())
-                .average()
-                .orElse(0);
-        double averageLon = postsWithLocation.stream()
-                .mapToDouble(post -> post.getLocation().getX())
-                .average()
-                .orElse(0);
-                
-        // Sort posts by distance from the calculated centroid
+        // Sort posts by distance from the user location
+        // If distances are equal, sort by timestamp (newer first)
         postsWithLocation.sort((post1, post2) -> {
             double distance1 = calculateDistance(
-                    averageLat, averageLon,
+                    userLat, userLon,
                     post1.getLocation().getY(), post1.getLocation().getX()
             );
             double distance2 = calculateDistance(
-                    averageLat, averageLon,
+                    userLat, userLon,
                     post2.getLocation().getY(), post2.getLocation().getX()
             );
-            return Double.compare(distance1, distance2);
+            
+            int distanceComparison = Double.compare(distance1, distance2);
+            if (distanceComparison == 0) {
+                // When distances are equal, sort by timestamp (newer first)
+                return post2.getCreatedAt().compareTo(post1.getCreatedAt());
+            }
+            return distanceComparison;
         });
         
         return postsWithLocation;
