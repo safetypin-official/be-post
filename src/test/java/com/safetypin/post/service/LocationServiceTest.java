@@ -2,7 +2,6 @@ package com.safetypin.post.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -21,15 +20,15 @@ class LocationServiceTest {
     @Mock
     private LocationProvider locationProvider;
     
-    private LocationService locationService;
+    private LocationServiceImpl locationService;
     
     @BeforeEach
     void setUp() {
-        locationService = new LocationService(locationProvider);
+        locationService = new LocationServiceImpl(locationProvider);
     }
 
     @Test
-    void etriveCurrentLocationWhenEnabled() {
+    void retriveCurrentLocationWhenEnabled() {
         // Setup
         Location expectedLocation = new Location(0.0, 0.0);
         when(locationProvider.isLocationEnabled()).thenReturn(true);
