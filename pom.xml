@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.safetypin</groupId>
-	<artifactId>authentication</artifactId>
+	<artifactId>post</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>authentication</name>
-	<description>authentication</description>
+	<name>post</name>
+	<description>post</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -171,6 +171,12 @@
 			<groupId>org.locationtech.jts</groupId>
 			<artifactId>jts-core</artifactId>
 			<version>1.18.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.hibernate.orm</groupId>
+			<artifactId>hibernate-spatial</artifactId>
+			<version>6.6.9.Final</version>
 		</dependency>
 
 	</dependencies>
