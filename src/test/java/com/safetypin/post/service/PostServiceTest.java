@@ -87,7 +87,7 @@ public class PostServiceTest {
         LocalDateTime startDate = LocalDateTime.of(2023, 1, 1, 0, 0);
         LocalDateTime endDate = LocalDateTime.of(2023, 3, 1, 0, 0);
         
-        when(postRepository.findByTimestampBetween(startDate, endDate))
+        when(postRepository.findByCreatedAtBetween(startDate, endDate))
                 .thenReturn(Arrays.asList(post1, post2));
         
         // Execute: Fetch posts within date range
