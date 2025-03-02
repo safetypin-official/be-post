@@ -28,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<mockito.version>5.11.0</mockito.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -185,6 +186,14 @@
 			<version>6.6.9.Final</version>
 		</dependency>
 
+		<!-- Add this dependency -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -251,6 +260,16 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.1.2</version>
+				<configuration>
+					<argLine>
+						-XX:+EnableDynamicAgentLoading
+					</argLine>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
