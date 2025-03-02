@@ -321,7 +321,7 @@ class PostControllerTest {
 
         // Use more flexible argument matchers for more reliable test
         when(postService.findPostsByLocation(
-                anyDouble(), anyDouble(), anyDouble(), any(),
+                anyDouble(), anyDouble(), any(), any(),
                 any(), any(), any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -333,7 +333,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         // Use more relaxed verification - don't verify exact parameter values
         verify(postService).findPostsByLocation(
-                anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), any(Pageable.class));
+                anyDouble(), anyDouble(), any(), any(), any(), any(), any(Pageable.class));
     }
 
     @Test
