@@ -25,7 +25,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -68,21 +69,21 @@ class PostControllerTest {
         LocalDate dateTo = LocalDate.now();
         int page = 0;
         int size = 10;
-        
+
         LocalDateTime fromDateTime = LocalDateTime.of(dateFrom, LocalTime.MIN);
         LocalDateTime toDateTime = LocalDateTime.of(dateTo, LocalTime.MAX);
         Pageable pageable = PageRequest.of(page, size);
-        
+
         // Use more flexible argument matching to avoid type issues
         when(postService.findPostsByLocation(
-                anyDouble(), anyDouble(), anyDouble(), any(), 
+                anyDouble(), anyDouble(), anyDouble(), any(),
                 any(), any(), any(Pageable.class)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, lon, radius, category, dateFrom, dateTo, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPage, response.getBody());
@@ -99,18 +100,18 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(locationService.getCurrentUserLocation()).thenReturn(userLocation);
         // No cast needed
         when(postService.findPostsByLocation(
-                eq(userLocation.getY()), eq(userLocation.getX()), eq(radius), isNull(), 
+                eq(userLocation.getY()), eq(userLocation.getX()), eq(radius), isNull(),
                 isNull(), isNull(), eq(pageable)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 null, null, radius, category, null, null, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPage, response.getBody());
@@ -128,17 +129,17 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(locationService.getCurrentUserLocation()).thenReturn(userLocation);
         when(postService.findPostsByLocation(
-                eq(userLocation.getY()), eq(userLocation.getX()), eq(radius), isNull(), 
+                eq(userLocation.getY()), eq(userLocation.getX()), eq(radius), isNull(),
                 isNull(), isNull(), eq(pageable)))
                 .thenReturn(mockPage); // No cast
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, null, radius, null, null, null, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(locationService).getCurrentUserLocation();
@@ -151,13 +152,13 @@ class PostControllerTest {
         Double radius = 10.0;
         int page = 0;
         int size = 10;
-        
+
         when(locationService.getCurrentUserLocation()).thenReturn(userLocation);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 null, lon, radius, null, null, null, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(locationService).getCurrentUserLocation();
@@ -167,14 +168,14 @@ class PostControllerTest {
     void whenGetPostsWithoutLatLonAndNoUserLocation_thenReturnBadRequest() {
         // Given
         when(locationService.getCurrentUserLocation()).thenReturn(null);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 null, null, 10.0, null, null, null, 0, 10);
-        
+
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, String> errorResponse = (Map<String, String>) response.getBody();
         assertEquals("Location required", errorResponse.get("message"));
         verify(locationService).getCurrentUserLocation();
@@ -186,14 +187,14 @@ class PostControllerTest {
     void whenGetPostsWithNumberFormatException_thenReturnBadRequest() {
         // Given
         when(locationService.getCurrentUserLocation()).thenThrow(new NumberFormatException());
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 null, null, 10.0, null, null, null, 0, 10);
-        
+
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, String> errorResponse = (Map<String, String>) response.getBody();
         assertEquals("Invalid location parameters", errorResponse.get("message"));
     }
@@ -203,14 +204,14 @@ class PostControllerTest {
         // Given
         String errorMessage = "Database connection failed";
         when(locationService.getCurrentUserLocation()).thenThrow(new RuntimeException(errorMessage));
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 null, null, 10.0, null, null, null, 0, 10);
-        
+
         // Then
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, String> errorResponse = (Map<String, String>) response.getBody();
         assertEquals("Error processing request: " + errorMessage, errorResponse.get("message"));
     }
@@ -218,9 +219,9 @@ class PostControllerTest {
     @Test
     void handleArgumentTypeMismatchException_returnsCorrectErrorResponse() {
         // When
-        ResponseEntity<Map<String, String>> response = 
+        ResponseEntity<Map<String, String>> response =
                 postController.handleArgumentTypeMismatch(methodArgumentTypeMismatchException);
-        
+
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Invalid location parameters", response.getBody().get("message"));
@@ -235,16 +236,16 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(postService.findPostsByLocation(
-                eq(lat), eq(lon), eq(radius), isNull(), 
+                eq(lat), eq(lon), eq(radius), isNull(),
                 isNull(), isNull(), eq(pageable)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, lon, radius, null, null, null, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPage, response.getBody());
@@ -263,16 +264,16 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(postService.findPostsByLocation(
-                eq(lat), eq(lon), eq(radius), isNull(), 
+                eq(lat), eq(lon), eq(radius), isNull(),
                 eq(fromDateTime), isNull(), eq(pageable)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, lon, radius, null, dateFrom, null, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPage, response.getBody());
@@ -291,16 +292,16 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(postService.findPostsByLocation(
-                eq(lat), eq(lon), eq(radius), isNull(), 
+                eq(lat), eq(lon), eq(radius), isNull(),
                 isNull(), eq(toDateTime), eq(pageable)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, lon, radius, null, null, dateTo, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPage, response.getBody());
@@ -317,17 +318,17 @@ class PostControllerTest {
         int defaultPage = 0;
         int defaultSize = 10;
         Pageable pageable = PageRequest.of(defaultPage, defaultSize);
-        
+
         // Use more flexible argument matchers for more reliable test
         when(postService.findPostsByLocation(
-                anyDouble(), anyDouble(), anyDouble(), any(), 
+                anyDouble(), anyDouble(), anyDouble(), any(),
                 any(), any(), any(Pageable.class)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, lon, null, null, null, null, defaultPage, defaultSize);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         // Use more relaxed verification - don't verify exact parameter values
@@ -343,17 +344,17 @@ class PostControllerTest {
         int page = 2;
         int size = 25;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         // Use more flexible matching
         when(postService.findPostsByLocation(
-                anyDouble(), anyDouble(), anyDouble(), any(), 
+                anyDouble(), anyDouble(), anyDouble(), any(),
                 any(), any(), any(Pageable.class)))
                 .thenReturn(mockPage);
-        
+
         // When
         ResponseEntity<?> response = postController.getPosts(
                 lat, lon, 10.0, null, null, null, page, size);
-        
+
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPage, response.getBody());
