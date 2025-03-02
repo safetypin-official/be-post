@@ -14,28 +14,22 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-
-    /**
-     * Find posts by category
-     */
     List<Post> findByCategory(String category);
     
-    /**
-     * Find posts created between the specified dates
-     */
-    List<Post> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     
-    /**
-     * Find posts by category and created between the specified dates
-     */
-    @Query("SELECT p FROM Post p WHERE p.createdAt BETWEEN :startDate AND :endDate AND p.category = :category")
-    List<Post> findByTimestampBetweenAndCategory(@Param("startDate") LocalDateTime startDate, 
-                                                @Param("endDate") LocalDateTime endDate, 
-                                                @Param("category") String category);
+    @Query("SELECT p FROM Post p WHERE p.createdAt BETWEEN :startTime AND :endTime AND p.category = :category")
+    List<Post> findByTimestampBetweenAndCategory(
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("category") String category);
     
-    /**
-     * Find posts within a specified radius of a point
-     */
-    @Query("SELECT p FROM Post p WHERE ST_Distance(p.location, :center) <= :radius")
-    Page<Post> findPostsWithinPointAndRadius(@Param("center") Point center, @Param("radius") Double radius, Pageable pageable);
+    // Updated spatial query to work with H2 for testing
+    @Query(value = "SELECT p.* FROM posts p " +
+           "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true", 
+           nativeQuery = true)
+    Page<Post> findPostsWithinPointAndRadius(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            Pageable pageable);
 }
