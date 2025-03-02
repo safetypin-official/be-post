@@ -12,7 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,33 +33,33 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<Map<String, Object>> findPostsByLocation(
-            Double centerLat, Double centerLon, Double radius, 
-            String category, LocalDateTime dateFrom, LocalDateTime dateTo, 
+            Double centerLat, Double centerLon, Double radius,
+            String category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable) {
-        
+
         // Create a point from the given lat/lon
         Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-        
+
         // Get posts within radius
         Page<Post> posts = searchPostsWithinRadius(centerPoint, radius, pageable);
-        
+
         // Transform results to include distance info
         return posts.map(post -> {
             Map<String, Object> result = new HashMap<>();
             result.put("post", post);
-            
+
             // Calculate distance
             Point postLocation = post.getLocation();
             if (postLocation != null) {
                 double distance = calculateDistance(
-                    centerLat, centerLon, 
-                    postLocation.getY(), postLocation.getX()
+                        centerLat, centerLon,
+                        postLocation.getY(), postLocation.getX()
                 );
                 result.put("distance", distance);
             } else {
                 result.put("distance", null);
             }
-            
+
             return result;
         });
     }
@@ -75,7 +77,7 @@ public class PostServiceImpl implements PostService {
         return allPosts.stream()
                 .filter(post -> {
                     if (post.getLocation() == null) return false;
-                    double distance = calculateDistance(latitude, longitude, 
+                    double distance = calculateDistance(latitude, longitude,
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
@@ -94,9 +96,9 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
-                                    String category, LocalDateTime startDate, LocalDateTime endDate) {
+                                          String category, LocalDateTime startDate, LocalDateTime endDate) {
         List<Post> candidatePosts;
-        
+
         // Use the appropriate repository method based on which filters are provided
         if (category != null && startDate != null && endDate != null) {
             // Use the specialized repository method for both category and date range
@@ -111,12 +113,12 @@ public class PostServiceImpl implements PostService {
             // No category or date filters
             candidatePosts = postRepository.findAll();
         }
-        
+
         // Always apply distance filter (since radius is always provided)
         return candidatePosts.stream()
                 .filter(post -> {
                     if (post.getLocation() == null) return false;
-                    double distance = calculateDistance(latitude, longitude, 
+                    double distance = calculateDistance(latitude, longitude,
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
@@ -129,9 +131,9 @@ public class PostServiceImpl implements PostService {
         return allPosts.stream()
                 .filter(post -> post.getLocation() != null)
                 .sorted((post1, post2) -> {
-                    double dist1 = calculateDistance(latitude, longitude, 
+                    double dist1 = calculateDistance(latitude, longitude,
                             post1.getLocation().getY(), post1.getLocation().getX());
-                    double dist2 = calculateDistance(latitude, longitude, 
+                    double dist2 = calculateDistance(latitude, longitude,
                             post2.getLocation().getY(), post2.getLocation().getX());
                     return Double.compare(dist1, dist2);
                 })
@@ -144,16 +146,16 @@ public class PostServiceImpl implements PostService {
         UserLocation userLocation = userLocationService.getCurrentUserLocation();
         double userLat = userLocation.getLatitude();
         double userLon = userLocation.getLongitude();
-        
+
         // Retrieve all posts that have a non-null location
         List<Post> postsWithLocation = postRepository.findAll().stream()
                 .filter(post -> post.getLocation() != null)
                 .collect(Collectors.toList());
-                
+
         if (postsWithLocation.isEmpty()) {
             return postsWithLocation;
         }
-        
+
         // Sort posts by distance from the user location
         // If distances are equal, sort by timestamp (newer first)
         postsWithLocation.sort((post1, post2) -> {
@@ -165,7 +167,7 @@ public class PostServiceImpl implements PostService {
                     userLat, userLon,
                     post2.getLocation().getY(), post2.getLocation().getX()
             );
-            
+
             int distanceComparison = Double.compare(distance1, distance2);
             if (distanceComparison == 0) {
                 // When distances are equal, sort by timestamp (newer first)
@@ -173,21 +175,21 @@ public class PostServiceImpl implements PostService {
             }
             return distanceComparison;
         });
-        
+
         return postsWithLocation;
     }
 
     // Haversine formula to calculate distance between two points on Earth
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; // Radius of the earth in km
-        
+
         double latDistance = Math.toRadians(lat2 - lat1);
         double lonDistance = Math.toRadians(lon2 - lon1);
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        
+
         return R * c;
     }
 }

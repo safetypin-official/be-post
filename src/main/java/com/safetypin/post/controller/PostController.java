@@ -60,8 +60,8 @@ public class PostController {
                     Map<String, String> errorResponse = new HashMap<>();
                     errorResponse.put("message", "Location required");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .body(errorResponse);
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(errorResponse);
                 }
             }
 
@@ -76,29 +76,29 @@ public class PostController {
                     latitude, longitude, radius, category, fromDateTime, toDateTime, pageable);
 
             return ResponseEntity.ok()
-                               .contentType(MediaType.APPLICATION_JSON)
-                               .body(posts);
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(posts);
         } catch (NumberFormatException e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", "Invalid location parameters");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                               .contentType(MediaType.APPLICATION_JSON)
-                               .body(errorResponse);
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", "Error processing request: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                               .contentType(MediaType.APPLICATION_JSON)
-                               .body(errorResponse);
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         }
     }
-    
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, String>> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("message", "Invalid location parameters");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                           .contentType(MediaType.APPLICATION_JSON)
-                           .body(errorResponse);
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
     }
 }

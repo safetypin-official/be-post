@@ -6,10 +6,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface LocationService {
-    
+
     /**
      * Gets the current user's location if available
-     * 
+     *
      * @return The user's current location as a Point or null if not available
      */
     Point getCurrentUserLocation();
