@@ -1,13 +1,14 @@
 package com.safetypin.post;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class PostApplicationTests {
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-	@Test
-	void contextLoads() {
-	}
+public class PostApplicationTests {
 
+    @Test
+    void testMainDoesNotThrowException() {
+        // Calling the main method should load the context without throwing an exception.
+        assertDoesNotThrow(() -> PostApplication.main(new String[]{}));
+    }
 }
