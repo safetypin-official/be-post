@@ -1,9 +1,7 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.service.LocationService;
 import com.safetypin.post.service.PostService;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,19 +23,17 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
-    private final LocationService locationService;
     private final GeometryFactory geometryFactory;
 
-    public PostController(PostService postService, LocationService locationService) {
+    public PostController(PostService postService) {
         this.postService = postService;
-        this.locationService = locationService;
         this.geometryFactory = new GeometryFactory();
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getPosts(
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lon,
+            @RequestParam Double lat,
+            @RequestParam Double lon,
             @RequestParam(required = false, defaultValue = "10.0") Double radius,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
@@ -46,23 +42,16 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         try {
-            // If lat and lon are provided, use them
             Double latitude = lat;
             Double longitude = lon;
 
-            // If not provided, try to use user's stored location
+            // Require lat and lon; return error if not provided
             if (latitude == null || longitude == null) {
-                Point userLocation = locationService.getCurrentUserLocation();
-                if (userLocation != null) {
-                    latitude = userLocation.getY();
-                    longitude = userLocation.getX();
-                } else {
-                    Map<String, String> errorResponse = new HashMap<>();
-                    errorResponse.put("message", "Location required");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(errorResponse);
-                }
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "Latitude and longitude are required");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(errorResponse);
             }
 
             LocalDateTime fromDateTime = dateFrom != null ?
