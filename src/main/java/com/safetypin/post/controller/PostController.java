@@ -44,6 +44,7 @@ public class PostController {
         try {
             Double latitude = lat;
             Double longitude = lon;
+            Double radiusToUse = radius != null ? radius : 10.0; // Explicitly handle null radius
 
             // Require lat and lon; return error if not provided
             if (latitude == null || longitude == null) {
@@ -62,7 +63,7 @@ public class PostController {
             Pageable pageable = PageRequest.of(page, size);
 
             Page<?> posts = postService.findPostsByLocation(
-                    latitude, longitude, radius, category, fromDateTime, toDateTime, pageable);
+                    latitude, longitude, radiusToUse, category, fromDateTime, toDateTime, pageable);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
