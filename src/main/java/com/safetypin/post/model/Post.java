@@ -26,7 +26,7 @@ public class Post {
     private UUID id;
     
     @Column(nullable = false)
-    private String content;
+    private String caption;
     @Column(nullable = true)
     private String title;
     @Column(nullable = true)
@@ -39,9 +39,9 @@ public class Post {
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
-    public Post(UUID id, String content, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
+    public Post(UUID id, String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
         this.id = id;
-        this.content = content;
+        this.caption = caption;
         this.title = title;
         this.category = category;
         this.createdAt = createdAt;
@@ -67,12 +67,12 @@ public class Post {
         this.title = title;
     }
 
-    public String getContent() {
-        return content;
+    public String getCaption() {
+        return caption;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setCaption(String content) {
+        this.caption = content;
     }
 
     public String getCategory() {
