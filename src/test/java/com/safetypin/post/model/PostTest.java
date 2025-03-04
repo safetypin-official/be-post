@@ -6,9 +6,11 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class PostTest {
 
@@ -27,7 +29,7 @@ class PostTest {
 
     @Test
     void testAllArgsConstructor() {
-        Long id = 1L;
+        UUID id = UUID.randomUUID();
         String content = "Test content";
         String title = "Test title";
         String category = "Test category";
@@ -46,7 +48,7 @@ class PostTest {
 
     @Test
     void testLatitudeLongitudeConstructor() {
-        Long id = 1L;
+        UUID id = UUID.randomUUID();
         String content = "Test content";
         String title = "Test title";
         String category = "Test category";
@@ -127,7 +129,7 @@ class PostTest {
     void testSetters() {
         Post post = new Post();
 
-        Long id = 1L;
+        UUID id = UUID.randomUUID();
         String content = "Updated content";
         String title = "Updated title";
         String category = "Updated category";
@@ -147,5 +149,14 @@ class PostTest {
         assertEquals(category, post.getCategory());
         assertEquals(createdAt, post.getCreatedAt());
         assertEquals(location, post.getLocation());
+    }
+    
+    @Test
+    void testPrePersistGeneratesUuid() {
+        Post post = new Post();
+        post.onCreate();
+        
+        assertNotNull(post.getId());
+        assertNotNull(post.getCreatedAt());
     }
 }
