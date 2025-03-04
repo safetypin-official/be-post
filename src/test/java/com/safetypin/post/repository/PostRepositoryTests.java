@@ -41,21 +41,21 @@ class PostRepositoryTests {
         // Create test posts
         post1 = new Post();
         post1.setTitle("Post 1");
-        post1.setContent("Content 1");
+        post1.setCaption("Caption 1");
         post1.setCategory("Safety");
         post1.setLocation(geometryFactory.createPoint(new Coordinate(-6.2088, 106.8456))); // Jakarta
         post1.setCreatedAt(now.minusDays(1));
 
         post2 = new Post();
         post2.setTitle("Post 2");
-        post2.setContent("Content 2");
+        post2.setCaption("Caption 2");
         post2.setCategory("Traffic");
         post2.setLocation(geometryFactory.createPoint(new Coordinate(-6.1751, 106.8650))); // Also Jakarta
         post2.setCreatedAt(now.minusHours(12));
 
         post3 = new Post();
         post3.setTitle("Post 3");
-        post3.setContent("Content 3");
+        post3.setCaption("Caption 3");
         post3.setCategory("Safety");
         post3.setLocation(geometryFactory.createPoint(new Coordinate(-7.7956, 110.3695))); // Yogyakarta
         post3.setCreatedAt(now);
@@ -77,7 +77,7 @@ class PostRepositoryTests {
     void testSavePost() {
         Post newPost = new Post();
         newPost.setTitle("New Post");
-        newPost.setContent("New Content");
+        newPost.setCaption("New Caption");
         newPost.setCategory("Emergency");
         newPost.setLocation(geometryFactory.createPoint(new Coordinate(-6.2, 106.8)));
         newPost.setCreatedAt(now);
