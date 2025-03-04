@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,7 +69,7 @@ class PostRepositoryTests {
         assertThat(foundPost).isPresent();
         assertThat(foundPost.get().getTitle()).isEqualTo("Post 1");
 
-        Optional<Post> notFoundPost = postRepository.findById(999L);
+        Optional<Post> notFoundPost = postRepository.findById(UUID.randomUUID());
         assertThat(notFoundPost).isEmpty();
     }
 
