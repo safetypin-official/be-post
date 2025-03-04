@@ -1,7 +1,6 @@
 package com.safetypin.post.controller;
 
 import com.safetypin.post.service.PostService;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,11 +22,9 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
-    private final GeometryFactory geometryFactory;
 
     public PostController(PostService postService) {
         this.postService = postService;
-        this.geometryFactory = new GeometryFactory();
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -42,12 +39,10 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         try {
-            Double latitude = lat;
-            Double longitude = lon;
             Double radiusToUse = radius != null ? radius : 10.0; // Explicitly handle null radius
 
             // Require lat and lon; return error if not provided
-            if (latitude == null || longitude == null) {
+            if (lat == null || lon == null) {
                 Map<String, String> errorResponse = new HashMap<>();
                 errorResponse.put("message", "Latitude and longitude are required");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -63,7 +58,7 @@ public class PostController {
             Pageable pageable = PageRequest.of(page, size);
 
             Page<?> posts = postService.findPostsByLocation(
-                    latitude, longitude, radiusToUse, category, fromDateTime, toDateTime, pageable);
+                    lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
