@@ -20,7 +20,7 @@ class PostTest {
     void testDefaultConstructor() {
         Post post = new Post();
         assertNull(post.getId());
-        assertNull(post.getContent());
+        assertNull(post.getCaption());
         assertNull(post.getTitle());
         assertNull(post.getCategory());
         assertNull(post.getCreatedAt());
@@ -39,7 +39,7 @@ class PostTest {
         Post post = new Post(id, content, title, category, createdAt, location);
 
         assertEquals(id, post.getId());
-        assertEquals(content, post.getContent());
+        assertEquals(content, post.getCaption());
         assertEquals(title, post.getTitle());
         assertEquals(category, post.getCategory());
         assertEquals(createdAt, post.getCreatedAt());
@@ -59,7 +59,7 @@ class PostTest {
         Post post = new Post(id, content, title, category, createdAt, latitude, longitude);
 
         assertEquals(id, post.getId());
-        assertEquals(content, post.getContent());
+        assertEquals(content, post.getCaption());
         assertEquals(title, post.getTitle());
         assertEquals(category, post.getCategory());
         assertEquals(createdAt, post.getCreatedAt());
@@ -137,14 +137,14 @@ class PostTest {
         Point location = geometryFactory.createPoint(new Coordinate(15.0, 25.0));
 
         post.setId(id);
-        post.setContent(content);
+        post.setCaption(content);
         post.setTitle(title);
         post.setCategory(category);
         post.setCreatedAt(createdAt);
         post.setLocation(location);
 
         assertEquals(id, post.getId());
-        assertEquals(content, post.getContent());
+        assertEquals(content, post.getCaption());
         assertEquals(title, post.getTitle());
         assertEquals(category, post.getCategory());
         assertEquals(createdAt, post.getCreatedAt());
