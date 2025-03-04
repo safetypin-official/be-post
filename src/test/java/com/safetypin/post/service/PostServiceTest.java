@@ -20,7 +20,6 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +38,7 @@ class PostServiceTest {
     private Post postWithoutLocation;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         geometryFactory = new GeometryFactory();
         postService = new PostServiceImpl(postRepository, geometryFactory);
 
@@ -76,7 +75,7 @@ class PostServiceTest {
 
         Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
 
-        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
+        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), radius, pageable))
                 .thenReturn(postPage);
 
         // When
@@ -105,7 +104,7 @@ class PostServiceTest {
 
         Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
 
-        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
+        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), radius, pageable))
                 .thenReturn(postPage);
 
         // When
@@ -114,7 +113,7 @@ class PostServiceTest {
 
         // Then
         assertEquals(1, result.getContent().size());
-        assertNull(result.getContent().get(0).get("distance"));
+        assertNull(result.getContent().getFirst().get("distance"));
     }
 
     @Test
@@ -128,7 +127,7 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> expected = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithinPointAndRadius(eq(centerPoint), eq(radius), eq(pageable)))
+        when(postRepository.findPostsWithinPointAndRadius(centerPoint, radius, pageable))
                 .thenReturn(expected);
 
         // When
