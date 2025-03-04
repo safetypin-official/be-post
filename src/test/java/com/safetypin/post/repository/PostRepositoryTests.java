@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-public class PostRepositoryTests {
+class PostRepositoryTests {
 
     private final LocalDateTime now = LocalDateTime.now();
     @Autowired
@@ -63,7 +63,7 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testFindById() {
+    void testFindById() {
         Optional<Post> foundPost = postRepository.findById(post1.getId());
         assertThat(foundPost).isPresent();
         assertThat(foundPost.get().getTitle()).isEqualTo("Post 1");
@@ -73,7 +73,7 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testSavePost() {
+    void testSavePost() {
         Post newPost = new Post();
         newPost.setTitle("New Post");
         newPost.setContent("New Content");
@@ -92,13 +92,13 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testFindAll() {
+    void testFindAll() {
         List<Post> allPosts = postRepository.findAll();
         assertThat(allPosts).hasSize(3);
     }
 
     @Test
-    public void testDeletePost() {
+    void testDeletePost() {
         postRepository.delete(post1);
 
         List<Post> remainingPosts = postRepository.findAll();
@@ -107,7 +107,7 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testFindByCategory() {
+    void testFindByCategory() {
         List<Post> safetyPosts = postRepository.findByCategory("Safety");
         assertThat(safetyPosts).hasSize(2);
         assertThat(safetyPosts).contains(post1, post3);
@@ -122,7 +122,7 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testFindByCreatedAtBetween() {
+    stFindByCreatedAtBetween() {
         // Test with a time range that includes all posts
         List<Post> allPosts = postRepository.findByCreatedAtBetween(now.minusDays(2), now.plusDays(1));
         assertThat(allPosts).hasSize(3);
@@ -139,7 +139,7 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testFindByTimestampBetweenAndCategory() {
+    void testFindByTimestampBetweenAndCategory() {
         // Test with a date range and category that matches posts
         List<Post> safetyPosts = postRepository.findByTimestampBetweenAndCategory(
                 now.minusDays(2), now.plusDays(1), "Safety");
@@ -159,7 +159,7 @@ public class PostRepositoryTests {
     }
 
     @Test
-    public void testFindPostsWithinPointAndRadius() {
+    void testFindPostsWithinPointAndRadius() {
         // Skip this test or use a different approach for testing spatial queries
         // Option 1: Use @Sql to set up data and query using H2-compatible functions
         // Option 2: Mock the repository for this specific test

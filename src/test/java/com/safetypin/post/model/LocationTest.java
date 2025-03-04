@@ -4,17 +4,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LocationTest {
+class LocationTest {
 
     @Test
-    public void testDefaultConstructor() {
+    void testDefaultConstructor() {
         Location location = new Location();
         assertEquals(0.0, location.getLatitude(), 0.0001);
         assertEquals(0.0, location.getLongitude(), 0.0001);
     }
 
     @Test
-    public void testParameterizedConstructor() {
+    void testParameterizedConstructor() {
         double latitude = 37.7749;
         double longitude = -122.4194;
         Location location = new Location(latitude, longitude);
@@ -24,7 +24,7 @@ public class LocationTest {
     }
 
     @Test
-    public void testSetters() {
+    void testSetters() {
         Location location = new Location();
         double latitude = 40.7128;
         double longitude = -74.0060;
@@ -37,7 +37,7 @@ public class LocationTest {
     }
 
     @Test
-    public void testEqualsAndHashCode() {
+    void testEqualsAndHashCode() {
         Location location1 = new Location(37.7749, -122.4194);
         Location location2 = new Location(37.7749, -122.4194);
         Location location3 = new Location(40.7128, -74.0060);
@@ -52,7 +52,7 @@ public class LocationTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         Location location = new Location(37.7749, -122.4194);
         String toString = location.toString();
 

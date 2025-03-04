@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-public class PostApplicationTests {
+class PostApplicationTests {
 
     @Test
     void testMainDoesNotThrowException() {

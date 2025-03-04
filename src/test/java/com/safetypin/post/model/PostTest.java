@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class PostTest {
+class PostTest {
 
     private static final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Test
-    public void testDefaultConstructor() {
+    void testDefaultConstructor() {
         Post post = new Post();
         assertNull(post.getId());
         assertNull(post.getContent());
@@ -26,7 +26,7 @@ public class PostTest {
     }
 
     @Test
-    public void testAllArgsConstructor() {
+    void testAllArgsConstructor() {
         Long id = 1L;
         String content = "Test content";
         String title = "Test title";
@@ -45,7 +45,7 @@ public class PostTest {
     }
 
     @Test
-    public void testLatitudeLongitudeConstructor() {
+    void testLatitudeLongitudeConstructor() {
         Long id = 1L;
         String content = "Test content";
         String title = "Test title";
@@ -66,7 +66,7 @@ public class PostTest {
     }
 
     @Test
-    public void testGetLatitudeLongitude() {
+    void testGetLatitudeLongitude() {
         Post post = new Post();
         Point point = geometryFactory.createPoint(new Coordinate(10.0, 20.0));
         post.setLocation(point);
@@ -76,7 +76,7 @@ public class PostTest {
     }
 
     @Test
-    public void testGetLatitudeLongitudeWithNullLocation() {
+    void testGetLatitudeLongitudeWithNullLocation() {
         Post post = new Post();
 
         assertNull(post.getLatitude());
@@ -84,7 +84,7 @@ public class PostTest {
     }
 
     @Test
-    public void testSetLatitude() {
+    void testSetLatitude() {
         Post post = new Post();
         // First set longitude to have a point to update
         post.setLongitude(10.0);
@@ -95,7 +95,7 @@ public class PostTest {
     }
 
     @Test
-    public void testSetLatitudeWithNullLocation() {
+    void testSetLatitudeWithNullLocation() {
         Post post = new Post();
         post.setLatitude(20.0);
 
@@ -104,7 +104,7 @@ public class PostTest {
     }
 
     @Test
-    public void testSetLongitude() {
+    void testSetLongitude() {
         Post post = new Post();
         // First set latitude to have a point to update
         post.setLatitude(20.0);
@@ -115,7 +115,7 @@ public class PostTest {
     }
 
     @Test
-    public void testSetLongitudeWithNullLocation() {
+    void testSetLongitudeWithNullLocation() {
         Post post = new Post();
         post.setLongitude(10.0);
 
@@ -124,7 +124,7 @@ public class PostTest {
     }
 
     @Test
-    public void testSetters() {
+    void testSetters() {
         Post post = new Post();
 
         Long id = 1L;

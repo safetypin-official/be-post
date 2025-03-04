@@ -4,7 +4,6 @@ import com.safetypin.post.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,8 +21,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +42,9 @@ class PostControllerTest {
         mockPage = new PageImpl<>(new ArrayList<>());
     }
 
-    /** Test missing latitude parameter */
+    /**
+     * Test missing latitude parameter
+     */
     @Test
     void whenGetPostsWithMissingLat_thenReturnBadRequest() {
         ResponseEntity<?> response = postController.getPosts(null, 10.0, 10.0, null, null, null, 0, 10);
@@ -51,7 +53,9 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.get("message"));
     }
 
-    /** Test missing longitude parameter */
+    /**
+     * Test missing longitude parameter
+     */
     @Test
     void whenGetPostsWithMissingLon_thenReturnBadRequest() {
         ResponseEntity<?> response = postController.getPosts(20.0, null, 10.0, null, null, null, 0, 10);
@@ -60,7 +64,9 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.get("message"));
     }
 
-    /** Test both lat and lon missing */
+    /**
+     * Test both lat and lon missing
+     */
     @Test
     void whenGetPostsWithMissingLatAndLon_thenReturnBadRequest() {
         ResponseEntity<?> response = postController.getPosts(null, null, 10.0, null, null, null, 0, 10);
@@ -69,7 +75,9 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.get("message"));
     }
 
-    /** Test valid request with all parameters */
+    /**
+     * Test valid request with all parameters
+     */
     @Test
     void whenGetPostsWithValidParams_thenReturnPosts() {
         Double lat = 20.0;
@@ -95,7 +103,9 @@ class PostControllerTest {
         verify(postService).findPostsByLocation(lat, lon, radius, category, fromDateTime, toDateTime, pageable);
     }
 
-    /** Test using default radius */
+    /**
+     * Test using default radius
+     */
     @Test
     void whenGetPostsWithDefaultRadius_thenUseDefault() {
         Double lat = 20.0;
@@ -114,7 +124,9 @@ class PostControllerTest {
         verify(postService).findPostsByLocation(lat, lon, radius, null, null, null, pageable);
     }
 
-    /** Test with only dateFrom */
+    /**
+     * Test with only dateFrom
+     */
     @Test
     void whenGetPostsWithOnlyDateFrom_thenSetFromDateTime() {
         Double lat = 20.0;
@@ -135,7 +147,9 @@ class PostControllerTest {
         verify(postService).findPostsByLocation(lat, lon, radius, null, fromDateTime, null, pageable);
     }
 
-    /** Test with only dateTo */
+    /**
+     * Test with only dateTo
+     */
     @Test
     void whenGetPostsWithOnlyDateTo_thenSetToDateTime() {
         Double lat = 20.0;
@@ -156,7 +170,9 @@ class PostControllerTest {
         verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
     }
 
-    /** Test custom pagination */
+    /**
+     * Test custom pagination
+     */
     @Test
     void whenGetPostsWithCustomPagination_thenUseCustomPageable() {
         Double lat = 20.0;
@@ -174,7 +190,9 @@ class PostControllerTest {
         verify(postService).findPostsByLocation(lat, lon, 10.0, null, null, null, pageable);
     }
 
-    /** Test NumberFormatException handling */
+    /**
+     * Test NumberFormatException handling
+     */
     @Test
     void whenGetPostsAndNumberFormatExceptionThrown_thenReturnBadRequest() {
         Double lat = 20.0;
@@ -189,7 +207,9 @@ class PostControllerTest {
         assertEquals("Invalid location parameters", errorResponse.get("message"));
     }
 
-    /** Test general exception handling */
+    /**
+     * Test general exception handling
+     */
     @Test
     void whenGetPostsAndGeneralExceptionThrown_thenReturnInternalServerError() {
         Double lat = 20.0;
@@ -205,7 +225,9 @@ class PostControllerTest {
         assertEquals("Error processing request: " + errorMessage, errorResponse.get("message"));
     }
 
-    /** Test MethodArgumentTypeMismatchException handler */
+    /**
+     * Test MethodArgumentTypeMismatchException handler
+     */
     @Test
     void handleArgumentTypeMismatchException_returnsCorrectErrorResponse() {
         MethodArgumentTypeMismatchException ex = mock(MethodArgumentTypeMismatchException.class);

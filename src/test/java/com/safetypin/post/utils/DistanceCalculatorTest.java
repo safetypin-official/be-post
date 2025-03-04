@@ -4,12 +4,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class DistanceCalculatorTest {
+class DistanceCalculatorTest {
 
     private static final double TOLERANCE = 0.01; // Tolerance for floating point comparisons
 
     @Test
-    public void testDistanceBetweenSameLocation() {
+    void testDistanceBetweenSameLocation() {
         // Setup: Calculate distance from (0,0) to (0,0)
         double distance = DistanceCalculator.calculateDistance(0.0, 0.0, 0.0, 0.0);
 
@@ -18,7 +18,7 @@ public class DistanceCalculatorTest {
     }
 
     @Test
-    public void testDistanceBetweenKnownPoints() {
+    void testDistanceBetweenKnownPoints() {
         // Setup: Calculate from (0,0) to (1,0) (~111.32 km)
         double distance = DistanceCalculator.calculateDistance(0.0, 0.0, 1.0, 0.0);
 
@@ -27,7 +27,7 @@ public class DistanceCalculatorTest {
     }
 
     @Test
-    public void testDistanceAcrossLargeDistance() {
+    void testDistanceAcrossLargeDistance() {
         // Setup: Calculate from (0,0) to (90,0)
         double distance = DistanceCalculator.calculateDistance(0.0, 0.0, 90.0, 0.0);
 

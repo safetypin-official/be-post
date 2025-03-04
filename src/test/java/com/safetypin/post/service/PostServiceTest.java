@@ -16,32 +16,27 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PostServiceTest {
-
-    @Mock
-    private PostRepository postRepository;
-
-    private GeometryFactory geometryFactory;
-    private PostServiceImpl postService;
-
-    private Post post1;
-    private Post post2;
-    private Post post3;
-    private Post postWithoutLocation;
+class PostServiceTest {
 
     private final LocalDateTime now = LocalDateTime.now();
     private final LocalDateTime yesterday = now.minusDays(1);
     private final LocalDateTime tomorrow = now.plusDays(1);
+    @Mock
+    private PostRepository postRepository;
+    private GeometryFactory geometryFactory;
+    private PostServiceImpl postService;
+    private Post post1;
+    private Post post2;
+    private Post post3;
+    private Post postWithoutLocation;
 
     @BeforeEach
     public void setup() {
@@ -70,7 +65,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testFindPostsByLocation_WithLocation() {
+    void testFindPostsByLocation_WithLocation() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -99,13 +94,13 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testFindPostsByLocation_WithoutLocation() {
+    void testFindPostsByLocation_WithoutLocation() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
         double radius = 10.0;
         Pageable pageable = PageRequest.of(0, 10);
-        List<Post> postList = Arrays.asList(postWithoutLocation);
+        List<Post> postList = Collections.singletonList(postWithoutLocation);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
         Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
@@ -123,7 +118,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testSearchPostsWithinRadius() {
+    void testSearchPostsWithinRadius() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -144,7 +139,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsWithinRadius() {
+    void testGetPostsWithinRadius() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -167,7 +162,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsByCategory() {
+    void testGetPostsByCategory() {
         // Given
         String category = "safety";
         List<Post> expectedPosts = Arrays.asList(post1, post3);
@@ -182,7 +177,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsByDateRange() {
+    void testGetPostsByDateRange() {
         // Given
         LocalDateTime startDate = yesterday;
         LocalDateTime endDate = tomorrow;
@@ -198,7 +193,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsWithFilters_AllFilters() {
+    void testGetPostsWithFilters_AllFilters() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -224,7 +219,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsWithFilters_OnlyCategoryFilter() {
+    void testGetPostsWithFilters_OnlyCategoryFilter() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -247,7 +242,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsWithFilters_OnlyDateFilter() {
+    void testGetPostsWithFilters_OnlyDateFilter() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -272,7 +267,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsWithFilters_NoFilters() {
+    void testGetPostsWithFilters_NoFilters() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -295,7 +290,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testGetPostsByProximity() {
+    void testGetPostsByProximity() {
         // Given
         double centerLat = 0.1;
         double centerLon = 0.1;
@@ -316,7 +311,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void testCalculateDistance() {
+    void testCalculateDistance() {
         // Given
         double lat1 = 0.0;
         double lon1 = 0.0;
