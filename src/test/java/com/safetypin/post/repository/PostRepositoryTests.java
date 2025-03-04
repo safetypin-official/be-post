@@ -122,7 +122,7 @@ class PostRepositoryTests {
     }
 
     @Test
-    stFindByCreatedAtBetween() {
+    void findPostFindByCreatedAtBetween() {
         // Test with a time range that includes all posts
         List<Post> allPosts = postRepository.findByCreatedAtBetween(now.minusDays(2), now.plusDays(1));
         assertThat(allPosts).hasSize(3);
