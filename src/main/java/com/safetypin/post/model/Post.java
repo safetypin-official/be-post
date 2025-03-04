@@ -9,6 +9,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -17,12 +18,13 @@ import java.time.LocalDateTime;
 @Table(name = "posts")
 public class Post {
 
-    // Add a GeometryFactory for creating new Point objects
     @Transient
     private static final GeometryFactory geometryFactory = new GeometryFactory();
+    
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
     @Column(nullable = false)
     private String content;
     @Column(nullable = true)
@@ -37,7 +39,7 @@ public class Post {
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
-    public Post(Long id, String content, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
+    public Post(UUID id, String content, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
         this.id = id;
         this.content = content;
         this.title = title;
@@ -49,11 +51,11 @@ public class Post {
         }
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -127,5 +129,13 @@ public class Post {
         }
     }
 
-
+    @PrePersist
+    protected void onCreate() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
