@@ -11,9 +11,10 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface PostRepository extends JpaRepository<Post, Long> {
+public interface PostRepository extends JpaRepository<Post, UUID> {
     List<Post> findByCategory(String category);
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
