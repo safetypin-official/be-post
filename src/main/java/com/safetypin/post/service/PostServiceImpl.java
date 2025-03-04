@@ -67,7 +67,7 @@ public class PostServiceImpl implements PostService {
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -100,7 +100,7 @@ public class PostServiceImpl implements PostService {
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class PostServiceImpl implements PostService {
                             post2.getLocation().getY(), post2.getLocation().getX());
                     return Double.compare(dist1, dist2);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
