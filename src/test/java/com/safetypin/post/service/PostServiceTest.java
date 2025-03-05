@@ -83,10 +83,10 @@ class PostServiceTest {
         // Then
         assertEquals(2, result.getContent().size());
 
-        Post resultPost1 = (Post) result.getContent().get(0).get("post");
+        Post resultPost1 = (Post) result.getContent().getFirst().get("post");
         assertEquals(post1, resultPost1);
 
-        Double distance1 = (Double) result.getContent().get(0).get("distance");
+        Double distance1 = (Double) result.getContent().getFirst().get("distance");
         assertEquals(0.0, distance1, 0.001); // Same location, distance should be 0
     }
 
