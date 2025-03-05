@@ -73,8 +73,6 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-
         when(postRepository.findPostsWithinPointAndRadius(any(Point.class), radius, pageable))
                 .thenReturn(postPage);
 
@@ -101,8 +99,6 @@ class PostServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         List<Post> postList = Collections.singletonList(postWithoutLocation);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
-
-        Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
 
         when(postRepository.findPostsWithinPointAndRadius(any(Point.class), radius, pageable))
                 .thenReturn(postPage);

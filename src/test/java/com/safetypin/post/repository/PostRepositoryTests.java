@@ -160,8 +160,6 @@ class PostRepositoryTests {
         // Option 2: Mock the repository for this specific test
         // Option 3: Refactor the test as shown below
 
-        Point jakartaCenter = geometryFactory.createPoint(new Coordinate(-6.2, 106.85)); // Central Jakarta
-
         // Instead of using the spatial query directly, we can test other repository methods
         // and assume the spatial query works if configured correctly in production
 
