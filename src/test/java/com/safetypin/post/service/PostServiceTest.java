@@ -20,6 +20,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,7 +74,7 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), radius, pageable))
+        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
                 .thenReturn(postPage);
 
         // When
@@ -100,7 +101,7 @@ class PostServiceTest {
         List<Post> postList = Collections.singletonList(postWithoutLocation);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), radius, pageable))
+        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
                 .thenReturn(postPage);
 
         // When
