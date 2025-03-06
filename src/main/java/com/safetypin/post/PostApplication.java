@@ -16,7 +16,7 @@ public class PostApplication {
 }
 
 @RestController
-@RequestMapping("/")
+@RequestMapping("/hello")
 class HelloController {
     @GetMapping
     public String sayHello() {
