@@ -48,7 +48,6 @@ class PostTest {
 
     @Test
     void testLatitudeLongitudeConstructor() {
-        UUID id = UUID.randomUUID();
         String content = "Test content";
         String title = "Test title";
         String category = "Test category";
@@ -56,9 +55,8 @@ class PostTest {
         Double latitude = 20.0;
         Double longitude = 10.0;
 
-        Post post = new Post(id, content, title, category, createdAt, latitude, longitude);
+        Post post = new Post(content, title, category, createdAt, latitude, longitude);
 
-        assertEquals(id, post.getId());
         assertEquals(content, post.getCaption());
         assertEquals(title, post.getTitle());
         assertEquals(category, post.getCategory());
@@ -154,9 +152,10 @@ class PostTest {
     @Test
     void testPrePersistGeneratesUuid() {
         Post post = new Post();
+        UUID id = UUID.randomUUID();
+        post.setId(id);
         post.onCreate();
-        
-        assertNotNull(post.getId());
+        assertEquals(id, post.getId());
         assertNotNull(post.getCreatedAt());
     }
 }
