@@ -25,12 +25,33 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("endTime") LocalDateTime endTime,
             @Param("category") String category);
 
+    // Get all posts within radius
     // Updated spatial query to work with H2 for testing
-    @Query(value = "SELECT p.* FROM posts p " +
-            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true",
+    @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
+            "FROM posts p " +
+            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
+            "ORDER BY distance ASC, p.id ASC",
             nativeQuery = true)
     Page<Post> findPostsWithinPointAndRadius(
             @Param("point") Point point,
             @Param("distanceMeters") Double distanceMeters,
             Pageable pageable);
+
+    // get posts with filter
+    @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
+            "FROM posts p " +
+            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
+            "AND p.category = :category " +
+            "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
+            "ORDER BY distance ASC, p.id ASC",
+            nativeQuery = true)
+    Page<Post> findPostsWithFilter(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("category") String category,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            Pageable pageable);
+
+
 }
