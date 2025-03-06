@@ -104,8 +104,6 @@ class DistanceCalculatorTest {
 
         // Calculate expected based on haversine formula with only latitude difference
         double dLat = Math.toRadians(lat2 - lat1);
-        double radLat1 = Math.toRadians(lat1);
-        double radLat2 = Math.toRadians(lat2);
 
         double havLat = Math.pow(Math.sin(dLat / 2), 2);
         double expected = 2 * 6371.0 * Math.asin(Math.sqrt(havLat));

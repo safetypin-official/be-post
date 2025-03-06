@@ -39,7 +39,7 @@ class PostServiceTest {
     private Post postWithoutLocation;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         geometryFactory = new GeometryFactory();
         postService = new PostServiceImpl(postRepository, geometryFactory);
 
@@ -74,8 +74,6 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-
         when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
                 .thenReturn(postPage);
 
@@ -86,10 +84,10 @@ class PostServiceTest {
         // Then
         assertEquals(2, result.getContent().size());
 
-        Post resultPost1 = (Post) result.getContent().get(0).get("post");
+        Post resultPost1 = (Post) result.getContent().getFirst().get("post");
         assertEquals(post1, resultPost1);
 
-        Double distance1 = (Double) result.getContent().get(0).get("distance");
+        Double distance1 = (Double) result.getContent().getFirst().get("distance");
         assertEquals(0.0, distance1, 0.001); // Same location, distance should be 0
     }
 
@@ -103,8 +101,6 @@ class PostServiceTest {
         List<Post> postList = Collections.singletonList(postWithoutLocation);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-
         when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
                 .thenReturn(postPage);
 
@@ -114,7 +110,7 @@ class PostServiceTest {
 
         // Then
         assertEquals(1, result.getContent().size());
-        assertNull(result.getContent().get(0).get("distance"));
+        assertNull(result.getContent().getFirst().get("distance"));
     }
 
     @Test
@@ -128,7 +124,7 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> expected = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithinPointAndRadius(eq(centerPoint), eq(radius), eq(pageable)))
+        when(postRepository.findPostsWithinPointAndRadius(centerPoint, radius, pageable))
                 .thenReturn(expected);
 
         // When

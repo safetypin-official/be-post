@@ -1,5 +1,6 @@
 package com.safetypin.post.controller;
 
+import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,10 +48,12 @@ class PostControllerTest {
      */
     @Test
     void whenGetPostsWithMissingLat_thenReturnBadRequest() {
-        ResponseEntity<?> response = postController.getPosts(null, 10.0, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(
+                null, 10.0, 10.0, null, null, null, 0, 10);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, String> errorResponse = (Map<String, String>) response.getBody();
-        assertEquals("Latitude and longitude are required", errorResponse.get("message"));
+        PostResponse errorResponse = response.getBody();
+
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
     /**
@@ -58,10 +61,12 @@ class PostControllerTest {
      */
     @Test
     void whenGetPostsWithMissingLon_thenReturnBadRequest() {
-        ResponseEntity<?> response = postController.getPosts(20.0, null, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(
+                20.0, null, 10.0, null, null, null, 0, 10);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, String> errorResponse = (Map<String, String>) response.getBody();
-        assertEquals("Latitude and longitude are required", errorResponse.get("message"));
+        PostResponse errorResponse = response.getBody();
+
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
     /**
@@ -69,11 +74,13 @@ class PostControllerTest {
      */
     @Test
     void whenGetPostsWithMissingLatAndLon_thenReturnBadRequest() {
-        ResponseEntity<?> response = postController.getPosts(null, null, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(null, null, 10.0, null, null, null, 0, 10);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, String> errorResponse = (Map<String, String>) response.getBody();
-        assertEquals("Latitude and longitude are required", errorResponse.get("message"));
+        PostResponse errorResponse = response.getBody();
+
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
+
 
     /**
      * Test valid request with all parameters
@@ -96,10 +103,11 @@ class PostControllerTest {
         when(postService.findPostsByLocation(lat, lon, radius, category, fromDateTime, toDateTime, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, radius, category, dateFrom, dateTo, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, category, dateFrom, dateTo, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockPage, response.getBody());
+        PostResponse postResponse = response.getBody();
+        assertEquals(mockPage, postResponse.getData());
         verify(postService).findPostsByLocation(lat, lon, radius, category, fromDateTime, toDateTime, pageable);
     }
 
@@ -118,7 +126,7 @@ class PostControllerTest {
         when(postService.findPostsByLocation(lat, lon, radius, null, null, null, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, null, null, null, null, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, null, null, null, null, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(postService).findPostsByLocation(lat, lon, radius, null, null, null, pageable);
@@ -141,7 +149,7 @@ class PostControllerTest {
         when(postService.findPostsByLocation(lat, lon, radius, null, fromDateTime, null, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, radius, null, dateFrom, null, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, null, dateFrom, null, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(postService).findPostsByLocation(lat, lon, radius, null, fromDateTime, null, pageable);
@@ -164,7 +172,7 @@ class PostControllerTest {
         when(postService.findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, radius, null, null, dateTo, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, null, null, dateTo, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
@@ -184,7 +192,7 @@ class PostControllerTest {
         when(postService.findPostsByLocation(lat, lon, 10.0, null, null, null, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, 10.0, null, null, null, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, 10.0, null, null, null, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(postService).findPostsByLocation(lat, lon, 10.0, null, null, null, pageable);
@@ -200,11 +208,12 @@ class PostControllerTest {
         when(postService.findPostsByLocation(anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), any()))
                 .thenThrow(new NumberFormatException("Invalid number"));
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, 10.0, null, null, null, 0, 10);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, String> errorResponse = (Map<String, String>) response.getBody();
-        assertEquals("Invalid location parameters", errorResponse.get("message"));
+        PostResponse errorResponse = response.getBody();
+
+        assertEquals("Invalid location parameters", errorResponse.getMessage());
     }
 
     /**
@@ -218,11 +227,12 @@ class PostControllerTest {
         when(postService.findPostsByLocation(anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException(errorMessage));
 
-        ResponseEntity<?> response = postController.getPosts(lat, lon, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, 10.0, null, null, null, 0, 10);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        Map<String, String> errorResponse = (Map<String, String>) response.getBody();
-        assertEquals("Error processing request: " + errorMessage, errorResponse.get("message"));
+        PostResponse errorResponse = response.getBody();
+
+        assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
     }
 
     /**
@@ -231,9 +241,11 @@ class PostControllerTest {
     @Test
     void handleArgumentTypeMismatchException_returnsCorrectErrorResponse() {
         MethodArgumentTypeMismatchException ex = mock(MethodArgumentTypeMismatchException.class);
-        ResponseEntity<Map<String, String>> response = postController.handleArgumentTypeMismatch(ex);
+        ResponseEntity<PostResponse> response = postController.handleArgumentTypeMismatch(ex);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Invalid location parameters", response.getBody().get("message"));
+        PostResponse errorResponse = response.getBody();
+
+        assertEquals("Invalid location parameters", errorResponse.getMessage());
     }
 }

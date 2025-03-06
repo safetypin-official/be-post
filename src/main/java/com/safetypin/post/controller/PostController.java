@@ -1,5 +1,6 @@
 package com.safetypin.post.controller;
 
+import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.service.PostService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,8 +15,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/posts")
@@ -28,7 +27,7 @@ public class PostController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getPosts(
+    public ResponseEntity<PostResponse> getPosts(
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(required = false, defaultValue = "10.0") Double radius,
@@ -43,8 +42,9 @@ public class PostController {
 
             // Require lat and lon; return error if not provided
             if (lat == null || lon == null) {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("message", "Latitude and longitude are required");
+                PostResponse errorResponse = new PostResponse(
+                        false, "Latitude and longitude are required", null);
+
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(errorResponse);
@@ -60,18 +60,21 @@ public class PostController {
             Page<?> posts = postService.findPostsByLocation(
                     lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
 
+            PostResponse postResponse = new PostResponse(
+                    true, null, posts);
+
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(posts);
+                    .body(postResponse);
         } catch (NumberFormatException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Invalid location parameters");
+            PostResponse errorResponse = new PostResponse(
+                    false, "Invalid location parameters", null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
         } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Error processing request: " + e.getMessage());
+            PostResponse errorResponse = new PostResponse(
+                    false, "Error processing request: " + e.getMessage(), null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
@@ -79,9 +82,9 @@ public class PostController {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, String>> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", "Invalid location parameters");
+    public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        PostResponse errorResponse = new PostResponse(
+                false, "Invalid location parameters", null);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(errorResponse);

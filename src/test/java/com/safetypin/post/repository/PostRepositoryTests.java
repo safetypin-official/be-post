@@ -32,7 +32,7 @@ class PostRepositoryTests {
     private Post post1, post2, post3;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         postRepository.deleteAll();
 
         // Initialize geometry factory for spatial operations
@@ -103,19 +103,16 @@ class PostRepositoryTests {
         postRepository.delete(post1);
 
         List<Post> remainingPosts = postRepository.findAll();
-        assertThat(remainingPosts).hasSize(2);
-        assertThat(remainingPosts).doesNotContain(post1);
+        assertThat(remainingPosts).hasSize(2).doesNotContain(post1);
     }
 
     @Test
     void testFindByCategory() {
         List<Post> safetyPosts = postRepository.findByCategory("Safety");
-        assertThat(safetyPosts).hasSize(2);
-        assertThat(safetyPosts).contains(post1, post3);
+        assertThat(safetyPosts).hasSize(2).contains(post1, post3);
 
         List<Post> trafficPosts = postRepository.findByCategory("Traffic");
-        assertThat(trafficPosts).hasSize(1);
-        assertThat(trafficPosts).contains(post2);
+        assertThat(trafficPosts).hasSize(1).contains(post2);
 
         // Test with a category that doesn't exist
         List<Post> nonExistingCategoryPosts = postRepository.findByCategory("NonExisting");
@@ -130,8 +127,7 @@ class PostRepositoryTests {
 
         // Test with a range that includes only post1
         List<Post> post1Only = postRepository.findByCreatedAtBetween(now.minusDays(2), now.minusDays(1).plusSeconds(1));
-        assertThat(post1Only).hasSize(1);
-        assertThat(post1Only).contains(post1);
+        assertThat(post1Only).hasSize(1).contains(post1);
 
 
         // Test with a range that includes no posts
@@ -144,14 +140,12 @@ class PostRepositoryTests {
         // Test with a date range and category that matches posts
         List<Post> safetyPosts = postRepository.findByTimestampBetweenAndCategory(
                 now.minusDays(2), now.plusDays(1), "Safety");
-        assertThat(safetyPosts).hasSize(2);
-        assertThat(safetyPosts).contains(post1, post3);
+        assertThat(safetyPosts).hasSize(2).contains(post1, post3);
 
         // Test with a date range that only includes post1 and the Safety category
         List<Post> earlyPosts = postRepository.findByTimestampBetweenAndCategory(
                 now.minusDays(2), now.minusDays(1).plusMinutes(1), "Safety");
-        assertThat(earlyPosts).hasSize(1);
-        assertThat(earlyPosts).contains(post1);
+        assertThat(earlyPosts).hasSize(1).contains(post1);
 
         // Test with a non-matching category
         List<Post> noPostsWrongCategory = postRepository.findByTimestampBetweenAndCategory(
@@ -165,8 +159,6 @@ class PostRepositoryTests {
         // Option 1: Use @Sql to set up data and query using H2-compatible functions
         // Option 2: Mock the repository for this specific test
         // Option 3: Refactor the test as shown below
-
-        Point jakartaCenter = geometryFactory.createPoint(new Coordinate(-6.2, 106.85)); // Central Jakarta
 
         // Instead of using the spatial query directly, we can test other repository methods
         // and assume the spatial query works if configured correctly in production

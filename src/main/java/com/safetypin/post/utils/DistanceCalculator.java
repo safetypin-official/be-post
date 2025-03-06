@@ -1,9 +1,11 @@
 package com.safetypin.post.utils;
 
+
 /**
  * Utility class for calculating geographical distances between coordinates
  */
 public class DistanceCalculator {
+    private DistanceCalculator() {}
 
     // Earth radius in kilometers
     private static final double EARTH_RADIUS_KM = 6371.0;
@@ -31,9 +33,9 @@ public class DistanceCalculator {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return EARTH_RADIUS_KM * c;
-        }
+    }
 
-        private static double calculateHaversineValue(double angle) {
+    private static double calculateHaversineValue(double angle) {
         return Math.pow(Math.sin(angle / 2), 2);
     }
 }
