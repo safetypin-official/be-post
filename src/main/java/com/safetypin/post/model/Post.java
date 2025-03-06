@@ -1,9 +1,10 @@
 package com.safetypin.post.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.safetypin.post.serializers.PointSerializer;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -14,6 +15,8 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name = "posts")
 public class Post {
@@ -31,16 +34,21 @@ public class Post {
     private String title;
     @Column(nullable = true)
     private String category;
-    @Column(nullable = false, columnDefinition = "TIMESTAMP")
+    @Column(nullable = false, columnDefinition = "timestamp")
     private LocalDateTime createdAt;
-    @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
+    //@JsonSerialize(using = PointSerializer.class)
+    @JsonIgnore
+    @Column(nullable = true, columnDefinition = "geography(Point,4326)")
     private Point location;
+//    @Version
+//    private Long version;
+
+
 
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
-    public Post(UUID id, String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
-        this.id = id;
+    public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
         this.caption = caption;
         this.title = title;
         this.category = category;
@@ -49,54 +57,6 @@ public class Post {
         if (latitude != null && longitude != null) {
             this.location = geometryFactory.createPoint(new Coordinate(longitude, latitude));
         }
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getCaption() {
-        return caption;
-    }
-
-    public void setCaption(String content) {
-        this.caption = content;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Point getLocation() {
-        return location;
-    }
-
-    public void setLocation(Point location) {
-        this.location = location;
     }
 
     // Methods to get latitude and longitude from the Point
