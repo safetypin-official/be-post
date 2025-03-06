@@ -7,8 +7,6 @@ package com.safetypin.post.utils;
 public class DistanceCalculator {
     private DistanceCalculator() {}
 
-    // Earth radius in kilometers
-    private static final double EARTH_RADIUS_KM = 6371.0;
 
     /**
      * Calculates the distance between two points on Earth using the Haversine formula.
@@ -20,22 +18,32 @@ public class DistanceCalculator {
      * @return Distance in kilometers
      */
     public static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        // Convert degrees to radians
-        double dLat = Math.toRadians((lat2 - lat1));
-        double dLong = Math.toRadians((lon2 - lon1));
+            final double EARTH_RADIUS = 6371000; // Radius of Earth in meters
 
-        // Convert latitudes to radians
-        lat1 = Math.toRadians(lat1);
-        lat2 = Math.toRadians(lat2);
+            // Convert degrees to radians
+            double lat1Rad = Math.toRadians(lat1);
+            double lon1Rad = Math.toRadians(lon1);
+            double lat2Rad = Math.toRadians(lat2);
+            double lon2Rad = Math.toRadians(lon2);
 
-        // Haversine formula
-        double a = calculateHaversineValue(dLat) + Math.cos(lat1) * Math.cos(lat2) * calculateHaversineValue(dLong);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            // Compute differences
+            double deltaLat = lat2Rad - lat1Rad;
+            double deltaLon = lon2Rad - lon1Rad;
 
-        return EARTH_RADIUS_KM * c;
-    }
+            // Haversine formula
+            double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                    Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                            Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    private static double calculateHaversineValue(double angle) {
-        return Math.pow(Math.sin(angle / 2), 2);
+            // Log input values and calculated distance
+            System.out.println(String.format(
+                    "Calculating distance between (%f, %f) and (%f, %f): %.2f meters",
+                    lat1, lon1, lat2, lon2, EARTH_RADIUS * c
+            ));
+
+
+            // Distance in meters
+            return EARTH_RADIUS * c;
     }
 }
