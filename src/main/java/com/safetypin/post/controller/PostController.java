@@ -1,7 +1,10 @@
 package com.safetypin.post.controller;
 
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
+import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Location;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +18,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/posts")
 public class PostController {
@@ -24,6 +31,11 @@ public class PostController {
 
     public PostController(PostService postService) {
         this.postService = postService;
+    }
+
+    @GetMapping("/all")
+    public List<Post> findAll() {
+        return postService.findAll();
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -38,7 +50,8 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         try {
-            Double radiusToUse = radius != null ? radius : 10.0; // Explicitly handle null radius
+            // Explicitly handle null radius
+            Double radiusToUse = radius != null ? radius : 10.0;
 
             // Require lat and lon; return error if not provided
             if (lat == null || lon == null) {
@@ -50,14 +63,17 @@ public class PostController {
                         .body(errorResponse);
             }
 
+            // convert LocalDate to localDateTime & handle null
             LocalDateTime fromDateTime = dateFrom != null ?
                     LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
             LocalDateTime toDateTime = dateTo != null ?
                     LocalDateTime.of(dateTo, LocalTime.MAX) : null;
 
+            // page
             Pageable pageable = PageRequest.of(page, size);
 
-            Page<?> posts = postService.findPostsByLocation(
+            // find posts
+            Page<Map<String, Object>> posts = postService.findPostsByLocation(
                     lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
 
             PostResponse postResponse = new PostResponse(
@@ -89,4 +105,5 @@ public class PostController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(errorResponse);
     }
+
 }

@@ -2,6 +2,8 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
+import com.safetypin.post.utils.DistanceCalculator;
+import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -14,7 +16,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+@Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
@@ -27,19 +31,33 @@ public class PostServiceImpl implements PostService {
         this.geometryFactory = geometryFactory;
     }
 
+    // find all (debugging purposes)
+    @Override
+    public List<Post> findAll() {
+        return postRepository.findAll();
+    }
+
+    // find posts given filter
     @Override
     public Page<Map<String, Object>> findPostsByLocation(
             Double centerLat, Double centerLon, Double radius,
             String category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable) {
+
+        // create point
         Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-        Page<Post> posts = searchPostsWithinRadius(centerPoint, radius, pageable);
-        return posts.map(post -> {
+
+        // get all posts within radius with page
+        //Page<Post> posts = searchPostsWithinRadius(centerPoint, radius, pageable);
+        Page<Post> posts = postRepository.findPostsWithFilter(centerPoint, radius, category, dateFrom, dateTo, pageable);
+
+        // add distance to each posts
+        Page<Map<String, Object>> postAndDistance = posts.map(post -> {
             Map<String, Object> result = new HashMap<>();
             result.put("post", post);
             Point postLocation = post.getLocation();
             if (postLocation != null) {
-                double distance = calculateDistance(
+                double distance = DistanceCalculator.calculateDistance(
                         centerLat, centerLon,
                         postLocation.getY(), postLocation.getX()
                 );
@@ -49,36 +67,42 @@ public class PostServiceImpl implements PostService {
             }
             return result;
         });
+        return postAndDistance;
     }
 
     @Override
     public Page<Post> searchPostsWithinRadius(Point center, Double radius, Pageable pageable) {
+        log.info(center.toString());
         return postRepository.findPostsWithinPointAndRadius(center, radius, pageable);
     }
 
+    // only for test
     @Override
     public List<Post> getPostsWithinRadius(double latitude, double longitude, double radius) {
         List<Post> allPosts = postRepository.findAll();
         return allPosts.stream()
                 .filter(post -> {
                     if (post.getLocation() == null) return false;
-                    double distance = calculateDistance(latitude, longitude,
+                    double distance = DistanceCalculator.calculateDistance(latitude, longitude,
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
                 .toList();
     }
 
+    // deprecated, use findPostByLocation instead
     @Override
     public List<Post> getPostsByCategory(String category) {
         return postRepository.findByCategory(category);
     }
 
+    // deprecated, use findPostByLocation instead
     @Override
     public List<Post> getPostsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return postRepository.findByCreatedAtBetween(startDate, endDate);
     }
 
+    // only for test
     @Override
     public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
                                           String category, LocalDateTime startDate, LocalDateTime endDate) {
@@ -95,36 +119,26 @@ public class PostServiceImpl implements PostService {
         return candidatePosts.stream()
                 .filter(post -> {
                     if (post.getLocation() == null) return false;
-                    double distance = calculateDistance(latitude, longitude,
+                    double distance = DistanceCalculator.calculateDistance(latitude, longitude,
                             post.getLocation().getY(), post.getLocation().getX());
                     return distance <= radius;
                 })
                 .toList();
     }
 
+    // only for test
     @Override
     public List<Post> getPostsByProximity(double latitude, double longitude) {
         List<Post> allPosts = postRepository.findAll();
         return allPosts.stream()
                 .filter(post -> post.getLocation() != null)
                 .sorted((post1, post2) -> {
-                    double dist1 = calculateDistance(latitude, longitude,
+                    double dist1 = DistanceCalculator.calculateDistance(latitude, longitude,
                             post1.getLocation().getY(), post1.getLocation().getX());
-                    double dist2 = calculateDistance(latitude, longitude,
+                    double dist2 = DistanceCalculator.calculateDistance(latitude, longitude,
                             post2.getLocation().getY(), post2.getLocation().getX());
                     return Double.compare(dist1, dist2);
                 })
                 .toList();
-    }
-
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371;
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
     }
 }

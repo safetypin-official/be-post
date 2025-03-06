@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public interface PostService {
@@ -30,4 +31,5 @@ public interface PostService {
                                    String category, LocalDateTime startDate, LocalDateTime endDate);
 
     List<Post> getPostsByProximity(double latitude, double longitude);
+    List<Post> findAll();
 }
