@@ -1,9 +1,7 @@
 package com.safetypin.post.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -25,14 +23,23 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
+    @Getter @Setter
     @Column(nullable = false)
     private String caption;
+    @Setter
+    @Getter
     @Column(nullable = true)
     private String title;
+    @Setter
+    @Getter
     @Column(nullable = true)
     private String category;
+    @Setter
+    @Getter
     @Column(nullable = false, columnDefinition = "TIMESTAMP")
     private LocalDateTime createdAt;
+    @Setter
+    @Getter
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point location;
 
@@ -51,53 +58,6 @@ public class Post {
         }
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getCaption() {
-        return caption;
-    }
-
-    public void setCaption(String content) {
-        this.caption = content;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Point getLocation() {
-        return location;
-    }
-
-    public void setLocation(Point location) {
-        this.location = location;
-    }
 
     // Methods to get latitude and longitude from the Point
     public Double getLatitude() {
