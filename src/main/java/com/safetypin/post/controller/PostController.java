@@ -102,6 +102,12 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(postResponse);
+        } catch (InvalidPostDataException e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, "Invalid post data: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         } catch (Exception e) {
             PostResponse errorResponse = new PostResponse(
                     false, "Error creating post: " + e.getMessage(), null);
