@@ -1,5 +1,7 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
 import org.locationtech.jts.geom.Coordinate;
@@ -115,6 +117,36 @@ public class PostServiceImpl implements PostService {
                     return Double.compare(dist1, dist2);
                 })
                 .toList();
+    }
+
+    @Override
+    public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
+        if (title == null || title.trim().isEmpty()) {
+            throw new InvalidPostDataException("Post title is required");
+        }
+        
+        if (content == null || content.trim().isEmpty()) {
+            throw new InvalidPostDataException("Post content is required");
+        }
+        
+        if (latitude == null || longitude == null) {
+            throw new InvalidPostDataException("Location coordinates are required");
+        }
+        
+        try {
+            Post post = new Post();
+            post.setTitle(title);
+            post.setCaption(content);
+            post.setCategory(category);
+            post.setCreatedAt(LocalDateTime.now());
+            
+            Point location = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+            post.setLocation(location);
+            
+            return postRepository.save(post);
+        } catch (Exception e) {
+            throw new PostException("Failed to create post: " + e.getMessage(), "POST_CREATION_ERROR", e);
+        }
     }
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {

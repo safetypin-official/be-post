@@ -30,4 +30,6 @@ public interface PostService {
                                    String category, LocalDateTime startDate, LocalDateTime endDate);
 
     List<Post> getPostsByProximity(double latitude, double longitude);
+    
+    Post createPost(String title, String content, Double latitude, Double longitude, String category);
 }
