@@ -1,6 +1,9 @@
 package com.safetypin.post.controller;
 
+import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +28,7 @@ public class PostController {
     public PostController(PostService postService) {
         this.postService = postService;
     }
-
+        
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> getPosts(
             @RequestParam Double lat,
@@ -40,14 +43,9 @@ public class PostController {
         try {
             Double radiusToUse = radius != null ? radius : 10.0; // Explicitly handle null radius
 
-            // Require lat and lon; return error if not provided
+            // Require lat and lon; throw custom exception if not provided
             if (lat == null || lon == null) {
-                PostResponse errorResponse = new PostResponse(
-                        false, "Latitude and longitude are required", null);
-
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(errorResponse);
+                throw new InvalidPostDataException("Latitude and longitude are required");
             }
 
             LocalDateTime fromDateTime = dateFrom != null ?
@@ -66,6 +64,12 @@ public class PostController {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(postResponse);
+        } catch (InvalidPostDataException e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         } catch (NumberFormatException e) {
             PostResponse errorResponse = new PostResponse(
                     false, "Invalid location parameters", null);
@@ -81,6 +85,32 @@ public class PostController {
         }
     }
 
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest request) {
+        try {
+            // Validation is moved to service layer to use custom exceptions
+            Post createdPost = postService.createPost(
+                    request.getTitle(), 
+                    request.getCaption(),
+                    request.getLatitude(), 
+                    request.getLongitude(), 
+                    request.getCategory());
+            
+            PostResponse postResponse = new PostResponse(
+                    true, "Post created successfully", createdPost);
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(postResponse);
+        } catch (Exception e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, "Error creating post: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        }
+    }
+    
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         PostResponse errorResponse = new PostResponse(
