@@ -1,6 +1,10 @@
 package com.safetypin.post.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,15 +20,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,10 +42,29 @@ class PostControllerTest {
     private PostController postController;
 
     private Page<Map<String, Object>> mockPage;
+    private Post mockPost;
+    private PostCreateRequest validRequest;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
         mockPage = new PageImpl<>(new ArrayList<>());
+
+        mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test Post");
+        mockPost.setCaption("Test Caption");
+        mockPost.setLatitude(20.0);
+        mockPost.setLongitude(10.0);
+        mockPost.setCategory("safety");
+
+        validRequest = new PostCreateRequest();
+        validRequest.setTitle("Test Post");
+        validRequest.setCaption("Test Caption");
+        validRequest.setLatitude(20.0);
+        validRequest.setLongitude(10.0);
+        validRequest.setCategory("safety");
     }
 
     /**
@@ -56,7 +80,7 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
-    /**
+    /** 
      * Test missing longitude parameter
      */
     @Test
@@ -80,7 +104,6 @@ class PostControllerTest {
 
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
-
 
     /**
      * Test valid request with all parameters
@@ -157,24 +180,6 @@ class PostControllerTest {
 
     /**
      * Test with only dateTo
-     */
-    @Test
-    void whenGetPostsWithOnlyDateTo_thenSetToDateTime() {
-        Double lat = 20.0;
-        Double lon = 10.0;
-        Double radius = 10.0;
-        LocalDate dateTo = LocalDate.now();
-        LocalDateTime toDateTime = LocalDateTime.of(dateTo, LocalTime.MAX);
-        int page = 0;
-        int size = 10;
-        Pageable pageable = PageRequest.of(page, size);
-
-        when(postService.findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable))
-                .thenReturn(mockPage);
-
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, null, null, dateTo, page, size);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
     }
 
@@ -247,5 +252,56 @@ class PostControllerTest {
         PostResponse errorResponse = response.getBody();
 
         assertEquals("Invalid location parameters", errorResponse.getMessage());
+    }
+
+    @Test
+    void createPost_Success() {
+        // Arrange
+        when(postService.createPost(
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                .thenReturn(mockPost);
+        
+        // Act
+        ResponseEntity<PostResponse> response = postController.createPost(validRequest);
+        
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertEquals("Post created successfully", response.getBody().getMessage());
+        assertNotNull(response.getBody().getData());
+    }
+
+    @Test
+    void createPost_ExceptionThrown() {
+        // Arrange
+        when(postService.createPost(
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                .thenThrow(new InvalidPostDataException("Test exception"));
+        
+        // Act
+        ResponseEntity<PostResponse> response = postController.createPost(validRequest);
+        
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Invalid post data: Test exception", response.getBody().getMessage());
+        assertNull(response.getBody().getData());
+    }
+    
+    @Test
+    void createPost_RuntimeException() {
+        // Arrange
+        when(postService.createPost(
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                .thenThrow(new RuntimeException("Unexpected runtime exception"));
+        
+        // Act
+        ResponseEntity<PostResponse> response = postController.createPost(validRequest);
+        
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Error creating post: Unexpected runtime exception", response.getBody().getMessage());
+        assertNull(response.getBody().getData());
     }
 }

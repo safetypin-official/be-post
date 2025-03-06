@@ -1,8 +1,6 @@
 package com.safetypin.post.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.safetypin.post.serializers.PointSerializer;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Coordinate;
@@ -38,12 +36,8 @@ public class Post {
     private LocalDateTime createdAt;
     //@JsonSerialize(using = PointSerializer.class)
     @JsonIgnore
-    @Column(nullable = true, columnDefinition = "geography(Point,4326)")
+    @Column(nullable = false, columnDefinition = "geography(Point,4326)")
     private Point location;
-//    @Version
-//    private Long version;
-
-
 
     // Additional fields as needed
 
