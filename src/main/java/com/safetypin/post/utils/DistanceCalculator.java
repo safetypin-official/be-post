@@ -18,7 +18,7 @@ public class DistanceCalculator {
      * @return Distance in kilometers
      */
     public static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-            final double EARTH_RADIUS = 6371000; // Radius of Earth in meters
+            final double EARTH_RADIUS = 6371; // Radius of Earth in meters
 
             // Convert degrees to radians
             double lat1Rad = Math.toRadians(lat1);
@@ -35,12 +35,6 @@ public class DistanceCalculator {
                     Math.cos(lat1Rad) * Math.cos(lat2Rad) *
                             Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
             double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            // Log input values and calculated distance
-            System.out.println(String.format(
-                    "Calculating distance between (%f, %f) and (%f, %f): %.2f meters",
-                    lat1, lon1, lat2, lon2, EARTH_RADIUS * c
-            ));
 
 
             // Distance in meters
