@@ -28,12 +28,17 @@ public class Post {
     
     @Column(nullable = false)
     private String caption;
-    @Column(nullable = true)
+
+    @Column()
     private String title;
-    @Column(nullable = true)
-    private String category;
+
+    @Column(nullable = false)
+    @ManyToOne
+    private Category category;
+
     @Column(nullable = false, columnDefinition = "timestamp")
     private LocalDateTime createdAt;
+
     //@JsonSerialize(using = PointSerializer.class)
     @JsonIgnore
     @Column(nullable = false, columnDefinition = "geography(Point,4326)")
@@ -42,7 +47,7 @@ public class Post {
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
-    public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
+    public Post(String caption, String title, Category category, LocalDateTime createdAt, Double latitude, Double longitude) {
         this.caption = caption;
         this.title = title;
         this.category = category;
@@ -85,10 +90,6 @@ public class Post {
 
     @PrePersist
     protected void onCreate() {
-        // karena sudah menggunakan IdGenerator
-//        if (id == null) {
-//            id = UUID.randomUUID();
-//        }
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }

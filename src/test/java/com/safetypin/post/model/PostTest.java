@@ -32,7 +32,7 @@ class PostTest {
         UUID id = UUID.randomUUID();
         String content = "Test content";
         String title = "Test title";
-        String category = "Test category";
+        Category category = new Category("Test category");
         LocalDateTime createdAt = LocalDateTime.now();
         Point location = geometryFactory.createPoint(new Coordinate(10.0, 20.0));
 
@@ -50,7 +50,7 @@ class PostTest {
     void testLatitudeLongitudeConstructor() {
         String content = "Test content";
         String title = "Test title";
-        String category = "Test category";
+        Category category = new Category("Test category");
         LocalDateTime createdAt = LocalDateTime.now();
         Double latitude = 20.0;
         Double longitude = 10.0;
@@ -130,7 +130,7 @@ class PostTest {
         UUID id = UUID.randomUUID();
         String content = "Updated content";
         String title = "Updated title";
-        String category = "Updated category";
+        Category category = new Category("Test category");
         LocalDateTime createdAt = LocalDateTime.now();
         Point location = geometryFactory.createPoint(new Coordinate(15.0, 25.0));
 
