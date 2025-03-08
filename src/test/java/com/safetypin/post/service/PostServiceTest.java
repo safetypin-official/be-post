@@ -23,7 +23,6 @@ import com.safetypin.post.exception.PostException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,8 +76,9 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
-                .thenReturn(postPage);
+        when(postRepository.findPostsWithFilter(
+                any(), anyDouble(), any(), any(), any(), any(PageRequest.class)
+        )).thenReturn(postPage);
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
@@ -104,13 +104,13 @@ class PostServiceTest {
         List<Post> postList = Collections.singletonList(postWithoutLocation);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithinPointAndRadius(any(Point.class), eq(radius), eq(pageable)))
-                .thenReturn(postPage);
+        when(postRepository.findPostsWithFilter(
+                any(), anyDouble(), any(), any(), any(), any(PageRequest.class)
+        )).thenReturn(postPage);
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
                 centerLat, centerLon, radius, null, null, null, pageable);
-
         // Then
         assertEquals(1, result.getContent().size());
         assertNull(result.getContent().getFirst().get("distance"));
