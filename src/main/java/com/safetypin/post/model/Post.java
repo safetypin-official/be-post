@@ -36,7 +36,7 @@ public class Post {
     private LocalDateTime createdAt;
     //@JsonSerialize(using = PointSerializer.class)
     @JsonIgnore
-    @Column(nullable = false, columnDefinition = "geography(Point,4326)")
+    @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point location;
 
     // Additional fields as needed
