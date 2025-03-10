@@ -85,12 +85,88 @@ public class Post {
 
     @PrePersist
     protected void onCreate() {
-        // karena sudah menggunakan IdGenerator
-//        if (id == null) {
-//            id = UUID.randomUUID();
-//        }
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+    }
+    
+    /**
+     * Static method to create a new Builder instance
+     * @return new Builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+    
+    /**
+     * Builder class for Post
+     */
+    public static class Builder {
+        private UUID id;
+        private String caption;
+        private String title;
+        private String category;
+        private LocalDateTime createdAt;
+        private Double latitude;
+        private Double longitude;
+        
+        private Builder() {}
+        
+        public Builder id(UUID id) {
+            this.id = id;
+            return this;
+        }
+        
+        public Builder caption(String caption) {
+            this.caption = caption;
+            return this;
+        }
+        
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
+        
+        public Builder category(String category) {
+            this.category = category;
+            return this;
+        }
+        
+        public Builder createdAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+        
+        public Builder latitude(Double latitude) {
+            this.latitude = latitude;
+            return this;
+        }
+        
+        public Builder longitude(Double longitude) {
+            this.longitude = longitude;
+            return this;
+        }
+        
+        public Builder location(Double latitude, Double longitude) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+            return this;
+        }
+        
+        public Post build() {
+            Post post = new Post();
+            post.setId(id);
+            post.setCaption(caption);
+            post.setTitle(title);
+            post.setCategory(category);
+            post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
+            
+            // Set location if latitude and longitude are provided
+            if (latitude != null && longitude != null) {
+                post.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+            }
+            
+            return post;
         }
     }
 }
