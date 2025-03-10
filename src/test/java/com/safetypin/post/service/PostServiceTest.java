@@ -20,6 +20,7 @@ import java.util.*;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.service.filter.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -201,10 +202,10 @@ class PostServiceTest {
         LocalDateTime startDate = yesterday;
         LocalDateTime endDate = tomorrow;
 
-        List<Post> filteredPosts = Arrays.asList(post1, post3, postWithoutLocation);
+        List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
 
-        when(postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category))
-                .thenReturn(filteredPosts);
+        // Mock findAll() instead of findByTimestampBetweenAndCategory()
+        when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
         List<Post> result = postService.getPostsWithFilters(
@@ -215,6 +216,7 @@ class PostServiceTest {
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post3));
         assertFalse(result.contains(postWithoutLocation));
+        assertFalse(result.contains(post2)); // Different category, should be filtered out
     }
 
     @Test
@@ -225,9 +227,10 @@ class PostServiceTest {
         double radius = 150.0; // Increased radius
         String category = "safety";
 
-        List<Post> filteredPosts = Arrays.asList(post1, post3, postWithoutLocation);
+        List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
 
-        when(postRepository.findByCategory(category)).thenReturn(filteredPosts);
+        // Mock findAll() instead of findByCategory()
+        when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
         List<Post> result = postService.getPostsWithFilters(
@@ -238,6 +241,7 @@ class PostServiceTest {
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post3));
         assertFalse(result.contains(postWithoutLocation));
+        assertFalse(result.contains(post2)); // Different category, should be filtered out
     }
 
     @Test
@@ -249,9 +253,10 @@ class PostServiceTest {
         LocalDateTime startDate = yesterday;
         LocalDateTime endDate = tomorrow;
 
-        List<Post> filteredPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
+        List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
 
-        when(postRepository.findByCreatedAtBetween(startDate, endDate)).thenReturn(filteredPosts);
+        // Mock findAll() instead of findByCreatedAtBetween() since we now use strategy pattern
+        when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
         List<Post> result = postService.getPostsWithFilters(
@@ -492,5 +497,137 @@ class PostServiceTest {
         );
         assertEquals("POST_CREATION_ERROR", exception.getErrorCode());
         assertTrue(exception.getMessage().contains("Failed to create post"));
+    }
+
+    @Test
+    void testFilterPosts_WithCategoryStrategy() {
+        // Given
+        String category = "safety";
+        List<Post> allPosts = Arrays.asList(post1, post2, post3);
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        CategoryFilteringStrategy categoryStrategy = new CategoryFilteringStrategy(category);
+        
+        // When
+        List<Post> result = postService.filterPosts(categoryStrategy);
+        
+        // Then
+        assertEquals(2, result.size());
+        assertTrue(result.contains(post1));
+        assertTrue(result.contains(post3));
+        assertFalse(result.contains(post2));
+    }
+    
+    @Test
+    void testFilterPosts_WithDateRangeStrategy() {
+        // Given
+        LocalDateTime startDate = yesterday;
+        LocalDateTime endDate = now;
+        List<Post> allPosts = Arrays.asList(post1, post2, post3);
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        DateRangeFilteringStrategy dateRangeStrategy = new DateRangeFilteringStrategy(startDate, endDate);
+        
+        // When
+        List<Post> result = postService.filterPosts(dateRangeStrategy);
+        
+        // Then
+        assertEquals(2, result.size());
+        assertTrue(result.contains(post1));
+        assertTrue(result.contains(post2));
+        assertFalse(result.contains(post3));
+    }
+    
+    @Test
+    void testFilterPosts_WithLocationRadiusStrategy() {
+        // Given
+        double centerLat = 0.1;
+        double centerLon = 0.1;
+        double radius = 5.0; // Smaller radius that only includes post1
+        List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        LocationRadiusFilteringStrategy locationStrategy = new LocationRadiusFilteringStrategy(centerLat, centerLon, radius);
+        
+        // When
+        List<Post> result = postService.filterPosts(locationStrategy);
+        
+        // Then
+        assertEquals(1, result.size());
+        assertTrue(result.contains(post1));
+    }
+    
+    @Test
+    void testFilterPosts_WithCompositeStrategy() {
+        // Given
+        double centerLat = 0.1;
+        double centerLon = 0.1;
+        double radius = 150.0; // Large radius
+        String category = "safety";
+        List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
+        compositeStrategy.addStrategy(new LocationRadiusFilteringStrategy(centerLat, centerLon, radius));
+        compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
+        
+        // When
+        List<Post> result = postService.filterPosts(compositeStrategy);
+        
+        // Then
+        assertEquals(2, result.size());
+        assertTrue(result.contains(post1));
+        assertTrue(result.contains(post3));
+        assertFalse(result.contains(post2));
+        assertFalse(result.contains(postWithoutLocation));
+    }
+
+    @Test
+    void testFindAllPosts() {
+        // Given
+        List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
+        when(postRepository.findAll()).thenReturn(allPosts);
+
+        // When
+        List<Post> result = postService.findAll();
+
+        // Then
+        assertEquals(allPosts, result);
+    }
+
+    @Test
+    void testFilterPostsByDate_NullDates(){
+        // Given
+        List<Post> allPosts = Arrays.asList(post1, post2, post3);
+        when(postRepository.findAll()).thenReturn(allPosts);
+
+        DateRangeFilteringStrategy dateRangeFilteringStrategy = new DateRangeFilteringStrategy(null, null);
+
+        // When
+        List<Post> result = postService.filterPosts(dateRangeFilteringStrategy);
+
+        // Then
+        assertEquals(3, result.size());
+        assertTrue(result.contains(post1));
+        assertTrue(result.contains(post2));
+        assertTrue(result.contains(post3));
+    }
+
+    @Test
+    void testFilterPostsByCategory_NullCategory(){
+        // Given
+        List<Post> allPosts = Arrays.asList(post1, post2, post3);
+        when(postRepository.findAll()).thenReturn(allPosts);
+
+        CategoryFilteringStrategy categoryFilteringStrategy = new CategoryFilteringStrategy(null);
+
+        // When
+        List<Post> result = postService.filterPosts(categoryFilteringStrategy);
+
+        // Then
+        assertEquals(3, result.size());
+        assertTrue(result.contains(post1));
+        assertTrue(result.contains(post2));
+        assertTrue(result.contains(post3));
     }
 }
