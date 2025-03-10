@@ -1,5 +1,8 @@
 package com.safetypin.post.exception;
 
+import lombok.Getter;
+
+@Getter
 public class PostException extends RuntimeException {
     private final String errorCode;
 
@@ -23,7 +26,4 @@ public class PostException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
-    public String getErrorCode() {
-        return errorCode;
-    }
 }

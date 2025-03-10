@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -42,6 +42,7 @@ class PostControllerTest {
     private PostController postController;
 
     private Page<Map<String, Object>> mockPage;
+    private Category mockCategory;
     private Post mockPost;
     private PostCreateRequest validRequest;
     private ObjectMapper objectMapper;
@@ -51,20 +52,24 @@ class PostControllerTest {
         objectMapper = new ObjectMapper();
         mockPage = new PageImpl<>(new ArrayList<>());
 
+        mockCategory = new Category();
+        mockCategory.setId(UUID.randomUUID());
+        mockCategory.setName("safety");
+
         mockPost = new Post();
         mockPost.setId(UUID.randomUUID());
         mockPost.setTitle("Test Post");
         mockPost.setCaption("Test Caption");
         mockPost.setLatitude(20.0);
         mockPost.setLongitude(10.0);
-        mockPost.setCategory("safety");
+        mockPost.setCategory(mockCategory);
 
         validRequest = new PostCreateRequest();
         validRequest.setTitle("Test Post");
         validRequest.setCaption("Test Caption");
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
-        validRequest.setCategory("safety");
+        validRequest.setCategory(mockCategory);
     }
 
     /**
@@ -113,7 +118,7 @@ class PostControllerTest {
         Double lat = 20.0;
         Double lon = 10.0;
         Double radius = 10.0;
-        String category = "safety";
+        Category category = mockCategory;
         LocalDate dateFrom = LocalDate.now().minusDays(7);
         LocalDate dateTo = LocalDate.now();
         int page = 0;
@@ -258,7 +263,7 @@ class PostControllerTest {
     void createPost_Success() {
         // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                anyString(), anyString(), anyDouble(), anyDouble(), any()))
                 .thenReturn(mockPost);
         
         // Act
@@ -275,7 +280,7 @@ class PostControllerTest {
     void createPost_ExceptionThrown() {
         // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                anyString(), anyString(), anyDouble(), anyDouble(), any()))
                 .thenThrow(new InvalidPostDataException("Test exception"));
         
         // Act
@@ -292,7 +297,7 @@ class PostControllerTest {
     void createPost_RuntimeException() {
         // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                anyString(), anyString(), anyDouble(), anyDouble(), any()))
                 .thenThrow(new RuntimeException("Unexpected runtime exception"));
         
         // Act

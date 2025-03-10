@@ -2,6 +2,7 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.utils.DistanceCalculator;
@@ -18,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -43,18 +43,18 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> findPostsByLocation(
             Double centerLat, Double centerLon, Double radius,
-            String category, LocalDateTime dateFrom, LocalDateTime dateTo,
+            Category category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable) {
 
         // create point
         Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
 
         // get all posts within radius with page
-        //Page<Post> posts = searchPostsWithinRadius(centerPoint, radius, pageable);
-        Page<Post> posts = postRepository.findPostsWithFilter(centerPoint, radius, category, dateFrom, dateTo, pageable);
+        Page<Post> posts = postRepository.findPostsWithFilter(
+                centerPoint, radius, category, dateFrom, dateTo, pageable);
 
         // add distance to each posts
-        Page<Map<String, Object>> postAndDistance = posts.map(post -> {
+        return posts.map(post -> {
             Map<String, Object> result = new HashMap<>();
             result.put("post", post);
             Point postLocation = post.getLocation();
@@ -69,7 +69,6 @@ public class PostServiceImpl implements PostService {
             }
             return result;
         });
-        return postAndDistance;
     }
 
     @Override
@@ -94,7 +93,7 @@ public class PostServiceImpl implements PostService {
 
     // deprecated, use findPostByLocation instead
     @Override
-    public List<Post> getPostsByCategory(String category) {
+    public List<Post> getPostsByCategory(Category category) {
         return postRepository.findByCategory(category);
     }
 
@@ -107,7 +106,7 @@ public class PostServiceImpl implements PostService {
     // only for test
     @Override
     public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
-                                          String category, LocalDateTime startDate, LocalDateTime endDate) {
+                                          Category category, LocalDateTime startDate, LocalDateTime endDate) {
         List<Post> candidatePosts;
         if (category != null && startDate != null && endDate != null) {
             candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
@@ -145,7 +144,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
+    public Post createPost(String title, String content, Double latitude, Double longitude, Category category) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Post title is required");
         }

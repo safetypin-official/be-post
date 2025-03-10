@@ -37,9 +37,9 @@ public class DevDataSeeder implements CommandLineRunner {
         Category crimeWatch = new Category("Crime Watch");
         Category lostBook = new Category("Lost Book");
 
-        categoryRepository.saveAll(Arrays.asList(lostItem, infrastructureIssue, crimeWatch, lostBook));
+        categoryRepository.saveAllAndFlush(Arrays.asList(lostItem, infrastructureIssue, crimeWatch, lostBook));
 
-        postRepository.saveAll(Arrays.asList(
+        postRepository.saveAllAndFlush(Arrays.asList(
             new Post("dec4c589-3c98-4645-8511-c917cc92a527", "Lost wallet near the park",
                     lostItem, LocalDateTime.parse("2025-03-06T20:46:39.073832"),
                     37.7749, -122.4194),

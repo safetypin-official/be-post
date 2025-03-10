@@ -1,5 +1,6 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,24 +23,27 @@ import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
-    private final LocalDateTime now = LocalDateTime.now();
-    private final LocalDateTime yesterday = now.minusDays(1);
-    private final LocalDateTime tomorrow = now.plusDays(1);
-    @Mock
-    private PostRepository postRepository;
+    private final LocalDateTime
+            now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
+
+    @Mock private PostRepository postRepository;
+
     private GeometryFactory geometryFactory;
     private PostServiceImpl postService;
-    private Post post1;
-    private Post post2;
-    private Post post3;
+    private Post post1, post2, post3;
     private Post postWithoutLocation;
+    private final Category
+            safety = new Category("Safety"),
+            crime = new Category("Crime");
+
 
     @BeforeEach
     void setup() {
@@ -49,21 +53,21 @@ class PostServiceTest {
         // Create test posts with locations
         post1 = new Post();
         post1.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1))); // lon, lat
-        post1.setCategory("safety");
+        post1.setCategory(safety);
         post1.setCreatedAt(now);
 
         post2 = new Post();
         post2.setLocation(geometryFactory.createPoint(new Coordinate(0.2, 0.2))); // lon, lat
-        post2.setCategory("crime");
+        post2.setCategory(crime);
         post2.setCreatedAt(yesterday);
 
         post3 = new Post();
         post3.setLocation(geometryFactory.createPoint(new Coordinate(0.3, 0.3))); // lon, lat
-        post3.setCategory("safety");
+        post3.setCategory(safety);
         post3.setCreatedAt(tomorrow);
 
         postWithoutLocation = new Post();
-        postWithoutLocation.setCategory("safety");
+        postWithoutLocation.setCategory(safety);
         postWithoutLocation.setCreatedAt(now);
     }
 
@@ -163,7 +167,7 @@ class PostServiceTest {
     @Test
     void testGetPostsByCategory() {
         // Given
-        String category = "safety";
+        Category category = safety;
         List<Post> expectedPosts = Arrays.asList(post1, post3);
 
         when(postRepository.findByCategory(category)).thenReturn(expectedPosts);
@@ -197,7 +201,7 @@ class PostServiceTest {
         double centerLat = 0.1;
         double centerLon = 0.1;
         double radius = 150.0; // Increased radius to include all test posts
-        String category = "safety";
+        Category category = safety;
         LocalDateTime startDate = yesterday;
         LocalDateTime endDate = tomorrow;
 
@@ -223,7 +227,7 @@ class PostServiceTest {
         double centerLat = 0.1;
         double centerLon = 0.1;
         double radius = 150.0; // Increased radius
-        String category = "safety";
+        Category category = safety;
 
         List<Post> filteredPosts = Arrays.asList(post1, post3, postWithoutLocation);
 
@@ -355,9 +359,9 @@ class PostServiceTest {
         // Given
         String title = "Test Post";
         String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = "safety";
+        double latitude = 1.0;
+        double longitude = 2.0;
+        Category category = safety;
 
         Post savedPost = new Post();
         savedPost.setTitle(title);
@@ -386,10 +390,10 @@ class PostServiceTest {
         String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
-        String category = "safety";
+        Category category = safety;
         
         // When & Then
-        assertThrows(InvalidPostDataException.class, () -> 
+        assertThrows(InvalidPostDataException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         verify(postRepository, never()).save(any(Post.class));
@@ -402,10 +406,10 @@ class PostServiceTest {
         String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
-        String category = "safety";
+        Category category = safety;
         
         // When & Then
-        assertThrows(InvalidPostDataException.class, () -> 
+        assertThrows(InvalidPostDataException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         verify(postRepository, never()).save(any(Post.class));
@@ -418,10 +422,10 @@ class PostServiceTest {
         String content = null;
         Double latitude = 1.0;
         Double longitude = 2.0;
-        String category = "safety";
+        Category category = safety;
         
         // When & Then
-        assertThrows(InvalidPostDataException.class, () -> 
+        assertThrows(InvalidPostDataException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         verify(postRepository, never()).save(any(Post.class));
@@ -434,10 +438,10 @@ class PostServiceTest {
         String content = "  ";
         Double latitude = 1.0;
         Double longitude = 2.0;
-        String category = "safety";
+        Category category = safety;
         
         // When & Then
-        assertThrows(InvalidPostDataException.class, () -> 
+        assertThrows(InvalidPostDataException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         verify(postRepository, never()).save(any(Post.class));
@@ -450,10 +454,10 @@ class PostServiceTest {
         String content = "This is a test post";
         Double latitude = null;
         Double longitude = 2.0;
-        String category = "safety";
+        Category category = safety;
         
         // When & Then
-        assertThrows(InvalidPostDataException.class, () -> 
+        assertThrows(InvalidPostDataException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         verify(postRepository, never()).save(any(Post.class));
@@ -466,10 +470,10 @@ class PostServiceTest {
         String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = null;
-        String category = "safety";
+        Category category = safety;
         
         // When & Then
-        assertThrows(InvalidPostDataException.class, () -> 
+        assertThrows(InvalidPostDataException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         verify(postRepository, never()).save(any(Post.class));
@@ -482,12 +486,12 @@ class PostServiceTest {
         String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
-        String category = "safety";
+        Category category = safety;
         
         when(postRepository.save(any(Post.class))).thenThrow(new RuntimeException("Database error"));
         
         // When & Then
-        PostException exception = assertThrows(PostException.class, () -> 
+        PostException exception = assertThrows(PostException.class, () ->
             postService.createPost(title, content, latitude, longitude, category)
         );
         assertEquals("POST_CREATION_ERROR", exception.getErrorCode());

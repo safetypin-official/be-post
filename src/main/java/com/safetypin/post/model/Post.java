@@ -32,7 +32,7 @@ public class Post {
     @Column()
     private String title;
 
-    @Column(nullable = false)
+    @JoinColumn(nullable = false)
     @ManyToOne
     private Category category;
 

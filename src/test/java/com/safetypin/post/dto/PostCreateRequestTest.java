@@ -1,19 +1,20 @@
 package com.safetypin.post.dto;
 
+import com.safetypin.post.model.Category;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PostCreateRequestTest {
+class PostCreateRequestTest {
 
     @Test
-    public void testGettersAndSetters() {
+    void testGettersAndSetters() {
         // Arrange
         PostCreateRequest request = new PostCreateRequest();
         String title = "Test Title";
         String caption = "Test Caption";
         Double latitude = 12.345;
         Double longitude = 67.890;
-        String category = "Test Category";
+        Category category = new Category("Test Category");
         
         // Act
         request.setTitle(title);
