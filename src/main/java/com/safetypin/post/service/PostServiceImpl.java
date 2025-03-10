@@ -4,6 +4,7 @@ import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
+import com.safetypin.post.service.filter.*;
 import com.safetypin.post.utils.DistanceCalculator;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -18,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -108,24 +108,24 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
                                           String category, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Post> candidatePosts;
-        if (category != null && startDate != null && endDate != null) {
-            candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
-        } else if (category != null) {
-            candidatePosts = postRepository.findByCategory(category);
-        } else if (startDate != null && endDate != null) {
-            candidatePosts = postRepository.findByCreatedAtBetween(startDate, endDate);
-        } else {
-            candidatePosts = postRepository.findAll();
+        // Create a composite strategy
+        CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
+        
+        // Add location radius filtering strategy
+        compositeStrategy.addStrategy(new LocationRadiusFilteringStrategy(latitude, longitude, radius));
+        
+        // Add category filtering strategy if category is provided
+        if (category != null && !category.trim().isEmpty()) {
+            compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
         }
-        return candidatePosts.stream()
-                .filter(post -> {
-                    if (post.getLocation() == null) return false;
-                    double distance = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post.getLocation().getY(), post.getLocation().getX());
-                    return distance <= radius;
-                })
-                .toList();
+        
+        // Add date range filtering strategy if both dates are provided
+        if (startDate != null && endDate != null) {
+            compositeStrategy.addStrategy(new DateRangeFilteringStrategy(startDate, endDate));
+        }
+        
+        // Apply all strategies to all posts
+        return filterPosts(compositeStrategy);
     }
 
     // only for test
@@ -174,14 +174,11 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371;
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+    // Implement the new strategy-based filtering method
+    @Override
+    public List<Post> filterPosts(PostFilteringStrategy filterStrategy) {
+        List<Post> allPosts = postRepository.findAll();
+        return filterStrategy.filter(allPosts);
     }
+
 }
