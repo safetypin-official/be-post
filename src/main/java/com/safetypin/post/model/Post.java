@@ -10,6 +10,7 @@ import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,39 +18,33 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "posts")
-public class Post {
+public class Post extends BasePost{
 
     @Transient
     private static final GeometryFactory geometryFactory = new GeometryFactory();
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-    
-    @Column(nullable = false)
-    private String caption;
+
     @Column(nullable = true)
     private String title;
+
     @Column(nullable = true)
     private String category;
-    @Column(nullable = false, columnDefinition = "timestamp")
-    private LocalDateTime createdAt;
+
     //@JsonSerialize(using = PointSerializer.class)
     @JsonIgnore
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
-    private Point location;
+    private Point location = geometryFactory.createPoint(new Coordinate(0.0d, 0.0d));
 
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
     public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
-        this.caption = caption;
-        this.title = title;
-        this.category = category;
-        this.createdAt = createdAt;
+        this.setCaption(caption);
+        this.setTitle(title);
+        this.setCategory(category);
+        this.setCreatedAt(createdAt);
         // Convert latitude and longitude to Point
         if (latitude != null && longitude != null) {
-            this.location = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+            this.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
         }
     }
 
@@ -85,12 +80,8 @@ public class Post {
 
     @PrePersist
     protected void onCreate() {
-        // karena sudah menggunakan IdGenerator
-//        if (id == null) {
-//            id = UUID.randomUUID();
-//        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+        if (getCreatedAt() == null) {
+            setCreatedAt(LocalDateTime.now());
         }
     }
 }
