@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -24,9 +25,7 @@ import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -65,6 +64,37 @@ class PostControllerTest {
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
         validRequest.setCategory("safety");
+    }
+
+    @Test
+    void testFindAllPosts() throws Exception {
+        // Mock Data
+        Post post1 = new Post();
+        post1.setId(UUID.randomUUID());
+        post1.setCaption("First Post");
+        post1.setTitle("Title 1");
+
+        Post post2 = new Post();
+        post2.setId(UUID.randomUUID());
+        post2.setCaption("Second Post");
+        post2.setTitle("Title 2");
+
+        List<Post> mockPosts = Arrays.asList(post1, post2);
+
+        // Mock Service Call
+        Mockito.when(postService.findAll()).thenReturn(mockPosts);
+
+        // Call Controller Method
+        List<Post> result = postController.findAll();
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("First Post", result.get(0).getCaption());
+        assertEquals("Second Post", result.get(1).getCaption());
+
+        // Verify interaction with mock
+        Mockito.verify(postService).findAll();
     }
 
     /**

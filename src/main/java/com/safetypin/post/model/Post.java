@@ -10,6 +10,7 @@ import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,39 +18,33 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "posts")
-public class Post {
+public class Post extends BasePost{
 
     @Transient
     private static final GeometryFactory geometryFactory = new GeometryFactory();
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-    
-    @Column(nullable = false)
-    private String caption;
+
     @Column(nullable = true)
     private String title;
+
     @Column(nullable = true)
     private String category;
-    @Column(nullable = false, columnDefinition = "timestamp")
-    private LocalDateTime createdAt;
+
     //@JsonSerialize(using = PointSerializer.class)
     @JsonIgnore
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
-    private Point location;
+    private Point location = geometryFactory.createPoint(new Coordinate(0.0d, 0.0d));
 
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
     public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
-        this.caption = caption;
-        this.title = title;
-        this.category = category;
-        this.createdAt = createdAt;
+        this.setCaption(caption);
+        this.setTitle(title);
+        this.setCategory(category);
+        this.setCreatedAt(createdAt);
         // Convert latitude and longitude to Point
         if (latitude != null && longitude != null) {
-            this.location = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+            this.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
         }
     }
 
@@ -85,11 +80,11 @@ public class Post {
 
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+        if (getCreatedAt() == null) {
+            setCreatedAt(LocalDateTime.now());
         }
     }
-    
+
     /**
      * Static method to create a new Builder instance
      * @return new Builder instance
@@ -97,7 +92,7 @@ public class Post {
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder class for Post
      */
@@ -109,50 +104,50 @@ public class Post {
         private LocalDateTime createdAt;
         private Double latitude;
         private Double longitude;
-        
+
         private Builder() {}
-        
+
         public Builder id(UUID id) {
             this.id = id;
             return this;
         }
-        
+
         public Builder caption(String caption) {
             this.caption = caption;
             return this;
         }
-        
+
         public Builder title(String title) {
             this.title = title;
             return this;
         }
-        
+
         public Builder category(String category) {
             this.category = category;
             return this;
         }
-        
+
         public Builder createdAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
             return this;
         }
-        
+
         public Builder latitude(Double latitude) {
             this.latitude = latitude;
             return this;
         }
-        
+
         public Builder longitude(Double longitude) {
             this.longitude = longitude;
             return this;
         }
-        
+
         public Builder location(Double latitude, Double longitude) {
             this.latitude = latitude;
             this.longitude = longitude;
             return this;
         }
-        
+
         public Post build() {
             Post post = new Post();
             post.setId(id);
@@ -160,12 +155,12 @@ public class Post {
             post.setTitle(title);
             post.setCategory(category);
             post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
-            
+
             // Set location if latitude and longitude are provided
             if (latitude != null && longitude != null) {
                 post.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
             }
-            
+
             return post;
         }
     }

@@ -2,6 +2,7 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
@@ -114,7 +116,7 @@ class PostServiceTest {
                 centerLat, centerLon, radius, null, null, null, pageable);
         // Then
         assertEquals(1, result.getContent().size());
-        assertNull(result.getContent().getFirst().get("distance"));
+        assertNotNull(result.getContent().getFirst().get("distance"));
     }
 
     @Test
@@ -154,11 +156,11 @@ class PostServiceTest {
 
         // Then
         // Post without location should be filtered out
-        assertEquals(3, result.size());
+        assertEquals(4, result.size());
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post2));
         assertTrue(result.contains(post3));
-        assertFalse(result.contains(postWithoutLocation));
+        assertTrue(result.contains(postWithoutLocation));
     }
 
     @Test
@@ -212,10 +214,10 @@ class PostServiceTest {
                 centerLat, centerLon, radius, category, startDate, endDate);
 
         // Then
-        assertEquals(2, result.size()); // postWithoutLocation should be filtered out
+        assertEquals(3, result.size()); // postWithoutLocation shouldn't be filtered out
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post3));
-        assertFalse(result.contains(postWithoutLocation));
+        assertTrue(result.contains(postWithoutLocation));
         assertFalse(result.contains(post2)); // Different category, should be filtered out
     }
 
@@ -237,10 +239,10 @@ class PostServiceTest {
                 centerLat, centerLon, radius, category, null, null);
 
         // Then
-        assertEquals(2, result.size()); // postWithoutLocation should be filtered out
+        assertEquals(3, result.size()); // postWithoutLocation shouldn't be filtered out
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post3));
-        assertFalse(result.contains(postWithoutLocation));
+        assertTrue(result.contains(postWithoutLocation));
         assertFalse(result.contains(post2)); // Different category, should be filtered out
     }
 
@@ -263,11 +265,11 @@ class PostServiceTest {
                 centerLat, centerLon, radius, null, startDate, endDate);
 
         // Then
-        assertEquals(3, result.size()); // postWithoutLocation should be filtered out
+        assertEquals(4, result.size()); // postWithoutLocation shouldn't be filtered out
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post2));
         assertTrue(result.contains(post3));
-        assertFalse(result.contains(postWithoutLocation));
+        assertTrue(result.contains(postWithoutLocation));
     }
 
     @Test
@@ -278,6 +280,7 @@ class PostServiceTest {
         double radius = 150.0; // Increased radius
 
         List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
+        log.info(String.valueOf(postWithoutLocation.getLocation()));
 
         when(postRepository.findAll()).thenReturn(allPosts);
 
@@ -286,11 +289,11 @@ class PostServiceTest {
                 centerLat, centerLon, radius, null, null, null);
 
         // Then
-        assertEquals(3, result.size()); // postWithoutLocation should be filtered out
+        assertEquals(4, result.size());
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post2));
         assertTrue(result.contains(post3));
-        assertFalse(result.contains(postWithoutLocation));
+        assertTrue(result.contains(postWithoutLocation));
     }
 
     @Test
@@ -307,11 +310,12 @@ class PostServiceTest {
         List<Post> result = postService.getPostsByProximity(centerLat, centerLon);
 
         // Then
-        assertEquals(3, result.size()); // postWithoutLocation should be filtered out
+        assertEquals(4, result.size()); // postWithoutLocation shouldn't be filtered out
         // Posts should be sorted by distance from the center point
         assertEquals(post1, result.get(0)); // closest to center
         assertEquals(post2, result.get(1));
-        assertEquals(post3, result.get(2)); // furthest from center
+        assertEquals(postWithoutLocation, result.get(2));
+        assertEquals(post3, result.get(3)); // furthest from center
     }
 
     @Test
@@ -505,19 +509,19 @@ class PostServiceTest {
         String category = "safety";
         List<Post> allPosts = Arrays.asList(post1, post2, post3);
         when(postRepository.findAll()).thenReturn(allPosts);
-        
+
         CategoryFilteringStrategy categoryStrategy = new CategoryFilteringStrategy(category);
-        
+
         // When
         List<Post> result = postService.filterPosts(categoryStrategy);
-        
+
         // Then
         assertEquals(2, result.size());
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post3));
         assertFalse(result.contains(post2));
     }
-    
+
     @Test
     void testFilterPosts_WithDateRangeStrategy() {
         // Given
@@ -525,19 +529,19 @@ class PostServiceTest {
         LocalDateTime endDate = now;
         List<Post> allPosts = Arrays.asList(post1, post2, post3);
         when(postRepository.findAll()).thenReturn(allPosts);
-        
+
         DateRangeFilteringStrategy dateRangeStrategy = new DateRangeFilteringStrategy(startDate, endDate);
-        
+
         // When
         List<Post> result = postService.filterPosts(dateRangeStrategy);
-        
+
         // Then
         assertEquals(2, result.size());
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post2));
         assertFalse(result.contains(post3));
     }
-    
+
     @Test
     void testFilterPosts_WithLocationRadiusStrategy() {
         // Given
@@ -546,17 +550,17 @@ class PostServiceTest {
         double radius = 5.0; // Smaller radius that only includes post1
         List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
         when(postRepository.findAll()).thenReturn(allPosts);
-        
+
         LocationRadiusFilteringStrategy locationStrategy = new LocationRadiusFilteringStrategy(centerLat, centerLon, radius);
-        
+
         // When
         List<Post> result = postService.filterPosts(locationStrategy);
-        
+
         // Then
         assertEquals(1, result.size());
         assertTrue(result.contains(post1));
     }
-    
+
     @Test
     void testFilterPosts_WithCompositeStrategy() {
         // Given
@@ -566,20 +570,20 @@ class PostServiceTest {
         String category = "safety";
         List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
         when(postRepository.findAll()).thenReturn(allPosts);
-        
+
         CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
         compositeStrategy.addStrategy(new LocationRadiusFilteringStrategy(centerLat, centerLon, radius));
         compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
-        
+
         // When
         List<Post> result = postService.filterPosts(compositeStrategy);
-        
+
         // Then
-        assertEquals(2, result.size());
+        assertEquals(3, result.size());
         assertTrue(result.contains(post1));
         assertTrue(result.contains(post3));
         assertFalse(result.contains(post2));
-        assertFalse(result.contains(postWithoutLocation));
+        assertTrue(result.contains(postWithoutLocation));
     }
 
     @Test

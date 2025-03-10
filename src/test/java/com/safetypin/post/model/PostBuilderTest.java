@@ -60,8 +60,8 @@ class PostBuilderTest {
         assertEquals(caption, post.getCaption());
         assertNull(post.getCategory());
         assertNotNull(post.getCreatedAt()); // Should be auto-generated
-        assertNull(post.getLatitude());
-        assertNull(post.getLongitude());
+        assertNotNull(post.getLatitude());
+        assertNotNull(post.getLongitude());
     }
 
     @Test
