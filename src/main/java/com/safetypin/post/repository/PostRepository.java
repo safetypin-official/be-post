@@ -22,7 +22,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
-    @Query(value = "SELECT p FROM posts p " +
+    @Query(value = "SELECT p.* FROM posts p " +
             "WHERE p.created_at BETWEEN :startTime AND :endTime " +
             "AND p.category_id = :#{#category.id} ", nativeQuery = true)
     List<Post> findByTimestampBetweenAndCategory(

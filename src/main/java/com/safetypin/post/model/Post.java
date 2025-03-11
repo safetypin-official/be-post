@@ -123,7 +123,7 @@ public class Post extends BasePost{
             return this;
         }
 
-        public Builder category(String category) {
+        public Builder category(Category category) {
             this.category = category;
             return this;
         }

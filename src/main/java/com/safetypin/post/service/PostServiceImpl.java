@@ -72,13 +72,14 @@ public class PostServiceImpl implements PostService {
         });
     }
 
+    // DEPRECIATED
     @Override
     public Page<Post> searchPostsWithinRadius(Point center, Double radius, Pageable pageable) {
         log.info(center.toString());
         return postRepository.findPostsWithinPointAndRadius(center, radius, pageable);
     }
 
-    // only for test
+    // DEPRECIATED, only for test
     @Override
     public List<Post> getPostsWithinRadius(double latitude, double longitude, double radius) {
         List<Post> allPosts = postRepository.findAll();
@@ -92,43 +93,50 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
-    // deprecated, use findPostByLocation instead
+    // DEPRECIATED, use findPostByLocation instead
     @Override
     public List<Post> getPostsByCategory(Category category) {
         return postRepository.findByCategory(category);
     }
 
-    // deprecated, use findPostByLocation instead
+    // DEPRECIATED, use findPostByLocation instead
     @Override
     public List<Post> getPostsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return postRepository.findByCreatedAtBetween(startDate, endDate);
     }
 
-    // only for test
+    // DEPRECIATED, only for test
     @Override
     public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
                                           Category category, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Post> candidatePosts;
-        if (category != null && startDate != null && endDate != null) {
-            candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
-        } else if (category != null) {
-            candidatePosts = postRepository.findByCategory(category);
-        } else if (startDate != null && endDate != null) {
-            candidatePosts = postRepository.findByCreatedAtBetween(startDate, endDate);
-        } else {
-            candidatePosts = postRepository.findAll();
-        }
+        // Create a composite strategy
+        CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
+
+//        List<Post> candidatePosts;
+//        if (category != null && startDate != null && endDate != null) {
+//            candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
+//        } else if (category != null) {
+//            candidatePosts = postRepository.findByCategory(category);
+//        } else if (startDate != null && endDate != null) {
+//            candidatePosts = postRepository.findByCreatedAtBetween(startDate, endDate);
+//        } else {
+//            candidatePosts = postRepository.findAll();
+//        }
 
         // Add date range filtering strategy if both dates are provided
         if (startDate != null && endDate != null) {
             compositeStrategy.addStrategy(new DateRangeFilteringStrategy(startDate, endDate));
         }
+        if (category != null) {
+            compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
+        }
 
         // Apply all strategies to all posts
         return filterPosts(compositeStrategy);
+        //return candidatePosts;
     }
 
-    // only for test
+    // DEPRECIATED, only for test
     @Override
     public List<Post> getPostsByProximity(double latitude, double longitude) {
         List<Post> allPosts = postRepository.findAll();
