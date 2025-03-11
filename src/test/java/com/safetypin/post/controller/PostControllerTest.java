@@ -1,6 +1,5 @@
 package com.safetypin.post.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
@@ -44,11 +43,11 @@ class PostControllerTest {
     private Category mockCategory;
     private Post mockPost;
     private PostCreateRequest validRequest;
-    private ObjectMapper objectMapper;
+    //private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        //objectMapper = new ObjectMapper();
         mockPage = new PageImpl<>(new ArrayList<>());
 
         mockCategory = new Category();
@@ -72,7 +71,7 @@ class PostControllerTest {
     }
 
     @Test
-    void testFindAllPosts() throws Exception {
+    void testFindAllPosts(){
         // Mock Data
         Post post1 = new Post();
         post1.setId(UUID.randomUUID());

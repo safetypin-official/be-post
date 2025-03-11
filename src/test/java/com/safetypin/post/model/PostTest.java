@@ -21,7 +21,7 @@ class PostTest {
         Post post = new Post();
         assertNull(post.getId());
         assertNull(post.getCaption());
-        assertNull(post.getTitle());
+        assertNotNull(post.getTitle());
         assertNull(post.getCategory());
         assertNull(post.getCreatedAt());
         assertNotNull(post.getLocation());

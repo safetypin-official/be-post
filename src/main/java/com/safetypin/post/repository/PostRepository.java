@@ -18,7 +18,6 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<Post, UUID> {
     List<Post> findByCategory(Category category);
 
-    List<Post> findByCategoryName(String categoryName);
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 

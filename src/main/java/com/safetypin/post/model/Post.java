@@ -23,8 +23,8 @@ public class Post extends BasePost{
     @Transient
     private static final GeometryFactory geometryFactory = new GeometryFactory();
 
-    @Column(nullable = true)
-    private String title;
+    @Column(nullable = false)
+    private String title = "";
 
     @JoinColumn(nullable = false)
     @ManyToOne

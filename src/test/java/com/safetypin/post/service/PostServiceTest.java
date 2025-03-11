@@ -205,9 +205,6 @@ class PostServiceTest {
         double centerLat = 0.1;
         double centerLon = 0.1;
         double radius = 150.0; // Increased radius to include all test posts
-        Category category = safety;
-        LocalDateTime startDate = yesterday;
-        LocalDateTime endDate = tomorrow;
 
         List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
 
@@ -216,7 +213,7 @@ class PostServiceTest {
 
         // When
         List<Post> result = postService.getPostsWithFilters(
-                centerLat, centerLon, radius, category, startDate, endDate);
+                centerLat, centerLon, radius, safety, yesterday, tomorrow);
 
         // Then
         assertEquals(3, result.size()); // postWithoutLocation shouldn't be filtered out
@@ -257,8 +254,6 @@ class PostServiceTest {
         double centerLat = 0.1;
         double centerLon = 0.1;
         double radius = 150.0; // Increased radius
-        LocalDateTime startDate = yesterday;
-        LocalDateTime endDate = tomorrow;
 
         List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
 
@@ -267,7 +262,7 @@ class PostServiceTest {
 
         // When
         List<Post> result = postService.getPostsWithFilters(
-                centerLat, centerLon, radius, null, startDate, endDate);
+                centerLat, centerLon, radius, null, yesterday, tomorrow);
 
         // Then
         assertEquals(4, result.size()); // postWithoutLocation shouldn't be filtered out
@@ -529,12 +524,10 @@ class PostServiceTest {
     @Test
     void testFilterPosts_WithDateRangeStrategy() {
         // Given
-        LocalDateTime startDate = yesterday;
-        LocalDateTime endDate = now;
         List<Post> allPosts = Arrays.asList(post1, post2, post3);
         when(postRepository.findAll()).thenReturn(allPosts);
 
-        DateRangeFilteringStrategy dateRangeStrategy = new DateRangeFilteringStrategy(startDate, endDate);
+        DateRangeFilteringStrategy dateRangeStrategy = new DateRangeFilteringStrategy(yesterday, now);
 
         // When
         List<Post> result = postService.filterPosts(dateRangeStrategy);

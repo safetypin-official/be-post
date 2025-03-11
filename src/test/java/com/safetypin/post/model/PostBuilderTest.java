@@ -1,8 +1,6 @@
 package com.safetypin.post.model;
 
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -11,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PostBuilderTest {
 
-    private static final GeometryFactory geometryFactory = new GeometryFactory();
+    //private static final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Test
     void testBuilderWithAllFields() {
