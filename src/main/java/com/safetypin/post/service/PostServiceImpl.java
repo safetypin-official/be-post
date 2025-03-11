@@ -167,14 +167,14 @@ public class PostServiceImpl implements PostService {
         }
 
         try {
-            Post post = new Post();
-            post.setTitle(title);
-            post.setCaption(content);
-            post.setCategory(category);
-            post.setCreatedAt(LocalDateTime.now());
-
-            Point location = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-            post.setLocation(location);
+            Post post = Post.builder()
+                .title(title)
+                .caption(content)
+                .category(category)
+                .createdAt(LocalDateTime.now())
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
 
             return postRepository.save(post);
         } catch (Exception e) {
