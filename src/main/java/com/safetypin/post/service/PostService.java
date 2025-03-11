@@ -2,6 +2,7 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.service.filter.PostFilteringStrategy;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,9 @@ public interface PostService {
 
     List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
                                    Category category, LocalDateTime startDate, LocalDateTime endDate);
+
+    // New method using strategy pattern
+    List<Post> filterPosts(PostFilteringStrategy filterStrategy);
 
     List<Post> getPostsByProximity(double latitude, double longitude);
 

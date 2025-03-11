@@ -24,21 +24,19 @@ class PostTest {
         assertNull(post.getTitle());
         assertNull(post.getCategory());
         assertNull(post.getCreatedAt());
-        assertNull(post.getLocation());
+        assertNotNull(post.getLocation());
     }
 
     @Test
     void testAllArgsConstructor() {
-        UUID id = UUID.randomUUID();
         String content = "Test content";
         String title = "Test title";
         Category category = new Category("Test category");
         LocalDateTime createdAt = LocalDateTime.now();
         Point location = geometryFactory.createPoint(new Coordinate(10.0, 20.0));
 
-        Post post = new Post(id, content, title, category, createdAt, location);
+        Post post = new Post(content, title, category, createdAt, 20.0, 10.0);
 
-        assertEquals(id, post.getId());
         assertEquals(content, post.getCaption());
         assertEquals(title, post.getTitle());
         assertEquals(category, post.getCategory());
@@ -79,8 +77,8 @@ class PostTest {
     void testGetLatitudeLongitudeWithNullLocation() {
         Post post = new Post();
 
-        assertNull(post.getLatitude());
-        assertNull(post.getLongitude());
+        assertNotNull(post.getLatitude());
+        assertNotNull(post.getLongitude());
     }
 
     @Test
