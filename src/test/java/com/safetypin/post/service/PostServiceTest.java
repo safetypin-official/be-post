@@ -510,12 +510,11 @@ class PostServiceTest {
 
     @Test
     void testFilterPosts_WithCategoryStrategy() {
-        // Given
-        String category = "safety";
+        // Given\
         List<Post> allPosts = Arrays.asList(post1, post2, post3);
         when(postRepository.findAll()).thenReturn(allPosts);
 
-        CategoryFilteringStrategy categoryStrategy = new CategoryFilteringStrategy(category);
+        CategoryFilteringStrategy categoryStrategy = new CategoryFilteringStrategy(safety);
 
         // When
         List<Post> result = postService.filterPosts(categoryStrategy);
@@ -572,13 +571,12 @@ class PostServiceTest {
         double centerLat = 0.1;
         double centerLon = 0.1;
         double radius = 150.0; // Large radius
-        String category = "safety";
         List<Post> allPosts = Arrays.asList(post1, post2, post3, postWithoutLocation);
         when(postRepository.findAll()).thenReturn(allPosts);
 
         CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
         compositeStrategy.addStrategy(new LocationRadiusFilteringStrategy(centerLat, centerLon, radius));
-        compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
+        compositeStrategy.addStrategy(new CategoryFilteringStrategy(safety));
 
         // When
         List<Post> result = postService.filterPosts(compositeStrategy);

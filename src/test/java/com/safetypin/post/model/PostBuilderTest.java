@@ -19,7 +19,7 @@ class PostBuilderTest {
         UUID id = UUID.randomUUID();
         String title = "Test Post";
         String caption = "This is a test post";
-        String category = "Safety";
+        Category category = new Category("Safety");
         LocalDateTime createdAt = LocalDateTime.now();
         Double latitude = 40.7128;
         Double longitude = -74.0060;

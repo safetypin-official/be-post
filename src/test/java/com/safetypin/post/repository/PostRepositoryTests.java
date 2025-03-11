@@ -32,6 +32,8 @@ class PostRepositoryTests {
     private GeometryFactory geometryFactory;
     private Post post1, post2, post3;
     private Category safety, traffic;
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @BeforeEach
     void setup() {
@@ -70,6 +72,7 @@ class PostRepositoryTests {
         post3.setLocation(geometryFactory.createPoint(new Coordinate(-7.7956, 110.3695))); // Yogyakarta
         post3.setCreatedAt(now);
 
+        categoryRepository.saveAll(Arrays.asList(safety, traffic));
         postRepository.saveAll(Arrays.asList(post1, post2, post3));
     }
 
@@ -93,6 +96,7 @@ class PostRepositoryTests {
         newPost.setLocation(geometryFactory.createPoint(new Coordinate(-6.2, 106.8)));
         newPost.setCreatedAt(now);
 
+        categoryRepository.save(emergency);
         Post savedPost = postRepository.save(newPost);
 
         assertThat(savedPost.getId()).isNotNull();
@@ -126,9 +130,11 @@ class PostRepositoryTests {
         List<Post> trafficPosts = postRepository.findByCategory(traffic);
         assertThat(trafficPosts).hasSize(1).contains(post2);
 
+        Category nonExisting = new Category("Non existing");
+        categoryRepository.save(nonExisting);
         // Test with a category that doesn't exist
         List<Post> nonExistingCategoryPosts
-                = postRepository.findByCategory(new Category("Non Existing"));
+                = postRepository.findByCategory(nonExisting);
         assertThat(nonExistingCategoryPosts).isEmpty();
     }
 
@@ -161,8 +167,10 @@ class PostRepositoryTests {
         assertThat(earlyPosts).hasSize(1).contains(post1);
 
         // Test with a non-matching category
+        Category nonExisting = new Category("Non existing");
+        categoryRepository.save(nonExisting);
         List<Post> noPostsWrongCategory = postRepository.findByTimestampBetweenAndCategory(
-                now.minusDays(2), now.plusDays(1), new Category("Non Existing"));
+                now.minusDays(2), now.plusDays(1), nonExisting);
         assertThat(noPostsWrongCategory).isEmpty();
     }
 
