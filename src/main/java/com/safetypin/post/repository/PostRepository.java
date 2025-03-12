@@ -21,6 +21,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
+    // DEPRECIATED, use findPostsWithFilter instead
     @Query(value = "SELECT p.* FROM posts p " +
             "WHERE p.created_at BETWEEN :startTime AND :endTime " +
             "AND p.category_id = :#{#category.id} ", nativeQuery = true)
@@ -29,6 +30,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("endTime") LocalDateTime endTime,
             @Param("category") Category category);
 
+    // DEPRECIATED, use findPostsWithFilter instead
     // Get all posts within radius
     // Updated spatial query to work with H2 for testing
     @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
@@ -40,6 +42,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("point") Point point,
             @Param("distanceMeters") Double distanceMeters,
             Pageable pageable);
+
 
     // get posts with filter
     @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
@@ -56,5 +59,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("dateFrom") LocalDateTime dateFrom,
             @Param("dateTo") LocalDateTime dateTo,
             Pageable pageable);
+
+
 
 }

@@ -72,8 +72,7 @@ public class PostController {
             Page<Map<String, Object>> posts = postService.findPostsByLocation(
                     lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
 
-            PostResponse postResponse = new PostResponse(
-                    true, null, posts);
+            PostResponse postResponse = new PostResponse(true, null, posts);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
