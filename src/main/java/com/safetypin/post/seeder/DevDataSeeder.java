@@ -15,7 +15,7 @@ import java.util.Arrays;
 
 @Slf4j
 @Configuration
-@Profile("dev")
+@Profile({"dev", "staging"})
 public class DevDataSeeder implements CommandLineRunner {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
@@ -36,25 +36,62 @@ public class DevDataSeeder implements CommandLineRunner {
         Category infrastructureIssue = new Category("Infrastructure Issue");
         Category crimeWatch = new Category("Crime Watch");
         Category lostBook = new Category("Lost Book");
+        Category lostPet = new Category("Lost Pet");
+        Category serviceIssue = new Category("Service Issue");
+        Category flooding = new Category("Flooding");
+        Category stolenVehicle = new Category("Stolen Vehicle");
 
-        categoryRepository.saveAllAndFlush(Arrays.asList(lostItem, infrastructureIssue, crimeWatch, lostBook));
+        categoryRepository.saveAllAndFlush(Arrays.asList(
+                lostItem,
+                infrastructureIssue,
+                crimeWatch,
+                lostBook,
+                lostPet,
+                serviceIssue,
+                flooding,
+                stolenVehicle
+        ));
 
         postRepository.saveAllAndFlush(Arrays.asList(
-            new Post("Oh no! I lost my wallet near some park somewhere in America. Can somebody pls help me find it.", "Lost wallet near the park",
-                    lostItem, LocalDateTime.parse("2025-03-06T20:46:39.073832"),
-                    37.7749, -122.4194),
-            new Post("Come on.. I can't see anything in the dark!", "Street light not working",
-                    infrastructureIssue, LocalDateTime.parse("2025-03-06T20:46:40.073832"),
-                    40.7128, -74.006),
-            new Post("I saw a person holding a knife! Should I call the police", "Suspicious activity spotted",
-                    crimeWatch, LocalDateTime.parse("2025-03-06T20:46:42.073832"),
-                    34.0522, -118.2437),
-            new Post("Halo, bagi yang menemukan dompet warna ungu di gedlam bisa DM saya ya, terakhir lihat di ruang 2403, thankyou", "Lost wallet near Pacil",
-                    lostItem, LocalDateTime.parse("2025-03-06T22:07:07.899287"),
-                    -6.365898347375627, 106.8267300354285),
-            new Post("Ada buku ketinggalan, punya siapa ya guys?", "Book left at Gramedia Depok",
-                    lostBook, LocalDateTime.parse("2025-03-06T22:07:08.899287"),
-                    -6.370909783830162, 106.83398272852651)
+                new Post("Dompet saya hilang di sekitar Margonda, tolong hubungi jika menemukan!", "Lost wallet near Margonda",
+                        lostItem, LocalDateTime.parse("2025-03-06T20:46:39.073832"),
+                        -6.381832, 106.832512),
+
+                new Post("Lampu jalan di Jalan Juanda mati, jadi gelap banget! Mohon segera diperbaiki.", "Street light not working",
+                        infrastructureIssue, LocalDateTime.parse("2025-03-06T20:46:40.073832"),
+                        -6.366356, 106.834091),
+
+                new Post("Tadi di sekitar UI ada orang mencurigakan bolak-balik sambil lihat-lihat ke kendaraan parkir. Hati-hati!", "Suspicious activity near UI",
+                        crimeWatch, LocalDateTime.parse("2025-03-06T20:46:42.073832"),
+                        -6.368326, 106.827390),
+
+                new Post("Bagi yang menemukan tas warna hitam di Margo City, tolong hubungi saya. Ada dokumen penting di dalamnya.", "Lost bag at Margo City",
+                        lostItem, LocalDateTime.parse("2025-03-06T22:07:07.899287"),
+                        -6.369028, 106.832322),
+
+                new Post("Buku catatan tertinggal di Perpustakaan UI lantai 2. Jika menemukannya, tolong dikembalikan ke resepsionis.", "Lost book at UI Library",
+                        lostBook, LocalDateTime.parse("2025-03-06T22:07:08.899287"),
+                        -6.360382, 106.827097),
+
+                new Post("Ada jalan berlubang cukup besar di Jalan Raya Bogor dekat Cisalak. Pengendara motor harap hati-hati!", "Pothole near Cisalak",
+                        infrastructureIssue, LocalDateTime.parse("2025-03-06T22:30:45.123456"),
+                        -6.382915, 106.853648),
+
+                new Post("Sepeda motor saya dicuri di parkiran Stasiun Depok Baru siang tadi. Ada yang melihat kejadian ini?", "Motor stolen at Depok Baru Station",
+                        crimeWatch, LocalDateTime.parse("2025-03-06T23:10:15.456789"),
+                        -6.391740, 106.831705),
+
+                new Post("Saya kehilangan kucing peliharaan di sekitar Beji. Dia berbulu oranye dan memakai kalung merah.", "Lost pet in Beji",
+                        lostPet, LocalDateTime.parse("2025-03-07T08:15:20.678912"),
+                        -6.375742, 106.822001),
+
+                new Post("Ada genangan air besar di flyover Kukusan akibat hujan deras tadi malam. Hati-hati yang melintas.", "Flooding at Kukusan flyover",
+                        infrastructureIssue, LocalDateTime.parse("2025-03-07T09:00:30.345678"),
+                        -6.374209, 106.814934),
+
+                new Post("ATM di ITC Depok error, sudah coba beberapa kali tapi kartu tidak bisa keluar. Hati-hati yang mau pakai!", "ATM issue at ITC Depok",
+                        serviceIssue, LocalDateTime.parse("2025-03-07T10:20:45.789123"),
+                        -6.402345, 106.818943)
         ));
 
         log.info("✅ Data seeded successfully.");
