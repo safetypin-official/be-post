@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 import java.net.URL;
@@ -34,15 +33,13 @@ public class S3ServiceImpl implements S3Service {
             String fileName = UUID.randomUUID() + "." + fileType;
             log.debug("Generated unique filename: {}", fileName);
 
-            PutObjectRequest objectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileName)
-                    .contentType("image/" + fileType)
-                    .build();
-
-            PresignedPutObjectRequest preSignedRequest = presigner.presignPutObject(
-                    builder -> builder.signatureDuration(Duration.ofMinutes(10))
-                            .putObjectRequest(objectRequest)
+            PresignedPutObjectRequest preSignedRequest = presigner.presignPutObject(builder -> 
+            builder.signatureDuration(Duration.ofMinutes(10))
+                    .putObjectRequest(req -> req
+                        .bucket(bucketName)
+                        .key(fileName)
+                        .contentType("image/" + fileType)
+                    )
             );
 
             URL presignedUrl = preSignedRequest.url();
