@@ -12,10 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-public class S3ControllerTest {
+class S3ControllerTest {
 
     @Mock
     private S3Service s3Service;
@@ -45,10 +45,10 @@ public class S3ControllerTest {
         // Arrange
         String fileType = "jpeg";
         String expectedUrl = "https://test-bucket.s3.amazonaws.com/test-file.jpeg";
-        URL mockUrl = new URL(expectedUrl);
+        URL mockUrl = new URI(expectedUrl).toURL();
 
         // Mock the S3Service to return a URL when generatePresignedUrl is called with "jpeg"
-        when(s3Service.generatePresignedUrl(eq(fileType))).thenReturn(mockUrl);
+        when(s3Service.generatePresignedUrl(fileType)).thenReturn(mockUrl);
 
         // Create request body
         Map<String, String> requestBody = Map.of("fileType", fileType);
@@ -74,10 +74,10 @@ public class S3ControllerTest {
         // Arrange
         String fileType = "png";
         String expectedUrl = "https://test-bucket.s3.amazonaws.com/test-file.png";
-        URL mockUrl = new URL(expectedUrl);
+        URL mockUrl = new URI(expectedUrl).toURL();
 
         // Mock the S3Service to return a URL when generatePresignedUrl is called with "png"
-        when(s3Service.generatePresignedUrl(eq(fileType))).thenReturn(mockUrl);
+        when(s3Service.generatePresignedUrl(fileType)).thenReturn(mockUrl);
 
         // Create request body
         Map<String, String> requestBody = Map.of("fileType", fileType);
@@ -96,12 +96,5 @@ public class S3ControllerTest {
 
         // Verify that the service method was called with the correct parameter
         verify(s3Service).generatePresignedUrl(fileType);
-    }
-
-    @Test
-    void constructor_InitializesCorrectly() {
-        // This explicitly tests the constructor to ensure 100% coverage
-        S3Controller controller = new S3Controller(s3Service);
-        // No assertions needed - just verifying constructor executes without exceptions
     }
 }
