@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -51,7 +50,7 @@ class S3ServiceImplTest {
         URL mockUrl = new URI("https://test-bucket.s3.amazonaws.com/test-file.jpeg").toURL();
 
         // Use Mockito.mockStatic with LENIENT settings
-        MockSettings lenientSettings = Mockito.withSettings().lenient();
+        MockSettings lenientSettings = Mockito.withSettings();
 
         try (MockedStatic<S3Presigner> s3PresignerMockedStatic = Mockito.mockStatic(S3Presigner.class, lenientSettings);
              MockedStatic<DefaultCredentialsProvider> defaultCredentialsProviderMockedStatic =
@@ -68,9 +67,9 @@ class S3ServiceImplTest {
             defaultCredentialsProviderMockedStatic.when(DefaultCredentialsProvider::create).thenReturn(mockCredentialsProvider);
 
             // Setup builder chain
-            lenient().when(mockBuilder.region(any(Region.class))).thenReturn(mockBuilder);
-            lenient().when(mockBuilder.credentialsProvider(any())).thenReturn(mockBuilder);
-            lenient().when(mockBuilder.build()).thenReturn(mockPresigner);
+            Mockito.lenient().when(mockBuilder.region(any(Region.class))).thenReturn(mockBuilder);
+            Mockito.lenient().when(mockBuilder.credentialsProvider(any())).thenReturn(mockBuilder);
+            Mockito.lenient().when(mockBuilder.build()).thenReturn(mockPresigner);
 
             // Use doAnswer with lenient settings
             doAnswer(invocation -> {
@@ -79,7 +78,7 @@ class S3ServiceImplTest {
             }).when(mockPresigner).presignPutObject(any(Consumer.class));
 
             // Setup URL return
-            lenient().when(mockPresignedRequest.url()).thenReturn(mockUrl);
+            Mockito.lenient().when(mockPresignedRequest.url()).thenReturn(mockUrl);
 
             // Act
             URL result = s3Service.generatePresignedUrl(testFileType);
@@ -96,7 +95,7 @@ class S3ServiceImplTest {
         Exception expectedException = new RuntimeException("Test exception");
 
         // Use Mockito.mockStatic with LENIENT settings
-        MockSettings lenientSettings = Mockito.withSettings().lenient();
+        MockSettings lenientSettings = Mockito.withSettings();
 
         try (MockedStatic<S3Presigner> s3PresignerMockedStatic = Mockito.mockStatic(S3Presigner.class, lenientSettings);
              MockedStatic<DefaultCredentialsProvider> defaultCredentialsProviderMockedStatic =
@@ -141,7 +140,7 @@ class S3ServiceImplTest {
         URL mockUrl = new URI("https://test-bucket.s3.amazonaws.com/test-file.jpeg").toURL();
 
         // Use Mockito.mockStatic with LENIENT settings
-        MockSettings lenientSettings = Mockito.withSettings().lenient();
+        MockSettings lenientSettings = Mockito.withSettings();
 
         try (MockedStatic<S3Presigner> s3PresignerMockedStatic = Mockito.mockStatic(S3Presigner.class, lenientSettings);
              MockedStatic<DefaultCredentialsProvider> defaultCredentialsProviderMockedStatic =
