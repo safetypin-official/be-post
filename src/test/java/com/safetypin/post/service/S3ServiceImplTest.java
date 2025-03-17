@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.function.Consumer;
@@ -24,7 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class S3ServiceImplTest {
+class S3ServiceImplTest {
 
     @InjectMocks
     private S3ServiceImpl s3Service;
@@ -54,7 +55,7 @@ public class S3ServiceImplTest {
     @Test
     void generatePresignedUrl_Success() throws Exception {
         // Arrange
-        URL mockUrl = new URL("https://test-bucket.s3.amazonaws.com/test-file.jpeg");
+        URL mockUrl = new URI("https://test-bucket.s3.amazonaws.com/test-file.jpeg").toURL();
 
         try (MockedStatic<S3Presigner> mockedS3Presigner = mockStatic(S3Presigner.class);
              MockedStatic<DefaultCredentialsProvider> mockedCredentialsProvider = mockStatic(DefaultCredentialsProvider.class)) {
@@ -129,7 +130,7 @@ public class S3ServiceImplTest {
             when(presignerBuilder.build()).thenReturn(presigner);
 
             // Create a mock URL for the response
-            URL mockUrl = new URL("https://test-bucket.s3.amazonaws.com/test-file.jpeg");
+            URL mockUrl = URI.create("https://test-bucket.s3.amazonaws.com/test-file.jpeg").toURL();
 
             // Use argument capture with a custom answer to inspect the PutObjectRequest
             lenient().when(presigner.presignPutObject(any(Consumer.class))).thenAnswer(invocation -> {
