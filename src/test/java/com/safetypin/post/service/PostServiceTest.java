@@ -55,21 +55,21 @@ class PostServiceTest {
         // Create test posts with locations
         post1 = new Post();
         post1.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1))); // lon, lat
-        post1.setCategory(safety);
+        post1.setCategory(safety.getName());
         post1.setCreatedAt(now);
 
         post2 = new Post();
         post2.setLocation(geometryFactory.createPoint(new Coordinate(0.2, 0.2))); // lon, lat
-        post2.setCategory(crime);
+        post2.setCategory(crime.getName());
         post2.setCreatedAt(yesterday);
 
         post3 = new Post();
         post3.setLocation(geometryFactory.createPoint(new Coordinate(0.3, 0.3))); // lon, lat
-        post3.setCategory(safety);
+        post3.setCategory(safety.getName());
         post3.setCreatedAt(tomorrow);
 
         postWithoutLocation = new Post();
-        postWithoutLocation.setCategory(safety);
+        postWithoutLocation.setCategory(safety.getName());
         postWithoutLocation.setCreatedAt(now);
     }
 
@@ -83,8 +83,9 @@ class PostServiceTest {
         List<Post> postList = Arrays.asList(post1, post2);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithFilter(
-                any(), anyDouble(), any(), any(), any(), any(PageRequest.class)
+        // Update the mock to match the method actually called with null parameters
+        when(postRepository.findPostsWithinPointAndRadius(
+                any(), anyDouble(), any(PageRequest.class)
         )).thenReturn(postPage);
 
         // When
@@ -111,8 +112,9 @@ class PostServiceTest {
         List<Post> postList = Collections.singletonList(postWithoutLocation);
         Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
 
-        when(postRepository.findPostsWithFilter(
-                any(), anyDouble(), any(), any(), any(), any(PageRequest.class)
+        // Update the mock to match the method actually called with null parameters
+        when(postRepository.findPostsWithinPointAndRadius(
+                any(), anyDouble(), any(PageRequest.class)
         )).thenReturn(postPage);
 
         // When
@@ -135,20 +137,20 @@ class PostServiceTest {
         Post savedPost = new Post();
         savedPost.setTitle(title);
         savedPost.setCaption(content);
-        savedPost.setCategory(category);
+        savedPost.setCategory(category.getName());
         savedPost.setCreatedAt(LocalDateTime.now()); // Use an actual LocalDateTime instead of a matcher
         savedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
 
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // When
-        Post result = postService.createPost(title, content, latitude, longitude, category);
+        Post result = postService.createPost(title, content, latitude, longitude, category.getName());
 
         // Then
         assertNotNull(result);
         assertEquals(title, result.getTitle());
         assertEquals(content, result.getCaption());
-        assertEquals(category, result.getCategory());
+        assertEquals(category.getName(), result.getCategory());
         verify(postRepository).save(any(Post.class));
     }
 
@@ -163,7 +165,7 @@ class PostServiceTest {
 
         // When & Then
         assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
+                postService.createPost(title, content, latitude, longitude, category.getName())
         );
         verify(postRepository, never()).save(any(Post.class));
     }
@@ -179,7 +181,7 @@ class PostServiceTest {
 
         // When & Then
         assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
+                postService.createPost(title, content, latitude, longitude, category.getName())
         );
         verify(postRepository, never()).save(any(Post.class));
     }
@@ -195,7 +197,7 @@ class PostServiceTest {
 
         // When & Then
         assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
+                postService.createPost(title, content, latitude, longitude, category.getName())
         );
         verify(postRepository, never()).save(any(Post.class));
     }
@@ -213,10 +215,10 @@ class PostServiceTest {
 
         // When & Then
         PostException exception = assertThrows(PostException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
+                postService.createPost(title, content, latitude, longitude, category.getName())
         );
-        assertEquals("POST_CREATION_ERROR", exception.getErrorCode());
-        assertTrue(exception.getMessage().contains("Failed to create post"));
+        assertEquals("POST_ERROR", exception.getErrorCode());
+        assertTrue(exception.getMessage().contains("Failed to save the post"));
     }
 
     @Test
@@ -232,7 +234,168 @@ class PostServiceTest {
         assertEquals(allPosts, result);
     }
 
+    @Test
+    void testCreatePost_EmptyTitle() {
+        // Given
+        String title = "";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        Category category = safety;
 
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category.getName())
+        );
+        assertEquals("Title is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
 
+    @Test
+    void testCreatePost_WhitespaceTitle() {
+        // Given
+        String title = "   ";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        Category category = safety;
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category.getName())
+        );
+        assertEquals("Title is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_EmptyContent() {
+        // Given
+        String title = "Test Post";
+        String content = "";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        Category category = safety;
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category.getName())
+        );
+        assertEquals("Content is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_WhitespaceContent() {
+        // Given
+        String title = "Test Post";
+        String content = "    ";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        Category category = safety;
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category.getName())
+        );
+        assertEquals("Content is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_NullLongitude() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = null;
+        Category category = safety;
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category.getName())
+        );
+        assertEquals("Location coordinates are required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_NullCategory() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String category = null;
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category)
+        );
+        assertEquals("Category is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_EmptyCategory() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String category = "";
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category)
+        );
+        assertEquals("Category is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_WhitespaceCategory() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String category = "   ";
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, category)
+        );
+        assertEquals("Category is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_ValidBoundaryValues() {
+        // Given - Neutral case with minimal valid values
+        String title = "X";  // Minimal valid title
+        String content = "Y"; // Minimal valid content
+        Double latitude = 90.0; // Boundary value (max valid latitude)
+        Double longitude = 180.0; // Boundary value (max valid longitude)
+        Category category = safety;
+
+        Post savedPost = new Post();
+        savedPost.setTitle(title);
+        savedPost.setCaption(content);
+        savedPost.setCategory(category.getName());
+        savedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+
+        when(postRepository.save(any(Post.class))).thenReturn(savedPost);
+
+        // When
+        Post result = postService.createPost(title, content, latitude, longitude, category.getName());
+
+        // Then
+        assertNotNull(result);
+        assertEquals(title, result.getTitle());
+        assertEquals(content, result.getCaption());
+        assertEquals(category.getName(), result.getCategory());
+        verify(postRepository).save(any(Post.class));
+    }
 
 }

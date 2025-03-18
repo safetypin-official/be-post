@@ -11,10 +11,12 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +60,11 @@ public class PostServiceImpl implements PostService {
             postsPage = postRepository.findPostsWithinPointAndRadius(center, radiusInMeters, pageable);
         }
 
+        // Check if postsPage is null, return empty page if null
+        if (postsPage == null) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+
         // Transform Post entities to DTOs with distance
         return postsPage.map(post -> {
             Map<String, Object> result = new HashMap<>();
@@ -69,7 +76,7 @@ public class PostServiceImpl implements PostService {
                 );
                 result.put("distance", distance);
             } else {
-                result.put("distance", null);
+                result.put("distance", 0.0);
             }
             return result;
         });
@@ -77,16 +84,16 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
-        if (title == null || title.isEmpty()) {
+        if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
-        if (content == null || content.isEmpty()) {
+        if (content == null || content.trim().isEmpty()) {
             throw new InvalidPostDataException("Content is required");
         }
         if (latitude == null || longitude == null) {
             throw new InvalidPostDataException("Location coordinates are required");
         }
-        if (category == null || category.isEmpty()) {
+        if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
         }
 

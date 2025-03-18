@@ -68,4 +68,16 @@ public class CategoryServiceImpl implements CategoryService {
         categoryRepository.delete(category);
         log.info("Category: {}; deleted", category);
     }
+
+    @Override
+    public void deleteCategoryByName(String categoryName) throws CategoryException {
+        Category category = categoryRepository.findByName(categoryName);
+        if (category == null) {
+            log.error("Category with name: {}, not found", categoryName);
+            throw new CategoryException("Category with name: " + categoryName + " not found");
+        }
+        
+        categoryRepository.delete(category);
+        log.info("Category: {}; deleted", category);
+    }
 }

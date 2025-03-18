@@ -20,14 +20,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
-    // DEPRECIATED, use findPostsWithFilter instead
-    @Query(value = "SELECT p.* FROM posts p " +
-            "WHERE p.created_at BETWEEN :startTime AND :endTime " +
-            "AND p.category = :category ", nativeQuery = true)
-    List<Post> findByTimestampBetweenAndCategory(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("category") String category);
+
 
     // DEPRECIATED, use findPostsWithFilter instead
     // Get all posts within radius
@@ -43,12 +36,13 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
 
     // get posts with filter
-    @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
             "FROM posts p " +
-            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
-            "AND p.category = :category " +
-            "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
-            "ORDER BY distance ASC, p.id ASC",
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND (:category IS NULL OR p.category = :category) " +
+            "AND (:dateFrom IS NULL OR :dateTo IS NULL OR p.created_at BETWEEN :dateFrom AND :dateTo) " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
             nativeQuery = true)
     Page<Post> findPostsWithFilter(
             @Param("point") Point point,

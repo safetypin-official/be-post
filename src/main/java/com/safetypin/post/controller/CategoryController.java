@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -25,10 +27,31 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<PostResponse> getAllCategories() {
-        List<Category> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(new PostResponse(
-                true, "Categories found", categories
-        ));
+        try {
+            List<Category> categories = categoryService.getAllCategories();
+            
+            // Convert categories to only include names
+            List<String> formattedCategories = categories.stream()
+                .map(Category::getName)
+                .toList();
+            
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new PostResponse(
+                    true,
+                    "Categories retrieved successfully",
+                    formattedCategories
+                ));
+        } catch (Exception e) {
+            log.error("Error retrieving categories: {}", e.getMessage());
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new PostResponse(
+                    false,
+                    "Error retrieving categories: " + e.getMessage(),
+                    null
+                ));
+        }
     }
 
     @PostMapping("/create")
@@ -74,10 +97,10 @@ public class CategoryController {
 
     @DeleteMapping("/delete")
     public ResponseEntity<PostResponse> deleteCategory(
-            @RequestParam Category category
+            @RequestParam String categoryName
     ) {
         try {
-            categoryService.deleteCategory(category);
+            categoryService.deleteCategoryByName(categoryName);
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(new PostResponse(
@@ -86,7 +109,7 @@ public class CategoryController {
         }
 
         return ResponseEntity.ok(new PostResponse(
-                true, "Category " + category.getName() + " deleted", null
+                true, "Category " + categoryName + " deleted", null
         ));
     }
 

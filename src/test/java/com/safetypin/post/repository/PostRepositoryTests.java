@@ -53,21 +53,21 @@ class PostRepositoryTests {
         post1 = new Post();
         post1.setTitle("Post 1");
         post1.setCaption("Caption 1");
-        post1.setCategory(safety);
+        post1.setCategory(safety.getName());
         post1.setLocation(geometryFactory.createPoint(new Coordinate(-6.2088, 106.8456))); // Jakarta
         post1.setCreatedAt(now.minusDays(1));
 
         post2 = new Post();
         post2.setTitle("Post 2");
         post2.setCaption("Caption 2");
-        post2.setCategory(traffic);
+        post2.setCategory(traffic.getName());
         post2.setLocation(geometryFactory.createPoint(new Coordinate(-6.1751, 106.8650))); // Also Jakarta
         post2.setCreatedAt(now.minusHours(12));
 
         post3 = new Post();
         post3.setTitle("Post 3");
         post3.setCaption("Caption 3");
-        post3.setCategory(safety);
+        post3.setCategory(safety.getName());
         post3.setLocation(geometryFactory.createPoint(new Coordinate(-7.7956, 110.3695))); // Yogyakarta
         post3.setCreatedAt(now);
 
@@ -91,7 +91,7 @@ class PostRepositoryTests {
         newPost.setTitle("New Post");
         newPost.setCaption("New Caption");
         Category emergency = new Category("Emergency");
-        newPost.setCategory(emergency);
+        newPost.setCategory(emergency.getName());
         newPost.setLocation(geometryFactory.createPoint(new Coordinate(-6.2, 106.8)));
         newPost.setCreatedAt(now);
 
@@ -100,7 +100,6 @@ class PostRepositoryTests {
 
         assertThat(savedPost.getId()).isNotNull();
         assertThat(savedPost.getTitle()).isEqualTo("New Post");
-        assertThat(savedPost.getCategory().getId()).isEqualTo(emergency.getId());
 
         Optional<Post> retrievedPost = postRepository.findById(savedPost.getId());
         assertThat(retrievedPost).isPresent();
@@ -123,17 +122,17 @@ class PostRepositoryTests {
 
     @Test
     void testFindByCategory() {
-        List<Post> safetyPosts = postRepository.findByCategory(safety);
+        List<Post> safetyPosts = postRepository.findByCategory(safety.getName());
         assertThat(safetyPosts).hasSize(2).contains(post1, post3);
 
-        List<Post> trafficPosts = postRepository.findByCategory(traffic);
+        List<Post> trafficPosts = postRepository.findByCategory(traffic.getName());
         assertThat(trafficPosts).hasSize(1).contains(post2);
 
         Category nonExisting = new Category("Non existing");
         categoryRepository.save(nonExisting);
         // Test with a category that doesn't exist
         List<Post> nonExistingCategoryPosts
-                = postRepository.findByCategory(nonExisting);
+                = postRepository.findByCategory(nonExisting.getName());
         assertThat(nonExistingCategoryPosts).isEmpty();
     }
 
@@ -151,26 +150,6 @@ class PostRepositoryTests {
         // Test with a range that includes no posts
         List<Post> noPosts = postRepository.findByCreatedAtBetween(now.plusDays(1), now.plusDays(2));
         assertThat(noPosts).isEmpty();
-    }
-
-    @Test
-    void testFindByTimestampBetweenAndCategory() {
-        // Test with a date range and category that matches posts
-        List<Post> safetyPosts = postRepository.findByTimestampBetweenAndCategory(
-                now.minusDays(2), now.plusDays(1), safety);
-        assertThat(safetyPosts).hasSize(2).contains(post1, post3);
-
-        // Test with a date range that only includes post1 and the Safety category
-        List<Post> earlyPosts = postRepository.findByTimestampBetweenAndCategory(
-                now.minusDays(2), now.minusDays(1).plusMinutes(1), safety);
-        assertThat(earlyPosts).hasSize(1).contains(post1);
-
-        // Test with a non-matching category
-        Category nonExisting = new Category("Non existing");
-        categoryRepository.save(nonExisting);
-        List<Post> noPostsWrongCategory = postRepository.findByTimestampBetweenAndCategory(
-                now.minusDays(2), now.plusDays(1), nonExisting);
-        assertThat(noPostsWrongCategory).isEmpty();
     }
 
     @Test

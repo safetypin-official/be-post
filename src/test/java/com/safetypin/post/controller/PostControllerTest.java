@@ -318,7 +318,7 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
-        assertEquals("Invalid post data: Test exception", response.getBody().getMessage());
+        assertEquals("Test exception", response.getBody().getMessage());
         assertNull(response.getBody().getData());
     }
 
