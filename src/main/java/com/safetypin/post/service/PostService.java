@@ -1,6 +1,5 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,10 +14,10 @@ public interface PostService {
 
     Page<Map<String, Object>> findPostsByLocation(
             Double centerLat, Double centerLon, Double radius,
-            Category category, LocalDateTime dateFrom, LocalDateTime dateTo,
+            String category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable);
 
-    Post createPost(String title, String content, Double latitude, Double longitude, Category category);
+    Post createPost(String title, String content, Double latitude, Double longitude, String category);
 
     List<Post> findAll();
 }

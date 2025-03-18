@@ -26,19 +26,18 @@ public class Post extends BasePost {
     @Column(nullable = false)
     private String title = "";
 
-    @JoinColumn(nullable = false)
-    @ManyToOne
-    private Category category;
-
-    //@JsonSerialize(using = PointSerializer.class)
     @JsonIgnore
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point location = geometryFactory.createPoint(new Coordinate(0.0d, 0.0d));
 
+    // Changed from Category entity to String
+    @Column(nullable = false)
+    private String category;
+
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
-    public Post(String caption, String title, Category category, LocalDateTime createdAt, Double latitude, Double longitude) {
+    public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
         this.setCaption(caption);
         this.setTitle(title);
         this.setCategory(category);
@@ -102,12 +101,12 @@ public class Post extends BasePost {
         private UUID id;
         private String caption;
         private String title;
-        private Category category;
+        private String category;
         private LocalDateTime createdAt;
         private Double latitude;
         private Double longitude;
 
-        private Builder() {
+        public Builder() {
         }
 
         public Builder id(UUID id) {
@@ -125,7 +124,7 @@ public class Post extends BasePost {
             return this;
         }
 
-        public Builder category(Category category) {
+        public Builder category(String category) {
             this.category = category;
             return this;
         }

@@ -60,14 +60,14 @@ class PostControllerTest {
         mockPost.setCaption("Test Caption");
         mockPost.setLatitude(20.0);
         mockPost.setLongitude(10.0);
-        mockPost.setCategory(mockCategory);
+        mockPost.setCategory(mockCategory.getName()); // Changed from Category to String
 
         validRequest = new PostCreateRequest();
         validRequest.setTitle("Test Post");
         validRequest.setCaption("Test Caption");
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
-        validRequest.setCategory(mockCategory);
+        validRequest.setCategory(mockCategory.getName()); // Changed from Category to String
     }
 
     @Test
@@ -147,7 +147,7 @@ class PostControllerTest {
         Double lat = 20.0;
         Double lon = 10.0;
         Double radius = 10.0;
-        Category category = mockCategory;
+        String category = mockCategory.getName(); // Changed from Category to String
         LocalDate dateFrom = LocalDate.now().minusDays(7);
         LocalDate dateTo = LocalDate.now();
         int page = 0;

@@ -3,7 +3,6 @@ package com.safetypin.post.controller;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +43,7 @@ public class PostController {
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(required = false, defaultValue = "10.0") Double radius,
-            Category category,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(defaultValue = "0") int page,
@@ -101,29 +100,40 @@ public class PostController {
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest request) {
         try {
-            // Validation is moved to service layer to use custom exceptions
-            Post createdPost = postService.createPost(
+            Post post = postService.createPost(
                     request.getTitle(),
                     request.getCaption(),
                     request.getLatitude(),
                     request.getLongitude(),
-                    request.getCategory());
+                    request.getCategory()
+            );
 
-            PostResponse postResponse = new PostResponse(
-                    true, "Post created successfully", createdPost);
+            PostResponse response = new PostResponse(
+                    true,
+                    "Post created successfully",
+                    post
+            );
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(postResponse);
+                    .body(response);
         } catch (InvalidPostDataException e) {
             PostResponse errorResponse = new PostResponse(
-                    false, "Invalid post data: " + e.getMessage(), null);
+                    false,
+                    e.getMessage(),
+                    null
+            );
+
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
         } catch (Exception e) {
             PostResponse errorResponse = new PostResponse(
-                    false, "Error creating post: " + e.getMessage(), null);
+                    false,
+                    "Error creating post: " + e.getMessage(),
+                    null
+            );
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);

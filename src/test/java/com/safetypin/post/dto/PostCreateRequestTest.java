@@ -15,7 +15,7 @@ class PostCreateRequestTest {
         String caption = "Test Caption";
         Double latitude = 12.345;
         Double longitude = 67.890;
-        Category category = new Category("Test Category");
+        String category = "Test Category";
 
         // Act
         request.setTitle(title);
