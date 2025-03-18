@@ -18,7 +18,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "posts")
-public class Post extends BasePost{
+public class Post extends BasePost {
 
     @Transient
     private static final GeometryFactory geometryFactory = new GeometryFactory();
@@ -47,6 +47,15 @@ public class Post extends BasePost{
         if (latitude != null && longitude != null) {
             this.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
         }
+    }
+
+    /**
+     * Static method to create a new Builder instance
+     *
+     * @return new Builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     // Methods to get latitude and longitude from the Point
@@ -87,14 +96,6 @@ public class Post extends BasePost{
     }
 
     /**
-     * Static method to create a new Builder instance
-     * @return new Builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
      * Builder class for Post
      */
     public static class Builder {
@@ -106,7 +107,8 @@ public class Post extends BasePost{
         private Double latitude;
         private Double longitude;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder id(UUID id) {
             this.id = id;

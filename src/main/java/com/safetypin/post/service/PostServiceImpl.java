@@ -5,7 +5,6 @@ import com.safetypin.post.exception.PostException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
-import com.safetypin.post.service.filter.*;
 import com.safetypin.post.utils.DistanceCalculator;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -72,86 +71,6 @@ public class PostServiceImpl implements PostService {
         });
     }
 
-    // DEPRECIATED
-    @Override
-    public Page<Post> searchPostsWithinRadius(Point center, Double radius, Pageable pageable) {
-        log.info(center.toString());
-        return postRepository.findPostsWithinPointAndRadius(center, radius, pageable);
-    }
-
-    // DEPRECIATED, only for test
-    @Override
-    public List<Post> getPostsWithinRadius(double latitude, double longitude, double radius) {
-        List<Post> allPosts = postRepository.findAll();
-        return allPosts.stream()
-                .filter(post -> {
-                    if (post.getLocation() == null) return false;
-                    double distance = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post.getLocation().getY(), post.getLocation().getX());
-                    return distance <= radius;
-                })
-                .toList();
-    }
-
-    // DEPRECIATED, use findPostByLocation instead
-    @Override
-    public List<Post> getPostsByCategory(Category category) {
-        return postRepository.findByCategory(category);
-    }
-
-    // DEPRECIATED, use findPostByLocation instead
-    @Override
-    public List<Post> getPostsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return postRepository.findByCreatedAtBetween(startDate, endDate);
-    }
-
-    // DEPRECIATED, only for test
-    @Override
-    public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
-                                          Category category, LocalDateTime startDate, LocalDateTime endDate) {
-        // Create a composite strategy
-        CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
-
-//        List<Post> candidatePosts;
-//        if (category != null && startDate != null && endDate != null) {
-//            candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
-//        } else if (category != null) {
-//            candidatePosts = postRepository.findByCategory(category);
-//        } else if (startDate != null && endDate != null) {
-//            candidatePosts = postRepository.findByCreatedAtBetween(startDate, endDate);
-//        } else {
-//            candidatePosts = postRepository.findAll();
-//        }
-
-        // Add date range filtering strategy if both dates are provided
-        if (startDate != null && endDate != null) {
-            compositeStrategy.addStrategy(new DateRangeFilteringStrategy(startDate, endDate));
-        }
-        if (category != null) {
-            compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
-        }
-
-        // Apply all strategies to all posts
-        return filterPosts(compositeStrategy);
-        //return candidatePosts;
-    }
-
-    // DEPRECIATED, only for test
-    @Override
-    public List<Post> getPostsByProximity(double latitude, double longitude) {
-        List<Post> allPosts = postRepository.findAll();
-        return allPosts.stream()
-                .filter(post -> post.getLocation() != null)
-                .sorted((post1, post2) -> {
-                    double dist1 = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post1.getLocation().getY(), post1.getLocation().getX());
-                    double dist2 = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post2.getLocation().getY(), post2.getLocation().getX());
-                    return Double.compare(dist1, dist2);
-                })
-                .toList();
-    }
-
     @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, Category category) {
         if (title == null || title.trim().isEmpty()) {
@@ -168,25 +87,18 @@ public class PostServiceImpl implements PostService {
 
         try {
             Post post = Post.builder()
-                .title(title)
-                .caption(content)
-                .category(category)
-                .createdAt(LocalDateTime.now())
-                .latitude(latitude)
-                .longitude(longitude)
-                .build();
+                    .title(title)
+                    .caption(content)
+                    .category(category)
+                    .createdAt(LocalDateTime.now())
+                    .latitude(latitude)
+                    .longitude(longitude)
+                    .build();
 
             return postRepository.save(post);
         } catch (Exception e) {
             throw new PostException("Failed to create post: " + e.getMessage(), "POST_CREATION_ERROR", e);
         }
-    }
-
-    // Implement the new strategy-based filtering method
-    @Override
-    public List<Post> filterPosts(PostFilteringStrategy filterStrategy) {
-        List<Post> allPosts = postRepository.findAll();
-        return filterStrategy.filter(allPosts);
     }
 
 }

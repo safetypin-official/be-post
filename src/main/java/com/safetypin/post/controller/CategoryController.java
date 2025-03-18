@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -20,7 +19,9 @@ import java.util.UUID;
 public class CategoryController {
     private final CategoryService categoryService;
 
-    public CategoryController(CategoryService categoryService) {this.categoryService = categoryService;}
+    public CategoryController(CategoryService categoryService) {
+        this.categoryService = categoryService;
+    }
 
     @GetMapping
     public ResponseEntity<PostResponse> getAllCategories() {
@@ -66,7 +67,7 @@ public class CategoryController {
         }
 
         return ResponseEntity.ok(new PostResponse(
-                true, "Category updated to " + category , updatedCategory
+                true, "Category updated to " + category, updatedCategory
         ));
     }
 
@@ -85,7 +86,7 @@ public class CategoryController {
         }
 
         return ResponseEntity.ok(new PostResponse(
-                true, "Category " +category.getName() + " deleted", null
+                true, "Category " + category.getName() + " deleted", null
         ));
     }
 

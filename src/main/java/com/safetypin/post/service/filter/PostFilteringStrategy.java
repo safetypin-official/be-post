@@ -1,6 +1,7 @@
 package com.safetypin.post.service.filter;
 
 import com.safetypin.post.model.Post;
+
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ import java.util.List;
 public interface PostFilteringStrategy {
     /**
      * Apply filtering criteria to the list of posts.
-     * 
+     *
      * @param posts List of posts to filter
      * @return Filtered list of posts
      */

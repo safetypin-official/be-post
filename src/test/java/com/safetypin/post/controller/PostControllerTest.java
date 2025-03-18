@@ -71,7 +71,7 @@ class PostControllerTest {
     }
 
     @Test
-    void testFindAllPosts(){
+    void testFindAllPosts() {
         // Mock Data
         Post post1 = new Post();
         post1.setId(UUID.randomUUID());
@@ -114,7 +114,7 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
-    /** 
+    /**
      * Test missing longitude parameter
      */
     @Test
@@ -214,10 +214,10 @@ class PostControllerTest {
 
     /**
      * Test with only dateTo
-        verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
-    }
-
-    /**
+     * verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
+     * }
+     * <p>
+     * /**
      * Test custom pagination
      */
     @Test
@@ -294,10 +294,10 @@ class PostControllerTest {
         when(postService.createPost(
                 anyString(), anyString(), anyDouble(), anyDouble(), any()))
                 .thenReturn(mockPost);
-        
+
         // Act
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
-        
+
         // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
@@ -311,27 +311,27 @@ class PostControllerTest {
         when(postService.createPost(
                 anyString(), anyString(), anyDouble(), anyDouble(), any()))
                 .thenThrow(new InvalidPostDataException("Test exception"));
-        
+
         // Act
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
-        
+
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
         assertEquals("Invalid post data: Test exception", response.getBody().getMessage());
         assertNull(response.getBody().getData());
     }
-    
+
     @Test
     void createPost_RuntimeException() {
         // Arrange
         when(postService.createPost(
                 anyString(), anyString(), anyDouble(), anyDouble(), any()))
                 .thenThrow(new RuntimeException("Unexpected runtime exception"));
-        
+
         // Act
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
-        
+
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());

@@ -1,7 +1,7 @@
 package com.safetypin.post.dto;
 
 import com.safetypin.post.model.Category;
-import lombok.*;
+import lombok.Data;
 
 @Data
 public class PostCreateRequest {

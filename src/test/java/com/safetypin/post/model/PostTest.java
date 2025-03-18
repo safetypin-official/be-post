@@ -8,9 +8,7 @@ import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PostTest {
 
@@ -146,7 +144,7 @@ class PostTest {
         assertEquals(createdAt, post.getCreatedAt());
         assertEquals(location, post.getLocation());
     }
-    
+
     @Test
     void testPrePersistGeneratesUuid() {
         Post post = new Post();

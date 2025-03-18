@@ -12,6 +12,7 @@ public interface CategoryService {
     Category createCategory(String categoryName);
 
     Category getCategoryByName(String categoryName);
+
     List<Category> getAllCategories();
 
     Category updateCategory(Category category) throws CategoryException;
