@@ -1,6 +1,5 @@
 package com.safetypin.post.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 

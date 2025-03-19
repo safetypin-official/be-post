@@ -76,7 +76,7 @@ public class CategoryServiceImpl implements CategoryService {
             log.error("Category with name: {}, not found", categoryName);
             throw new CategoryException("Category with name: " + categoryName + " not found");
         }
-        
+
         categoryRepository.delete(category);
         log.info("Category: {}; deleted", category);
     }

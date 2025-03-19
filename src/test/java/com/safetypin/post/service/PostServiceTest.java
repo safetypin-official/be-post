@@ -35,13 +35,12 @@ class PostServiceTest {
 
     private final Category
             safety = new Category("Safety"),
-            crime = new Category("Crime");    private final LocalDateTime
+            crime = new Category("Crime");
+    @Mock
+    private PostRepository postRepository;    private final LocalDateTime
             now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
-    @Mock
-    private PostRepository postRepository;
-
     private GeometryFactory geometryFactory;
     private PostServiceImpl postService;
     private Post post1, post2, post3;
@@ -397,5 +396,7 @@ class PostServiceTest {
         assertEquals(category.getName(), result.getCategory());
         verify(postRepository).save(any(Post.class));
     }
+
+
 
 }

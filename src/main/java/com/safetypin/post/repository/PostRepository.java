@@ -1,6 +1,5 @@
 package com.safetypin.post.repository;
 
-import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
@@ -19,7 +18,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     List<Post> findByCategory(String category);
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
-
 
 
     // DEPRECIATED, use findPostsWithFilter instead

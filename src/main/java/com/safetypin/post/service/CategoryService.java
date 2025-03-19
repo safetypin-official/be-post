@@ -18,6 +18,6 @@ public interface CategoryService {
     Category updateCategory(Category category) throws CategoryException;
 
     void deleteCategory(Category category) throws CategoryException;
-    
+
     void deleteCategoryByName(String categoryName) throws CategoryException;
 }
