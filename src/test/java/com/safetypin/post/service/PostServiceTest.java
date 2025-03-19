@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -20,14 +21,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @Slf4j
@@ -38,7 +37,11 @@ class PostServiceTest {
             safety = new Category("Safety"),
             crime = new Category("Crime");
     @Mock
-    private PostRepository postRepository;    private final LocalDateTime
+    private PostRepository postRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
+    
+    private final LocalDateTime
             now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
@@ -46,11 +49,12 @@ class PostServiceTest {
     private PostServiceImpl postService;
     private Post post1, post2, post3;
     private Post postWithoutLocation;
+    private Category safetyCategory;
+    private Category crimeCategory;
 
     @BeforeEach
     void setup() {
         geometryFactory = new GeometryFactory();
-        CategoryRepository categoryRepository = mock(CategoryRepository.class);
         postService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory);
 
         // Create test posts with locations
@@ -72,6 +76,12 @@ class PostServiceTest {
         postWithoutLocation = new Post();
         postWithoutLocation.setCategory(safety.getName());
         postWithoutLocation.setCreatedAt(now);
+
+        safetyCategory = new Category("Safety");
+        safetyCategory.setId(UUID.randomUUID());
+
+        crimeCategory = new Category("Crime");
+        crimeCategory.setId(UUID.randomUUID());
     }
 
     @Test
@@ -87,7 +97,7 @@ class PostServiceTest {
         savedPost.setTitle(title);
         savedPost.setCaption(content);
         savedPost.setCategory(category.getName());
-        savedPost.setCreatedAt(LocalDateTime.now()); // Use an actual LocalDateTime instead of a matcher
+        savedPost.setCreatedAt(LocalDateTime.now());
         savedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
 
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
@@ -347,6 +357,150 @@ class PostServiceTest {
         verify(postRepository).save(any(Post.class));
     }
 
+    // Test findPostsByLocation with null repository response
+    @Test
+    void testFindPostsByLocationWithNullResponse() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0; // 20 km
+        Pageable pageable = PageRequest.of(0, 10);
 
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(null);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, null, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+    }
+
+    // Test findPostsByLocation with category filter
+    @Test
+    void testFindPostsByLocationWithCategoryFilter() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0; // 20 km
+        String category = "Crime";
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<Post> posts = Arrays.asList(post1, post2, post3);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, category, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        // Only post2 has Crime category
+        assertEquals(1, result.getContent().size());
+    }
+
+    // Test findPostsByLocation with distance filtering
+    @Test
+    void testFindPostsByLocationWithDistanceFiltering() {
+        // Given
+        double centerLat = 0.1;  // Same as post1's latitude
+        double centerLon = 0.1;  // Same as post1's longitude
+        double radius = 5.0;     // Small radius to filter out post2 and post3
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<Post> posts = Arrays.asList(post1, post2, post3);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, null, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        // Only post1 should be within the small radius
+        assertEquals(1, result.getContent().size());
+
+        Map<String, Object> postResult = result.getContent().get(0);
+        Map<String, Object> postData = (Map<String, Object>) postResult.get("post");
+        assertEquals(0.0, postResult.get("distance"));
+        assertEquals(post1.getCategory(), postData.get("category"));
+    }
+
+    // Test category UUID handling in findPostsByLocation
+    @Test
+    void testFindPostsByLocationWithCategoryUUID() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create a post with UUID as category
+        Post postWithCategoryId = new Post();
+        postWithCategoryId.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
+        postWithCategoryId.setCategory(safetyCategory.getId().toString());
+        postWithCategoryId.setTitle("Safety Post");
+        postWithCategoryId.setCreatedAt(now);
+
+        List<Post> posts = Collections.singletonList(postWithCategoryId);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+                
+        when(categoryRepository.findById(safetyCategory.getId()))
+                .thenReturn(Optional.of(safetyCategory));
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, "Safety", null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        Map<String, Object> postData = (Map<String, Object>) result.getContent().get(0).get("post");
+        assertEquals("Safety", postData.get("category"));
+    }
+
+    // Test invalid UUID handling in findPostsByLocation
+    @Test
+    void testFindPostsByLocationWithInvalidCategoryUUID() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create a post with invalid UUID format as category
+        Post postWithInvalidCategoryId = new Post();
+        postWithInvalidCategoryId.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
+        postWithInvalidCategoryId.setCategory("not-a-uuid");
+        postWithInvalidCategoryId.setTitle("Invalid Category Post");
+        postWithInvalidCategoryId.setCreatedAt(now);
+
+        List<Post> posts = Collections.singletonList(postWithInvalidCategoryId);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, "not-a-uuid", null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        Map<String, Object> postData = (Map<String, Object>) result.getContent().get(0).get("post");
+        assertEquals("not-a-uuid", postData.get("category"));
+    }
 
 }

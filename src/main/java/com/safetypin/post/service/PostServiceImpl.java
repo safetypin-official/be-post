@@ -119,7 +119,7 @@ public class PostServiceImpl implements PostService {
                 return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, categoryName));
             })
             // Filter by the actual calculated distance (using the specified radius)
-            .filter(entry -> entry.getValue().getKey() <= radius)
+            .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
             // Filter by category if provided
             .filter(entry -> category == null || 
                    (entry.getValue().getValue() != null && 

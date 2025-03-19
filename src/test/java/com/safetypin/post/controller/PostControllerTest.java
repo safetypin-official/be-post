@@ -40,17 +40,14 @@ class PostControllerTest {
     private PostController postController;
 
     private Page<Map<String, Object>> mockPage;
-    private Category mockCategory;
     private Post mockPost;
     private PostCreateRequest validRequest;
-    //private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        //objectMapper = new ObjectMapper();
         mockPage = new PageImpl<>(new ArrayList<>());
 
-        mockCategory = new Category();
+        Category mockCategory = new Category();
         mockCategory.setId(UUID.randomUUID());
         mockCategory.setName("safety");
 
