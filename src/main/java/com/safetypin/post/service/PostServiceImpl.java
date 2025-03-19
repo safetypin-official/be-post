@@ -18,12 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,8 +49,11 @@ public class PostServiceImpl implements PostService {
             String category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable) {
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-        Double radiusInMeters = radius * 1000;
         Page<Post> postsPage;
+        
+        // Use a larger radius for database query to account for calculation differences
+        // The exact filtering will be done after calculating the actual distances
+        Double radiusInMeters = radius * 1000;
 
         // Select appropriate query based on which parameters are provided
         if (category != null && dateFrom != null && dateTo != null) {
@@ -79,47 +78,63 @@ public class PostServiceImpl implements PostService {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
-        // Transform Post entities to DTOs with distance
-        return postsPage.map(post -> {
-            Map<String, Object> result = new HashMap<>();
-            
-            // Create post data with category name instead of id
-            Map<String, Object> postData = new HashMap<>();
-            postData.put("id", post.getId());
-            postData.put("title", post.getTitle());
-            postData.put("caption", post.getCaption());
-            postData.put("latitude", post.getLatitude());
-            postData.put("longitude", post.getLongitude());
-            postData.put("createdAt", post.getCreatedAt());
-            
-            // Include category name by looking up the category object
-            if (post.getCategory() != null) {
-                try {
-                    UUID categoryId = UUID.fromString(post.getCategory());
-                    Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-                    if (categoryOpt.isPresent()) {
-                        postData.put("category", categoryOpt.get().getName());
-                    } else {
-                        postData.put("category", post.getCategory()); // Fallback to ID if not found
+        // Transform Post entities to DTOs with distance, filtering by actual calculated distance
+        List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
+            .map(post -> {
+                Map<String, Object> result = new HashMap<>();
+                
+                // Create post data with category name instead of id
+                Map<String, Object> postData = new HashMap<>();
+                postData.put("id", post.getId());
+                postData.put("title", post.getTitle());
+                postData.put("caption", post.getCaption());
+                postData.put("latitude", post.getLatitude());
+                postData.put("longitude", post.getLongitude());
+                postData.put("createdAt", post.getCreatedAt());
+                
+                // Include category name by looking up the category object
+                if (post.getCategory() != null) {
+                    try {
+                        UUID categoryId = UUID.fromString(post.getCategory());
+                        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+                        if (categoryOpt.isPresent()) {
+                            postData.put("category", categoryOpt.get().getName());
+                        } else {
+                            postData.put("category", post.getCategory()); // Fallback to ID if not found
+                        }
+                    } catch (IllegalArgumentException e) {
+                        // If category string is not a valid UUID, use it directly
+                        postData.put("category", post.getCategory());
                     }
-                } catch (IllegalArgumentException e) {
-                    // If category string is not a valid UUID, use it directly
-                    postData.put("category", post.getCategory());
                 }
-            }
-            
-            result.put("post", postData);
+                
+                result.put("post", postData);
 
-            if (post.getLocation() != null) {
-                double distance = DistanceCalculator.calculateDistance(
-                        centerLat, centerLon, post.getLatitude(), post.getLongitude()
-                );
-                result.put("distance", distance);
-            } else {
-                result.put("distance", 0.0);
-            }
-            return result;
-        });
+                double distance = 0.0;
+                if (post.getLocation() != null) {
+                    distance = DistanceCalculator.calculateDistance(
+                            centerLat, centerLon, post.getLatitude(), post.getLongitude()
+                    );
+                    result.put("distance", distance);
+                } else {
+                    result.put("distance", distance);
+                }
+                
+                // Return the result with the calculated distance
+                return new AbstractMap.SimpleEntry<>(result, distance);
+            })
+            // Filter by the actual calculated distance (using the specified radius)
+            .filter(entry -> entry.getValue() <= radius)
+            // Extract just the result map
+            .map(AbstractMap.SimpleEntry::getKey)
+            .collect(Collectors.toList());
+
+        // Create a new page with the filtered results
+        return new PageImpl<>(
+            filteredResults,
+            pageable,
+            filteredResults.size()
+        );
     }
 
     @Override

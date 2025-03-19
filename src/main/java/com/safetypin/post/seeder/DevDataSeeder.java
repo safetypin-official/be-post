@@ -40,6 +40,15 @@ public class DevDataSeeder implements CommandLineRunner {
 
         // Create and save posts
         postRepository.saveAll(Arrays.asList(
+                // Adding the lost wallet and lost bag posts from the example response
+                new Post("Dompet saya hilang di sekitar Margonda, tolong hubungi jika menemukan!", "Lost wallet near Margonda",
+                        lostItem, LocalDateTime.parse("2025-03-06T20:46:39.073832"),
+                        -6.381832, 106.832512),
+                        
+                new Post("Bagi yang menemukan tas warna hitam di Margo City, tolong hubungi saya. Ada dokumen penting di dalamnya.", "Lost bag at Margo City",
+                        lostItem, LocalDateTime.parse("2025-03-06T22:07:07.899287"),
+                        -6.369028, 106.832322),
+
                 new Post("Buku catatan tertinggal di Perpustakaan UI lantai 2. Jika menemukannya, tolong dikembalikan ke resepsionis.", "Lost book at UI Library",
                         lostBook, LocalDateTime.parse("2025-03-06T22:07:08.899287"),
                         -6.360382, 106.827097),
