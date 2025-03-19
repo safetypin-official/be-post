@@ -2,7 +2,9 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.utils.DistanceCalculator;
 import lombok.extern.slf4j.Slf4j;
@@ -20,17 +22,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
     private final GeometryFactory geometryFactory;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, GeometryFactory geometryFactory) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory) {
         this.postRepository = postRepository;
+        this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
     }
 
@@ -50,14 +56,22 @@ public class PostServiceImpl implements PostService {
         Double radiusInMeters = radius * 1000;
         Page<Post> postsPage;
 
+        // Select appropriate query based on which parameters are provided
         if (category != null && dateFrom != null && dateTo != null) {
-            postsPage = postRepository.findPostsWithFilter(center, radiusInMeters, category, dateFrom, dateTo, pageable);
+            // Filter by both category and date range
+            postsPage = postRepository.findPostsByCategoryAndDateRange(
+                    center, radiusInMeters, category, dateFrom, dateTo, pageable);
         } else if (category != null) {
-            postsPage = postRepository.findPostsWithinRadiusByCategory(center, radiusInMeters, category, pageable);
+            // Filter by category only
+            postsPage = postRepository.findPostsByCategory(
+                    center, radiusInMeters, category, pageable);
         } else if (dateFrom != null && dateTo != null) {
-            postsPage = postRepository.findPostsWithinRadiusByDateRange(center, radiusInMeters, dateFrom, dateTo, pageable);
+            // Filter by date range only
+            postsPage = postRepository.findPostsByDateRange(
+                    center, radiusInMeters, dateFrom, dateTo, pageable);
         } else {
-            postsPage = postRepository.findPostsWithinPointAndRadius(center, radiusInMeters, pageable);
+            // No filters, just use radius
+            postsPage = postRepository.findPostsWithinRadius(center, radiusInMeters, pageable);
         }
 
         // Check if postsPage is null, return empty page if null
@@ -68,7 +82,33 @@ public class PostServiceImpl implements PostService {
         // Transform Post entities to DTOs with distance
         return postsPage.map(post -> {
             Map<String, Object> result = new HashMap<>();
-            result.put("post", post);
+            
+            // Create post data with category name instead of id
+            Map<String, Object> postData = new HashMap<>();
+            postData.put("id", post.getId());
+            postData.put("title", post.getTitle());
+            postData.put("caption", post.getCaption());
+            postData.put("latitude", post.getLatitude());
+            postData.put("longitude", post.getLongitude());
+            postData.put("createdAt", post.getCreatedAt());
+            
+            // Include category name by looking up the category object
+            if (post.getCategory() != null) {
+                try {
+                    UUID categoryId = UUID.fromString(post.getCategory());
+                    Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+                    if (categoryOpt.isPresent()) {
+                        postData.put("category", categoryOpt.get().getName());
+                    } else {
+                        postData.put("category", post.getCategory()); // Fallback to ID if not found
+                    }
+                } catch (IllegalArgumentException e) {
+                    // If category string is not a valid UUID, use it directly
+                    postData.put("category", post.getCategory());
+                }
+            }
+            
+            result.put("post", postData);
 
             if (post.getLocation() != null) {
                 double distance = DistanceCalculator.calculateDistance(

@@ -4,6 +4,7 @@ import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,8 @@ class PostServiceTest {
     @BeforeEach
     void setup() {
         geometryFactory = new GeometryFactory();
-        postService = new PostServiceImpl(postRepository, geometryFactory);
+        CategoryRepository categoryRepository = mock(CategoryRepository.class);
+        postService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory);
 
         // Create test posts with locations
         post1 = new Post();
