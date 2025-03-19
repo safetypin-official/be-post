@@ -55,21 +55,13 @@ public class PostServiceImpl implements PostService {
         // The exact filtering will be done after calculating the actual distances
         Double radiusInMeters = radius * 1000;
 
-        // Select appropriate query based on which parameters are provided
-        if (category != null && dateFrom != null && dateTo != null) {
-            // Filter by both category and date range
-            postsPage = postRepository.findPostsByCategoryAndDateRange(
-                    center, radiusInMeters, category, dateFrom, dateTo, pageable);
-        } else if (category != null) {
-            // Filter by category only
-            postsPage = postRepository.findPostsByCategory(
-                    center, radiusInMeters, category, pageable);
-        } else if (dateFrom != null && dateTo != null) {
+        // Select appropriate query based on date parameters only, we'll filter by category later
+        if (dateFrom != null && dateTo != null) {
             // Filter by date range only
             postsPage = postRepository.findPostsByDateRange(
                     center, radiusInMeters, dateFrom, dateTo, pageable);
         } else {
-            // No filters, just use radius
+            // No date filters, just use radius
             postsPage = postRepository.findPostsWithinRadius(center, radiusInMeters, pageable);
         }
 
@@ -78,7 +70,7 @@ public class PostServiceImpl implements PostService {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
-        // Transform Post entities to DTOs with distance, filtering by actual calculated distance
+        // Transform Post entities to DTOs with distance, filtering by actual calculated distance and category
         List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
             .map(post -> {
                 Map<String, Object> result = new HashMap<>();
@@ -92,19 +84,22 @@ public class PostServiceImpl implements PostService {
                 postData.put("longitude", post.getLongitude());
                 postData.put("createdAt", post.getCreatedAt());
                 
-                // Include category name by looking up the category object
+                // Get category name
+                String categoryName = null;
                 if (post.getCategory() != null) {
                     try {
                         UUID categoryId = UUID.fromString(post.getCategory());
                         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
                         if (categoryOpt.isPresent()) {
-                            postData.put("category", categoryOpt.get().getName());
+                            categoryName = categoryOpt.get().getName();
+                            postData.put("category", categoryName);
                         } else {
                             postData.put("category", post.getCategory()); // Fallback to ID if not found
                         }
                     } catch (IllegalArgumentException e) {
                         // If category string is not a valid UUID, use it directly
-                        postData.put("category", post.getCategory());
+                        categoryName = post.getCategory();
+                        postData.put("category", categoryName);
                     }
                 }
                 
@@ -120,11 +115,15 @@ public class PostServiceImpl implements PostService {
                     result.put("distance", distance);
                 }
                 
-                // Return the result with the calculated distance
-                return new AbstractMap.SimpleEntry<>(result, distance);
+                // Return the result with the calculated distance and category name for filtering
+                return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, categoryName));
             })
             // Filter by the actual calculated distance (using the specified radius)
-            .filter(entry -> entry.getValue() <= radius)
+            .filter(entry -> entry.getValue().getKey() <= radius)
+            // Filter by category if provided
+            .filter(entry -> category == null || 
+                   (entry.getValue().getValue() != null && 
+                    entry.getValue().getValue().equalsIgnoreCase(category)))
             // Extract just the result map
             .map(AbstractMap.SimpleEntry::getKey)
             .collect(Collectors.toList());
