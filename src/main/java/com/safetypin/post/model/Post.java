@@ -30,8 +30,8 @@ public class Post extends BasePost {
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point location = geometryFactory.createPoint(new Coordinate(0.0d, 0.0d));
 
-    // Changed from Category entity to String
-    @Column(nullable = false)
+    // Changed from Category entity to String - fix column name to match database schema
+    @Column(nullable = false, name = "category_id")
     private String category;
 
     // Additional fields as needed
