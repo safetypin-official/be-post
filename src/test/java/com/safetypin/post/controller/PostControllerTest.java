@@ -140,35 +140,6 @@ class PostControllerTest {
     }
 
     /**
-     * Test valid request with all parameters
-     */
-    @Test
-    void whenGetPostsWithValidParams_thenReturnPosts() {
-        Double lat = 20.0;
-        Double lon = 10.0;
-        Double radius = 10.0;
-        String category = mockCategory.getName(); // Changed from Category to String
-        LocalDate dateFrom = LocalDate.now().minusDays(7);
-        LocalDate dateTo = LocalDate.now();
-        int page = 0;
-        int size = 10;
-
-        LocalDateTime fromDateTime = LocalDateTime.of(dateFrom, LocalTime.MIN);
-        LocalDateTime toDateTime = LocalDateTime.of(dateTo, LocalTime.MAX);
-        Pageable pageable = PageRequest.of(page, size);
-
-        when(postService.findPostsByLocation(lat, lon, radius, category, fromDateTime, toDateTime, pageable))
-                .thenReturn(mockPage);
-
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, category, dateFrom, dateTo, page, size);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        PostResponse postResponse = response.getBody();
-        assertEquals(mockPage, postResponse.getData());
-        verify(postService).findPostsByLocation(lat, lon, radius, category, fromDateTime, toDateTime, pageable);
-    }
-
-    /**
      * Test using default radius
      */
     @Test

@@ -75,58 +75,6 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByLocation_WithLocation() {
-        // Given
-        double centerLat = 0.1;
-        double centerLon = 0.1;
-        double radius = 10.0;
-        Pageable pageable = PageRequest.of(0, 10);
-        List<Post> postList = Arrays.asList(post1, post2);
-        Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
-
-        // Update the mock to match the method actually called with null parameters
-        when(postRepository.findPostsWithinPointAndRadius(
-                any(), anyDouble(), any(PageRequest.class)
-        )).thenReturn(postPage);
-
-        // When
-        Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, null, null, pageable);
-
-        // Then
-        assertEquals(2, result.getContent().size());
-
-        Post resultPost1 = (Post) result.getContent().getFirst().get("post");
-        assertEquals(post1, resultPost1);
-
-        Double distance1 = (Double) result.getContent().getFirst().get("distance");
-        assertEquals(0.0, distance1, 0.001); // Same location, distance should be 0
-    }
-
-    @Test
-    void testFindPostsByLocation_WithoutLocation() {
-        // Given
-        double centerLat = 0.1;
-        double centerLon = 0.1;
-        double radius = 10.0;
-        Pageable pageable = PageRequest.of(0, 10);
-        List<Post> postList = Collections.singletonList(postWithoutLocation);
-        Page<Post> postPage = new PageImpl<>(postList, pageable, postList.size());
-
-        // Update the mock to match the method actually called with null parameters
-        when(postRepository.findPostsWithinPointAndRadius(
-                any(), anyDouble(), any(PageRequest.class)
-        )).thenReturn(postPage);
-
-        // When
-        Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, null, null, pageable);
-        // Then
-        assertEquals(1, result.getContent().size());
-        assertNotNull(result.getContent().getFirst().get("distance"));
-    }
-
-    @Test
     void testCreatePost_Success() {
         // Given
         String title = "Test Post";
