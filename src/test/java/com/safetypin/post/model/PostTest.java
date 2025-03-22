@@ -161,11 +161,11 @@ class PostTest {
         String title = "Test title";
         String category = "Test category";
         LocalDateTime createdAt = LocalDateTime.now();
-        
+
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             new Post(content, title, category, createdAt, null, 10.0);
         });
-        
+
         assertEquals("Latitude cannot be null", exception.getMessage());
     }
 
@@ -175,11 +175,11 @@ class PostTest {
         String title = "Test title";
         String category = "Test category";
         LocalDateTime createdAt = LocalDateTime.now();
-        
+
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             new Post(content, title, category, createdAt, 20.0, null);
         });
-        
+
         assertEquals("Longitude cannot be null", exception.getMessage());
     }
 
@@ -189,11 +189,11 @@ class PostTest {
         String title = "Test title";
         String category = "Test category";
         LocalDateTime createdAt = LocalDateTime.now();
-        
+
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             new Post(content, title, category, createdAt, null, null);
         });
-        
+
         assertEquals("Both latitude and longitude cannot be null", exception.getMessage());
     }
 
@@ -201,43 +201,43 @@ class PostTest {
     void testBuilderThrowsExceptionWhenCoordinatesAreNotProvided() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             Post.builder()
-                .caption("Test content")
-                .title("Test title")
-                .category("Test category")
-                .build();
+                    .caption("Test content")
+                    .title("Test title")
+                    .category("Test category")
+                    .build();
         });
-        
+
         assertEquals("Both latitude and longitude must be provided", exception.getMessage());
     }
-    
+
     @Test
     void testBuilderThrowsExceptionWhenOnlyLatitudeIsProvided() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             Post.builder()
-                .caption("Test content")
-                .title("Test title")
-                .category("Test category")
-                .latitude(20.0)
-                .build();
+                    .caption("Test content")
+                    .title("Test title")
+                    .category("Test category")
+                    .latitude(20.0)
+                    .build();
         });
-        
+
         assertEquals("Both latitude and longitude must be provided", exception.getMessage());
     }
-    
+
     @Test
     void testBuilderThrowsExceptionWhenOnlyLongitudeIsProvided() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             Post.builder()
-                .caption("Test content")
-                .title("Test title")
-                .category("Test category")
-                .longitude(10.0)
-                .build();
+                    .caption("Test content")
+                    .title("Test title")
+                    .category("Test category")
+                    .longitude(10.0)
+                    .build();
         });
-        
+
         assertEquals("Both latitude and longitude must be provided", exception.getMessage());
     }
-    
+
     @Test
     void testBuilderCreatesValidPost() {
         UUID id = UUID.randomUUID();
@@ -249,14 +249,14 @@ class PostTest {
         Double longitude = 10.0;
 
         Post post = Post.builder()
-            .id(id)
-            .caption(content)
-            .title(title)
-            .category(category)
-            .createdAt(createdAt)
-            .latitude(latitude)
-            .longitude(longitude)
-            .build();
+                .id(id)
+                .caption(content)
+                .title(title)
+                .category(category)
+                .createdAt(createdAt)
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
 
         assertEquals(id, post.getId());
         assertEquals(content, post.getCaption());
@@ -266,7 +266,7 @@ class PostTest {
         assertEquals(latitude, post.getLatitude());
         assertEquals(longitude, post.getLongitude());
     }
-    
+
     @Test
     void testBuilderWithLocationMethod() {
         String content = "Test content";
@@ -276,11 +276,11 @@ class PostTest {
         Double longitude = 10.0;
 
         Post post = Post.builder()
-            .caption(content)
-            .title(title)
-            .category(category)
-            .location(latitude, longitude)  // Using the location method
-            .build();
+                .caption(content)
+                .title(title)
+                .category(category)
+                .location(latitude, longitude)  // Using the location method
+                .build();
 
         assertEquals(content, post.getCaption());
         assertEquals(title, post.getTitle());
@@ -299,11 +299,11 @@ class PostTest {
         Double longitude = 10.0;
 
         Post post = Post.builder()
-            .title(title)
-            .category(category)
-            .latitude(latitude)
-            .longitude(longitude)
-            .build();
+                .title(title)
+                .category(category)
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
 
         assertEquals(title, post.getTitle());
         assertEquals(category, post.getCategory());
@@ -312,7 +312,7 @@ class PostTest {
         assertNotNull(post.getCreatedAt());  // Should auto-generate
         assertNull(post.getCaption());       // Optional field
     }
-    
+
     @Test
     void testBuilderWithNoCreatedAt() {
         // Even without createdAt, latitude and longitude must still be provided
@@ -324,12 +324,12 @@ class PostTest {
 
         LocalDateTime beforeBuild = LocalDateTime.now();
         Post post = Post.builder()
-            .caption(content)
-            .title(title)
-            .category(category)
-            .latitude(latitude)
-            .longitude(longitude)
-            .build();
+                .caption(content)
+                .title(title)
+                .category(category)
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
         LocalDateTime afterBuild = LocalDateTime.now();
 
         assertEquals(content, post.getCaption());
@@ -338,12 +338,12 @@ class PostTest {
         assertEquals(latitude, post.getLatitude());
         assertEquals(longitude, post.getLongitude());
         assertNotNull(post.getCreatedAt());
-        
+
         // Verify that createdAt was auto-generated within the expected timeframe
         assertTrue(
-            !post.getCreatedAt().isBefore(beforeBuild) && 
-            !post.getCreatedAt().isAfter(afterBuild),
-            "CreatedAt should be auto-generated between beforeBuild and afterBuild"
+                !post.getCreatedAt().isBefore(beforeBuild) &&
+                        !post.getCreatedAt().isAfter(afterBuild),
+                "CreatedAt should be auto-generated between beforeBuild and afterBuild"
         );
     }
 
@@ -353,7 +353,7 @@ class PostTest {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             post.setLatitude(null);
         });
-        
+
         assertEquals("Latitude cannot be null", exception.getMessage());
     }
 
@@ -363,7 +363,7 @@ class PostTest {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             post.setLongitude(null);
         });
-        
+
         assertEquals("Longitude cannot be null", exception.getMessage());
     }
 

@@ -41,7 +41,7 @@ public class PostServiceImpl implements PostService {
     public List<Post> findAll() {
         return postRepository.findAll();
     }
-    
+
     // find all with pagination
     @Override
     public Page<Post> findAllPaginated(Pageable pageable) {
@@ -56,7 +56,7 @@ public class PostServiceImpl implements PostService {
             Pageable pageable) {
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
         Page<Post> postsPage;
-        
+
         // Use a larger radius for database query to account for calculation differences
         // The exact filtering will be done after calculating the actual distances
         Double radiusInMeters = radius * 1000;
@@ -78,49 +78,49 @@ public class PostServiceImpl implements PostService {
 
         // Transform Post entities to DTOs with distance, filtering by actual calculated distance and category
         List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
-            .map(post -> {
-                Map<String, Object> result = new HashMap<>();
-                
-                // Create post data with category name
-                Map<String, Object> postData = new HashMap<>();
-                postData.put("id", post.getId());
-                postData.put("title", post.getTitle());
-                postData.put("caption", post.getCaption());
-                postData.put("latitude", post.getLatitude());
-                postData.put("longitude", post.getLongitude());
-                postData.put("createdAt", post.getCreatedAt());
-                postData.put("category", post.getCategory()); // Now directly using the category name
-                
-                result.put("post", postData);
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
 
-                double distance = 0.0;
-                if (post.getLocation() != null) {
-                    distance = DistanceCalculator.calculateDistance(
-                            centerLat, centerLon, post.getLatitude(), post.getLongitude()
-                    );
-                    result.put("distance", distance);
-                } else {
-                    result.put("distance", distance);
-                }
-                
-                // Return the result with the calculated distance and category name for filtering
-                return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
-            })
-            // Filter by the actual calculated distance (using the specified radius)
-            .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
-            // Filter by category if provided
-            .filter(entry -> category == null || 
-                   (entry.getValue().getValue() != null && 
-                    entry.getValue().getValue().equalsIgnoreCase(category)))
-            // Extract just the result map
-            .map(AbstractMap.SimpleEntry::getKey)
-            .collect(Collectors.toList());
+                    // Create post data with category name
+                    Map<String, Object> postData = new HashMap<>();
+                    postData.put("id", post.getId());
+                    postData.put("title", post.getTitle());
+                    postData.put("caption", post.getCaption());
+                    postData.put("latitude", post.getLatitude());
+                    postData.put("longitude", post.getLongitude());
+                    postData.put("createdAt", post.getCreatedAt());
+                    postData.put("category", post.getCategory()); // Now directly using the category name
+
+                    result.put("post", postData);
+
+                    double distance = 0.0;
+                    if (post.getLocation() != null) {
+                        distance = DistanceCalculator.calculateDistance(
+                                centerLat, centerLon, post.getLatitude(), post.getLongitude()
+                        );
+                        result.put("distance", distance);
+                    } else {
+                        result.put("distance", distance);
+                    }
+
+                    // Return the result with the calculated distance and category name for filtering
+                    return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
+                })
+                // Filter by the actual calculated distance (using the specified radius)
+                .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
+                // Filter by category if provided
+                .filter(entry -> category == null ||
+                        (entry.getValue().getValue() != null &&
+                                entry.getValue().getValue().equalsIgnoreCase(category)))
+                // Extract just the result map
+                .map(AbstractMap.SimpleEntry::getKey)
+                .collect(Collectors.toList());
 
         // Create a new page with the filtered results
         return new PageImpl<>(
-            filteredResults,
-            pageable,
-            filteredResults.size()
+                filteredResults,
+                pageable,
+                filteredResults.size()
         );
     }
 

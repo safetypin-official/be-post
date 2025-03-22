@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -24,7 +23,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -302,11 +304,11 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         List<Post> postList = new ArrayList<>();
         postList.add(mockPost);
         Page<Post> postPage = new PageImpl<>(postList, pageable, 1);
-        
+
         when(postService.findAllPaginated(pageable)).thenReturn(postPage);
 
         // Act
@@ -317,7 +319,7 @@ class PostControllerTest {
         PostResponse postResponse = response.getBody();
         assert postResponse != null;
         assertTrue(postResponse.isSuccess());
-        
+
         @SuppressWarnings("unchecked")
         Map<String, Object> responseData = (Map<String, Object>) postResponse.getData();
         assertEquals(1L, responseData.get("totalElements"));
@@ -334,9 +336,9 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         String errorMessage = "Database error";
-        
+
         when(postService.findAllPaginated(any(Pageable.class)))
-            .thenThrow(new RuntimeException(errorMessage));
+                .thenThrow(new RuntimeException(errorMessage));
 
         // Act
         ResponseEntity<PostResponse> response = postController.findAll(page, size);

@@ -20,6 +20,6 @@ public interface PostService {
     Post createPost(String title, String content, Double latitude, Double longitude, String category);
 
     List<Post> findAll();
-    
+
     Page<Post> findAllPaginated(Pageable pageable);
 }

@@ -19,9 +19,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,39 +42,39 @@ public class PostController {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<Post> postsPage = postService.findAllPaginated(pageable);
-            
+
             List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-                .map(post -> {
-                    Map<String, Object> postData = new HashMap<>();
-                    postData.put("id", post.getId());
-                    postData.put("title", post.getTitle());
-                    postData.put("caption", post.getCaption());
-                    postData.put("latitude", post.getLatitude());
-                    postData.put("longitude", post.getLongitude());
-                    postData.put("createdAt", post.getCreatedAt());
-                    postData.put("category", post.getCategory());
-                    return postData;
-                })
-                .collect(Collectors.toList());
-            
+                    .map(post -> {
+                        Map<String, Object> postData = new HashMap<>();
+                        postData.put("id", post.getId());
+                        postData.put("title", post.getTitle());
+                        postData.put("caption", post.getCaption());
+                        postData.put("latitude", post.getLatitude());
+                        postData.put("longitude", post.getLongitude());
+                        postData.put("createdAt", post.getCreatedAt());
+                        postData.put("category", post.getCategory());
+                        return postData;
+                    })
+                    .collect(Collectors.toList());
+
             Map<String, Object> paginationData = Map.of(
-                "content", formattedPosts,
-                "totalPages", postsPage.getTotalPages(),
-                "totalElements", postsPage.getTotalElements(),
-                "currentPage", postsPage.getNumber(),
-                "pageSize", postsPage.getSize(),
-                "hasNext", postsPage.hasNext(),
-                "hasPrevious", postsPage.hasPrevious()
+                    "content", formattedPosts,
+                    "totalPages", postsPage.getTotalPages(),
+                    "totalElements", postsPage.getTotalElements(),
+                    "currentPage", postsPage.getNumber(),
+                    "pageSize", postsPage.getSize(),
+                    "hasNext", postsPage.hasNext(),
+                    "hasPrevious", postsPage.hasPrevious()
             );
-            
+
             PostResponse response = new PostResponse(true, null, paginationData);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(response);
         } catch (Exception e) {
             PostResponse errorResponse = new PostResponse(
-                false, "Error retrieving posts: " + e.getMessage(), null);
+                    false, "Error retrieving posts: " + e.getMessage(), null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(errorResponse);
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         }
     }
 
@@ -110,16 +110,16 @@ public class PostController {
             // find posts
             Page<Map<String, Object>> posts = postService.findPostsByLocation(
                     lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
-            
+
             // Create response with pagination metadata
             Map<String, Object> paginationData = Map.of(
-                "content", posts.getContent(),
-                "totalPages", posts.getTotalPages(),
-                "totalElements", posts.getTotalElements(),
-                "currentPage", posts.getNumber(),
-                "pageSize", posts.getSize(),
-                "hasNext", posts.hasNext(),
-                "hasPrevious", posts.hasPrevious()
+                    "content", posts.getContent(),
+                    "totalPages", posts.getTotalPages(),
+                    "totalElements", posts.getTotalElements(),
+                    "currentPage", posts.getNumber(),
+                    "pageSize", posts.getSize(),
+                    "hasNext", posts.hasNext(),
+                    "hasPrevious", posts.hasPrevious()
             );
 
             PostResponse postResponse = new PostResponse(true, null, paginationData);

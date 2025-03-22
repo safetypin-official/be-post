@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,14 +22,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
 
+    private final String testCategoryName = "Test Category";
     @Mock
     private CategoryRepository categoryRepository;
-
     @InjectMocks
     private CategoryServiceImpl categoryService;
-
     private Category testCategory;
-    private final String testCategoryName = "Test Category";
 
     @BeforeEach
     void setUp() {
@@ -79,7 +76,7 @@ class CategoryServiceTest {
         assertEquals(testCategoryName, result.getName());
         verify(categoryRepository, times(1)).findByName(testCategoryName);
     }
-    
+
     @Test
     void testGetCategoryByName_NotFound() {
         // Arrange
@@ -99,7 +96,7 @@ class CategoryServiceTest {
         Category category1 = new Category("Category 1");
         Category category2 = new Category("Category 2");
         List<Category> expectedCategories = Arrays.asList(category1, category2);
-        
+
         when(categoryRepository.findAll()).thenReturn(expectedCategories);
 
         // Act
@@ -142,7 +139,7 @@ class CategoryServiceTest {
         // Arrange
         Category categoryToUpdate = new Category(testCategoryName);
         categoryToUpdate.setDescription("Updated description");
-        
+
         when(categoryRepository.findById(testCategoryName)).thenReturn(Optional.of(testCategory));
         when(categoryRepository.save(any(Category.class))).thenReturn(categoryToUpdate);
 
@@ -160,7 +157,7 @@ class CategoryServiceTest {
     void testUpdateCategory_NotFound() {
         // Arrange
         Category categoryToUpdate = new Category(testCategoryName);
-        
+
         when(categoryRepository.findById(testCategoryName)).thenReturn(Optional.empty());
 
         // Act & Assert

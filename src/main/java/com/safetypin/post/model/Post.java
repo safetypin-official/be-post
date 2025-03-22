@@ -52,8 +52,18 @@ public class Post extends BasePost {
     }
 
     /**
+     * Static method to create a new Builder instance
+     *
+     * @return new Builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Validates that both latitude and longitude are not null
-     * @param latitude the latitude value
+     *
+     * @param latitude  the latitude value
      * @param longitude the longitude value
      * @throws IllegalArgumentException if either latitude or longitude is null
      */
@@ -110,15 +120,6 @@ public class Post extends BasePost {
         if (getCreatedAt() == null) {
             setCreatedAt(LocalDateTime.now());
         }
-    }
-
-    /**
-     * Static method to create a new Builder instance
-     *
-     * @return new Builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**

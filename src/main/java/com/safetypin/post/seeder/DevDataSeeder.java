@@ -30,34 +30,34 @@ public class DevDataSeeder implements CommandLineRunner {
     public void run(String... args) {
         // Seed categories first
         seedCategories();
-        
+
         // Then seed posts
         seedPosts();
     }
-    
+
     private void seedCategories() {
         if (categoryRepository.count() > 0) {
             log.info("ℹ️ Categories already exist. Skipping category seeding.");
             return;
         }
-        
+
         // Define categories
         List<Category> categories = Arrays.asList(
-            new Category("Lost Item"),
-            new Category("Infrastructure Issue"),
-            new Category("Crime Watch"),
-            new Category("Lost Book"),
-            new Category("Lost Pet"),
-            new Category("Service Issue"),
-            new Category("Flooding"),
-            new Category("Stolen Vehicle")
+                new Category("Lost Item"),
+                new Category("Infrastructure Issue"),
+                new Category("Crime Watch"),
+                new Category("Lost Book"),
+                new Category("Lost Pet"),
+                new Category("Service Issue"),
+                new Category("Flooding"),
+                new Category("Stolen Vehicle")
         );
-        
+
         // Save all categories
         categoryRepository.saveAll(categories);
         log.info("✅ Database seeded with categories!");
     }
-    
+
     private void seedPosts() {
         if (postRepository.count() > 0) {
             log.info("ℹ️ Posts already exist. Skipping post seeding.");
@@ -80,7 +80,7 @@ public class DevDataSeeder implements CommandLineRunner {
                 new Post("Dompet saya hilang di sekitar Margonda, tolong hubungi jika menemukan!", "Lost wallet near Margonda",
                         lostItem, LocalDateTime.parse("2025-03-06T20:46:39.073832"),
                         -6.381832, 106.832512),
-                        
+
                 new Post("Bagi yang menemukan tas warna hitam di Margo City, tolong hubungi saya. Ada dokumen penting di dalamnya.", "Lost bag at Margo City",
                         lostItem, LocalDateTime.parse("2025-03-06T22:07:07.899287"),
                         -6.369028, 106.832322),

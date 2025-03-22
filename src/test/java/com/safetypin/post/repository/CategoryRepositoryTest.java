@@ -34,9 +34,6 @@ class CategoryRepositoryTest {
     }
 
 
-
-
-
     @Test
     void testFindAll() {
         List<Category> result = categoryRepository.findAll();

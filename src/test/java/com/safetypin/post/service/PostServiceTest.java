@@ -21,12 +21,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @Slf4j
@@ -40,12 +41,10 @@ class PostServiceTest {
     private PostRepository postRepository;
     @Mock
     private CategoryRepository categoryRepository;
-    
-    private final LocalDateTime
+    private GeometryFactory geometryFactory;    private final LocalDateTime
             now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
-    private GeometryFactory geometryFactory;
     private PostServiceImpl postService;
     private Post post1, post2, post3;
     private Post postWithoutLocation;
@@ -80,8 +79,6 @@ class PostServiceTest {
         safetyCategory = new Category("Safety");
         crimeCategory = new Category("Crime");
     }
-
-
 
     @Test
     void testCreatePost_NullTitle() {
@@ -130,8 +127,6 @@ class PostServiceTest {
         );
         verify(postRepository, never()).save(any(Post.class));
     }
-
-
 
     @Test
     void testFindAllPosts() {
@@ -282,8 +277,6 @@ class PostServiceTest {
         verify(postRepository, never()).save(any(Post.class));
     }
 
-
-
     // Test findPostsByLocation with null repository response
     @Test
     void testFindPostsByLocationWithNullResponse() {
@@ -361,24 +354,24 @@ class PostServiceTest {
         assertEquals(post1.getCategory(), postData.get("category"));
     }
 
-    // Test category UUID handling in findPostsByLocation
-
     @Test
     void testFindAllPaginated() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> expectedPage = new PageImpl<>(posts, pageable, posts.size());
-        
+
         when(postRepository.findAll(pageable)).thenReturn(expectedPage);
-        
+
         // When
         Page<Post> result = postService.findAllPaginated(pageable);
-        
+
         // Then
         assertEquals(expectedPage, result);
         verify(postRepository).findAll(pageable);
     }
+
+    // Test category UUID handling in findPostsByLocation
 
     @Test
     void testCreatePost_Success() {
@@ -388,25 +381,25 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         String categoryName = "Safety";
-        
+
         Post expectedPost = new Post();
         expectedPost.setTitle(title);
         expectedPost.setCaption(content);
         expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
         expectedPost.setCategory(categoryName);
-        
+
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
-        
+
         // When
         Post result = postService.createPost(title, content, latitude, longitude, categoryName);
-        
+
         // Then
         assertNotNull(result);
         assertEquals(title, result.getTitle());
         assertEquals(content, result.getCaption());
         assertEquals(categoryName, result.getCategory());
-        
+
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
     }
@@ -419,14 +412,14 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         String categoryName = "NonExistentCategory";
-        
+
         when(categoryRepository.findByName(categoryName)).thenReturn(null);
-        
+
         // When & Then
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
                 postService.createPost(title, content, latitude, longitude, categoryName)
         );
-        
+
         assertEquals("Category does not exist: " + categoryName, exception.getMessage());
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository, never()).save(any(Post.class));
@@ -440,15 +433,15 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         String categoryName = "Safety";
-        
+
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenThrow(new RuntimeException("Database error"));
-        
+
         // When & Then
         PostException exception = assertThrows(PostException.class, () ->
                 postService.createPost(title, content, latitude, longitude, categoryName)
         );
-        
+
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
@@ -463,17 +456,17 @@ class PostServiceTest {
         LocalDateTime dateFrom = yesterday;
         LocalDateTime dateTo = tomorrow;
         Pageable pageable = PageRequest.of(0, 10);
-        
+
         List<Post> posts = Arrays.asList(post1, post2);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-        
+
         when(postRepository.findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo), eq(pageable)))
                 .thenReturn(postsPage);
-        
+
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
                 centerLat, centerLon, radius, null, dateFrom, dateTo, pageable);
-        
+
         // Then
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
@@ -487,17 +480,17 @@ class PostServiceTest {
         double centerLon = 0.15;
         double radius = 20.0; // 20 km
         Pageable pageable = PageRequest.of(0, 10);
-        
+
         List<Post> posts = Collections.singletonList(postWithoutLocation);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-        
+
         when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
                 .thenReturn(postsPage);
-        
+
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
                 centerLat, centerLon, radius, null, null, null, pageable);
-        
+
         // Then
         assertNotNull(result);
         // Post without location should be filtered out because distance check would fail
@@ -513,21 +506,23 @@ class PostServiceTest {
 
 
         Pageable pageable = PageRequest.of(0, 10);
-        
+
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-        
+
         when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
                 .thenReturn(postsPage);
-        
+
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
                 centerLat, centerLon, radius, null, null, null, pageable);
-        
+
         // Then
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
         verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
     }
+
+
 
 }

@@ -98,12 +98,12 @@ class DevDataSeederTest {
         verify(postRepository).saveAll(postCaptor.capture());
         List<Post> savedPosts = postCaptor.getValue();
         assertEquals(6, savedPosts.size());
-        
+
         // Verify first post content
         assertEquals("Dompet saya hilang di sekitar Margonda, tolong hubungi jika menemukan!", savedPosts.get(0).getCaption());
         assertEquals("Lost wallet near Margonda", savedPosts.get(0).getTitle());
         assertEquals("Lost Item", savedPosts.get(0).getCategory());
-        
+
         // Verify last post content
         assertEquals("ATM di ITC Depok error, sudah coba beberapa kali tapi kartu tidak bisa keluar. Hati-hati yang mau pakai!", savedPosts.get(5).getCaption());
         assertEquals("ATM issue at ITC Depok", savedPosts.get(5).getTitle());

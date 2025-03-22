@@ -87,7 +87,7 @@ class PostBuilderTest {
         // Given
         Double latitude = 37.7749;
         Double longitude = -122.4194;
-        
+
         // When
         Post post = Post.builder()
                 .caption("Required caption")
