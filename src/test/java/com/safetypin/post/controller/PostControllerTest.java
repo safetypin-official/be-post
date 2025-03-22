@@ -48,7 +48,6 @@ class PostControllerTest {
         mockPage = new PageImpl<>(new ArrayList<>());
 
         Category mockCategory = new Category();
-        mockCategory.setId(UUID.randomUUID());
         mockCategory.setName("safety");
 
         mockPost = new Post();
@@ -65,37 +64,6 @@ class PostControllerTest {
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
         validRequest.setCategory(mockCategory.getName()); // Changed from Category to String
-    }
-
-    @Test
-    void testFindAllPosts() {
-        // Mock Data
-        Post post1 = new Post();
-        post1.setId(UUID.randomUUID());
-        post1.setCaption("First Post");
-        post1.setTitle("Title 1");
-
-        Post post2 = new Post();
-        post2.setId(UUID.randomUUID());
-        post2.setCaption("Second Post");
-        post2.setTitle("Title 2");
-
-        List<Post> mockPosts = Arrays.asList(post1, post2);
-
-        // Mock Service Call
-        Mockito.when(postService.findAll()).thenReturn(mockPosts);
-
-        // Call Controller Method
-        List<Post> result = postController.findAll();
-
-        // Assertions
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("First Post", result.get(0).getCaption());
-        assertEquals("Second Post", result.get(1).getCaption());
-
-        // Verify interaction with mock
-        Mockito.verify(postService).findAll();
     }
 
     /**
@@ -182,10 +150,28 @@ class PostControllerTest {
 
     /**
      * Test with only dateTo
-     * verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
-     * }
-     * <p>
-     * /**
+     */
+    @Test
+    void whenGetPostsWithOnlyDateTo_thenSetToDateTime() {
+        Double lat = 20.0;
+        Double lon = 10.0;
+        Double radius = 10.0;
+        LocalDate dateTo = LocalDate.now();
+        LocalDateTime toDateTime = LocalDateTime.of(dateTo, LocalTime.MAX);
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+
+        when(postService.findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable))
+                .thenReturn(mockPage);
+
+        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, null, null, dateTo, page, size);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
+    }
+
+    /**
      * Test custom pagination
      */
     @Test
@@ -305,5 +291,61 @@ class PostControllerTest {
         assertFalse(response.getBody().isSuccess());
         assertEquals("Error creating post: Unexpected runtime exception", response.getBody().getMessage());
         assertNull(response.getBody().getData());
+    }
+
+    /**
+     * Test for successful retrieval of all posts
+     */
+    @Test
+    void findAll_Success() {
+        // Arrange
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+        
+        List<Post> postList = new ArrayList<>();
+        postList.add(mockPost);
+        Page<Post> postPage = new PageImpl<>(postList, pageable, 1);
+        
+        when(postService.findAllPaginated(pageable)).thenReturn(postPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.findAll(page, size);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assert postResponse != null;
+        assertTrue(postResponse.isSuccess());
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseData = (Map<String, Object>) postResponse.getData();
+        assertEquals(1L, responseData.get("totalElements"));
+        assertEquals(0, responseData.get("currentPage"));
+        assertEquals(10, responseData.get("pageSize"));
+    }
+
+    /**
+     * Test for exception during retrieval of all posts
+     */
+    @Test
+    void findAll_ExceptionThrown() {
+        // Arrange
+        int page = 0;
+        int size = 10;
+        String errorMessage = "Database error";
+        
+        when(postService.findAllPaginated(any(Pageable.class)))
+            .thenThrow(new RuntimeException(errorMessage));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.findAll(page, size);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Error retrieving posts: " + errorMessage, errorResponse.getMessage());
+        assertNull(errorResponse.getData());
     }
 }

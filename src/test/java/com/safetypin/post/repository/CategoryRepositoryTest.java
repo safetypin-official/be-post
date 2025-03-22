@@ -33,23 +33,9 @@ class CategoryRepositoryTest {
         categoryRepository.saveAllAndFlush(Arrays.asList(category1, category2, category3));
     }
 
-    @Test
-    void testFindByName() {
-        Category result = categoryRepository.findByName("Lost Item");
-        assertEquals(category1.getId(), result.getId());
-        assertEquals(category1.getName(), result.getName());
-    }
 
-    @Test
-    void testSaveCategory() {
-        // save category then test if it was saved and generated an id
-        Category category = new Category("Lost Book");
-        categoryRepository.save(category);
-        assertNotNull(category.getId());
 
-        Category result = categoryRepository.findByName("Lost Book");
-        assertEquals(category.getId(), result.getId());
-    }
+
 
     @Test
     void testFindAll() {

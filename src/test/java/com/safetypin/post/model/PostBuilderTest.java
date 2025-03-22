@@ -9,8 +9,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PostBuilderTest {
 
-    //private static final GeometryFactory geometryFactory = new GeometryFactory();
-
     @Test
     void testBuilderWithAllFields() {
         // Given
@@ -46,10 +44,14 @@ class PostBuilderTest {
     void testBuilderWithRequiredFieldsOnly() {
         // Given
         String caption = "This is a test post";
+        Double latitude = 37.7749;
+        Double longitude = -122.4194;
 
         // When
         Post post = Post.builder()
                 .caption(caption)
+                .latitude(latitude)
+                .longitude(longitude)
                 .build();
 
         // Then
@@ -58,8 +60,8 @@ class PostBuilderTest {
         assertEquals(caption, post.getCaption());
         assertNull(post.getCategory());
         assertNotNull(post.getCreatedAt()); // Should be auto-generated
-        assertNotNull(post.getLatitude());
-        assertNotNull(post.getLongitude());
+        assertEquals(latitude, post.getLatitude());
+        assertEquals(longitude, post.getLongitude());
     }
 
     @Test
@@ -82,14 +84,22 @@ class PostBuilderTest {
 
     @Test
     void testBuilderWithNoCreatedAt() {
+        // Given
+        Double latitude = 37.7749;
+        Double longitude = -122.4194;
+        
         // When
         Post post = Post.builder()
                 .caption("Required caption")
+                .latitude(latitude)
+                .longitude(longitude)
                 .build();
 
         // Then
         assertNotNull(post.getCreatedAt());
         assertTrue(post.getCreatedAt().isBefore(LocalDateTime.now().plusSeconds(1)));
         assertTrue(post.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(1)));
+        assertEquals(latitude, post.getLatitude());
+        assertEquals(longitude, post.getLongitude());
     }
 }
