@@ -1,6 +1,8 @@
 package com.safetypin.post.seeder;
 
+import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -9,6 +11,7 @@ import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
 
 @Slf4j
@@ -16,19 +19,52 @@ import java.util.Arrays;
 @Profile({"dev", "staging"})
 public class DevDataSeeder implements CommandLineRunner {
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
 
-    public DevDataSeeder(PostRepository postRepository) {
+    public DevDataSeeder(PostRepository postRepository, CategoryRepository categoryRepository) {
         this.postRepository = postRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
     public void run(String... args) {
+        // Seed categories first
+        seedCategories();
+        
+        // Then seed posts
+        seedPosts();
+    }
+    
+    private void seedCategories() {
+        if (categoryRepository.count() > 0) {
+            log.info("ℹ️ Categories already exist. Skipping category seeding.");
+            return;
+        }
+        
+        // Define categories
+        List<Category> categories = Arrays.asList(
+            new Category("Lost Item"),
+            new Category("Infrastructure Issue"),
+            new Category("Crime Watch"),
+            new Category("Lost Book"),
+            new Category("Lost Pet"),
+            new Category("Service Issue"),
+            new Category("Flooding"),
+            new Category("Stolen Vehicle")
+        );
+        
+        // Save all categories
+        categoryRepository.saveAll(categories);
+        log.info("✅ Database seeded with categories!");
+    }
+    
+    private void seedPosts() {
         if (postRepository.count() > 0) {
-            log.info("ℹ️ Data already exist. Skipping seeding.");
+            log.info("ℹ️ Posts already exist. Skipping post seeding.");
             return;
         }
 
-        // Define categories as strings
+        // Define categories as strings - these must match the names in the categories table
         String lostItem = "Lost Item";
         String infrastructureIssue = "Infrastructure Issue";
         String crimeWatch = "Crime Watch";
@@ -58,7 +94,7 @@ public class DevDataSeeder implements CommandLineRunner {
                         -6.375742, 106.822001),
 
                 new Post("Ada genangan air besar di flyover Kukusan akibat hujan deras tadi malam. Hati-hati yang melintas.", "Flooding at Kukusan flyover",
-                        infrastructureIssue, LocalDateTime.parse("2025-03-07T09:00:30.345678"),
+                        flooding, LocalDateTime.parse("2025-03-07T09:00:30.345678"),
                         -6.374209, 106.814934),
 
                 new Post("ATM di ITC Depok error, sudah coba beberapa kali tapi kartu tidak bisa keluar. Hati-hati yang mau pakai!", "ATM issue at ITC Depok",

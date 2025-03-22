@@ -30,9 +30,13 @@ public class Post extends BasePost {
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point location = geometryFactory.createPoint(new Coordinate(0.0d, 0.0d));
 
-    // Changed from Category entity to String - fix column name to match database schema
-    @Column(nullable = false, name = "category_id")
+    // Changed from UUID to String and column name to "name"
+    @Column(nullable = false, name = "name")
     private String category;
+
+    @ManyToOne
+    @JoinColumn(name = "name", referencedColumnName = "name", insertable = false, updatable = false)
+    private Category categoryEntity;
 
     // Additional fields as needed
 
@@ -42,9 +46,69 @@ public class Post extends BasePost {
         this.setTitle(title);
         this.setCategory(category);
         this.setCreatedAt(createdAt);
-        // Convert latitude and longitude to Point
-        if (latitude != null && longitude != null) {
-            this.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+        // Validate and convert latitude and longitude to Point
+        validateCoordinates(latitude, longitude);
+        this.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+    }
+
+    /**
+     * Validates that both latitude and longitude are not null
+     * @param latitude the latitude value
+     * @param longitude the longitude value
+     * @throws IllegalArgumentException if either latitude or longitude is null
+     */
+    private void validateCoordinates(Double latitude, Double longitude) {
+        if (latitude == null && longitude == null) {
+            throw new IllegalArgumentException("Both latitude and longitude cannot be null");
+        } else if (latitude == null) {
+            throw new IllegalArgumentException("Latitude cannot be null");
+        } else if (longitude == null) {
+            throw new IllegalArgumentException("Longitude cannot be null");
+        }
+    }
+
+    // Methods to get latitude and longitude from the Point
+    public Double getLatitude() {
+        return location != null ? location.getY() : null;
+    }
+
+    // Fix the method name typo and implementation
+    public void setLatitude(Double latitude) {
+        if (latitude == null) {
+            throw new IllegalArgumentException("Latitude cannot be null");
+        }
+
+        if (location != null) {
+            // Create a new Point with the updated latitude
+            location = geometryFactory.createPoint(new Coordinate(location.getX(), latitude));
+        } else {
+            // Create a new Point with the provided latitude and default longitude (0.0)
+            location = geometryFactory.createPoint(new Coordinate(0.0d, latitude));
+        }
+    }
+
+    public Double getLongitude() {
+        return location != null ? location.getX() : null;
+    }
+
+    public void setLongitude(Double longitude) {
+        if (longitude == null) {
+            throw new IllegalArgumentException("Longitude cannot be null");
+        }
+
+        if (location != null) {
+            // Create a new Point with the updated longitude
+            location = geometryFactory.createPoint(new Coordinate(longitude, location.getY()));
+        } else {
+            // Create a new Point with the provided longitude and default latitude (0.0)
+            location = geometryFactory.createPoint(new Coordinate(longitude, 0.0d));
+        }
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (getCreatedAt() == null) {
+            setCreatedAt(LocalDateTime.now());
         }
     }
 
@@ -55,43 +119,6 @@ public class Post extends BasePost {
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    // Methods to get latitude and longitude from the Point
-    public Double getLatitude() {
-        return location != null ? location.getY() : null;
-    }
-
-    // Fix the method name typo and implementation
-    public void setLatitude(Double latitude) {
-        if (location != null) {
-            // Create a new Point with the updated latitude
-            location = geometryFactory.createPoint(new Coordinate(location.getX(), latitude));
-        } else if (latitude != null) {
-            // If location is null but latitude is provided, create a new Point
-            location = geometryFactory.createPoint(new Coordinate(0, latitude));
-        }
-    }
-
-    public Double getLongitude() {
-        return location != null ? location.getX() : null;
-    }
-
-    public void setLongitude(Double longitude) {
-        if (location != null) {
-            // Create a new Point with the updated longitude
-            location = geometryFactory.createPoint(new Coordinate(longitude, location.getY()));
-        } else if (longitude != null) {
-            // If location is null but longitude is provided, create a new Point
-            location = geometryFactory.createPoint(new Coordinate(longitude, 0));
-        }
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        if (getCreatedAt() == null) {
-            setCreatedAt(LocalDateTime.now());
-        }
     }
 
     /**
@@ -158,10 +185,11 @@ public class Post extends BasePost {
             post.setCategory(category);
             post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
 
-            // Set location if latitude and longitude are provided
-            if (latitude != null && longitude != null) {
-                post.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+            // Validate and set location
+            if (latitude == null || longitude == null) {
+                throw new IllegalArgumentException("Both latitude and longitude must be provided");
             }
+            post.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
 
             return post;
         }

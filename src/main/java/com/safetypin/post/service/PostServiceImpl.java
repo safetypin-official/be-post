@@ -41,6 +41,12 @@ public class PostServiceImpl implements PostService {
     public List<Post> findAll() {
         return postRepository.findAll();
     }
+    
+    // find all with pagination
+    @Override
+    public Page<Post> findAllPaginated(Pageable pageable) {
+        return postRepository.findAll(pageable);
+    }
 
     // find posts given filter
     @Override
@@ -75,7 +81,7 @@ public class PostServiceImpl implements PostService {
             .map(post -> {
                 Map<String, Object> result = new HashMap<>();
                 
-                // Create post data with category name instead of id
+                // Create post data with category name
                 Map<String, Object> postData = new HashMap<>();
                 postData.put("id", post.getId());
                 postData.put("title", post.getTitle());
@@ -83,25 +89,7 @@ public class PostServiceImpl implements PostService {
                 postData.put("latitude", post.getLatitude());
                 postData.put("longitude", post.getLongitude());
                 postData.put("createdAt", post.getCreatedAt());
-                
-                // Get category name
-                String categoryName = null;
-                if (post.getCategory() != null) {
-                    try {
-                        UUID categoryId = UUID.fromString(post.getCategory());
-                        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-                        if (categoryOpt.isPresent()) {
-                            categoryName = categoryOpt.get().getName();
-                            postData.put("category", categoryName);
-                        } else {
-                            postData.put("category", post.getCategory()); // Fallback to ID if not found
-                        }
-                    } catch (IllegalArgumentException e) {
-                        // If category string is not a valid UUID, use it directly
-                        categoryName = post.getCategory();
-                        postData.put("category", categoryName);
-                    }
-                }
+                postData.put("category", post.getCategory()); // Now directly using the category name
                 
                 result.put("post", postData);
 
@@ -116,7 +104,7 @@ public class PostServiceImpl implements PostService {
                 }
                 
                 // Return the result with the calculated distance and category name for filtering
-                return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, categoryName));
+                return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
             })
             // Filter by the actual calculated distance (using the specified radius)
             .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
@@ -149,6 +137,12 @@ public class PostServiceImpl implements PostService {
         }
         if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
+        }
+
+        // Verify that the category exists
+        Category categoryObj = categoryRepository.findByName(category);
+        if (categoryObj == null) {
+            throw new InvalidPostDataException("Category does not exist: " + category);
         }
 
         // Create the post

@@ -31,12 +31,12 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("distanceMeters") Double distanceMeters,
             Pageable pageable);
 
-    // get posts with filter
+    // get posts with filter - Updated to use name instead of category_id
     @Query(value = "SELECT p.*, " +
             "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
             "FROM posts p " +
             "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
-            "AND (:category IS NULL OR p.category_id = CAST(:category AS uuid)) " +
+            "AND (:category IS NULL OR p.name = :category) " + 
             "AND ((:dateFrom IS NULL OR :dateTo IS NULL) OR " + 
             "     p.created_at BETWEEN :dateFrom AND :dateTo) " +
             "ORDER BY distance ASC NULLS LAST, p.id ASC",
@@ -49,13 +49,12 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("dateTo") LocalDateTime dateTo,
             Pageable pageable);
 
-    // Filter by category only - Join with categories table
+    // Filter by category only - Simplified since name is in posts table directly
     @Query(value = "SELECT p.*, " +
             "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
             "FROM posts p " +
-            "JOIN categories c ON p.category_id = c.id " +
             "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
-            "AND c.name = :category " +
+            "AND p.name = :category " +
             "ORDER BY distance ASC NULLS LAST, p.id ASC",
             nativeQuery = true)
     Page<Post> findPostsByCategory(
@@ -79,13 +78,12 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("dateTo") LocalDateTime dateTo,
             Pageable pageable);
 
-    // Filter by both category and dates - Join with categories table
+    // Filter by both category and dates - Simplified
     @Query(value = "SELECT p.*, " +
             "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
             "FROM posts p " +
-            "JOIN categories c ON p.category_id = c.id " +
             "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
-            "AND c.name = :category " +
+            "AND p.name = :category " +
             "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
             "ORDER BY distance ASC NULLS LAST, p.id ASC",
             nativeQuery = true)

@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -34,8 +36,46 @@ public class PostController {
     }
 
     @GetMapping("/all")
-    public List<Post> findAll() {
-        return postService.findAll();
+    public ResponseEntity<PostResponse> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Post> postsPage = postService.findAllPaginated(pageable);
+            
+            List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
+                .map(post -> {
+                    Map<String, Object> postData = new HashMap<>();
+                    postData.put("id", post.getId());
+                    postData.put("title", post.getTitle());
+                    postData.put("caption", post.getCaption());
+                    postData.put("latitude", post.getLatitude());
+                    postData.put("longitude", post.getLongitude());
+                    postData.put("createdAt", post.getCreatedAt());
+                    postData.put("category", post.getCategory());
+                    return postData;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> paginationData = Map.of(
+                "content", formattedPosts,
+                "totalPages", postsPage.getTotalPages(),
+                "totalElements", postsPage.getTotalElements(),
+                "currentPage", postsPage.getNumber(),
+                "pageSize", postsPage.getSize(),
+                "hasNext", postsPage.hasNext(),
+                "hasPrevious", postsPage.hasPrevious()
+            );
+            
+            PostResponse response = new PostResponse(true, null, paginationData);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(response);
+        } catch (Exception e) {
+            PostResponse errorResponse = new PostResponse(
+                false, "Error retrieving posts: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
+        }
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
