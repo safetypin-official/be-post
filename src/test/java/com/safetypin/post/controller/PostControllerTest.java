@@ -291,7 +291,7 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
-        assertEquals("Error creating post: Unexpected runtime exception", response.getBody().getMessage());
+        assertEquals("Error processing request: Unexpected runtime exception", response.getBody().getMessage());
         assertNull(response.getBody().getData());
     }
 
@@ -347,7 +347,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
         assertFalse(errorResponse.isSuccess());
-        assertEquals("Error retrieving posts: " + errorMessage, errorResponse.getMessage());
+        assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
         assertNull(errorResponse.getData());
     }
 
