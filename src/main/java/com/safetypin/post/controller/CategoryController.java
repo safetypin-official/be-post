@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/posts/category")
 public class CategoryController {
     private final CategoryService categoryService;
 
