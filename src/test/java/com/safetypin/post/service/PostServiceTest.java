@@ -21,10 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -523,6 +520,140 @@ class PostServiceTest {
         verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
     }
 
-
+    @Test
+    void testFindPostsByDistanceFeed_SuccessWithSorting() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        Pageable pageable = PageRequest.of(0, 10);
+        
+        // Create posts at different distances
+        Post nearPost = new Post();
+        nearPost.setLocation(geometryFactory.createPoint(new Coordinate(0.01, 0.01))); // very close
+        nearPost.setLatitude(0.01);
+        nearPost.setLongitude(0.01);
+        nearPost.setCategory("Safety");
+        
+        Post midPost = new Post();
+        midPost.setLocation(geometryFactory.createPoint(new Coordinate(0.05, 0.05))); // medium distance
+        midPost.setLatitude(0.05);
+        midPost.setLongitude(0.05);
+        midPost.setCategory("Crime");
+        
+        Post farPost = new Post();
+        farPost.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1))); // furthest
+        farPost.setLatitude(0.1);
+        farPost.setLongitude(0.1);
+        farPost.setCategory("Safety");
+        
+        List<Post> allPosts = Arrays.asList(farPost, midPost, nearPost); // Intentionally unsorted
+        
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.getContent().size());
+        
+        // Verify sorting (nearest first)
+        double firstDistance = (Double) result.getContent().get(0).get("distance");
+        double secondDistance = (Double) result.getContent().get(1).get("distance");
+        double thirdDistance = (Double) result.getContent().get(2).get("distance");
+        
+        assertTrue(firstDistance < secondDistance);
+        assertTrue(secondDistance < thirdDistance);
+        
+        // Verify content is correctly mapped
+        Map<String, Object> firstPost = (Map<String, Object>) result.getContent().get(0).get("post");
+        assertNotNull(firstPost);
+        assertEquals("Safety", firstPost.get("category"));
+        assertEquals(0.01, firstPost.get("latitude"));
+    }
+    
+    @Test
+    void testFindPostsByDistanceFeed_EmptyResult() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        Pageable pageable = PageRequest.of(0, 10);
+        
+        when(postRepository.findAll()).thenReturn(Collections.emptyList());
+        
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+        
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+    }
+    
+    @Test
+    void testFindPostsByDistanceFeed_Pagination() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        int pageSize = 2;
+        
+        // Create multiple posts
+        List<Post> allPosts = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            Post post = new Post();
+            post.setLocation(geometryFactory.createPoint(new Coordinate(0.01 * i, 0.01 * i)));
+            post.setLatitude(0.01 * i);
+            post.setLongitude(0.01 * i);
+            post.setCategory("Category " + i);
+            allPosts.add(post);
+        }
+        
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        // When - First page
+        Page<Map<String, Object>> firstPageResult = postService.findPostsByDistanceFeed(
+                userLat, userLon, PageRequest.of(0, pageSize));
+        
+        // Then - First page
+        assertEquals(2, firstPageResult.getContent().size());
+        assertEquals(5, firstPageResult.getTotalElements());
+        assertEquals(3, firstPageResult.getTotalPages());
+        assertTrue(firstPageResult.hasNext());
+        assertFalse(firstPageResult.hasPrevious());
+        
+        // When - Second page
+        Page<Map<String, Object>> secondPageResult = postService.findPostsByDistanceFeed(
+                userLat, userLon, PageRequest.of(1, pageSize));
+        
+        // Then - Second page
+        assertEquals(2, secondPageResult.getContent().size());
+        assertEquals(5, secondPageResult.getTotalElements());
+        assertEquals(1, secondPageResult.getNumber());
+        assertTrue(secondPageResult.hasNext());
+        assertTrue(secondPageResult.hasPrevious());
+    }
+    
+    @Test
+    void testFindPostsByDistanceFeed_PaginationBeyondAvailableData() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        Pageable pageable = PageRequest.of(5, 10); // Page beyond available data
+        
+        List<Post> allPosts = Arrays.asList(post1, post2, post3); // Just 3 posts
+        
+        when(postRepository.findAll()).thenReturn(allPosts);
+        
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+        
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(3, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertFalse(result.hasNext());
+        assertTrue(result.hasPrevious());
+    }
 
 }

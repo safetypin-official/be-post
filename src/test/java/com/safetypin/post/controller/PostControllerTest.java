@@ -350,4 +350,105 @@ class PostControllerTest {
         assertEquals("Error retrieving posts: " + errorMessage, errorResponse.getMessage());
         assertNull(errorResponse.getData());
     }
+
+    /**
+     * Test successful retrieval of posts feed by distance
+     */
+    @Test
+    void getPostsFeedByDistance_Success() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+        
+        when(postService.findPostsByDistanceFeed(lat, lon, pageable))
+                .thenReturn(mockPage);
+                
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, page, size);
+        
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        verify(postService).findPostsByDistanceFeed(lat, lon, pageable);
+    }
+    
+    /**
+     * Test missing latitude parameter
+     */
+    @Test
+    void getPostsFeedByDistance_MissingLatitude() {
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(null, 10.0, 0, 10);
+        
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+    
+    /**
+     * Test missing longitude parameter
+     */
+    @Test
+    void getPostsFeedByDistance_MissingLongitude() {
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(20.0, null, 0, 10);
+        
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+    
+    /**
+     * Test service throwing InvalidPostDataException
+     */
+    @Test
+    void getPostsFeedByDistance_InvalidPostDataException() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), any(Pageable.class)))
+                .thenThrow(new InvalidPostDataException("Invalid post data"));
+                
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, 0, 10);
+        
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Invalid post data", errorResponse.getMessage());
+    }
+    
+    /**
+     * Test service throwing generic Exception
+     */
+    @Test
+    void getPostsFeedByDistance_GenericException() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        String errorMessage = "Database error";
+        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), any(Pageable.class)))
+                .thenThrow(new RuntimeException(errorMessage));
+                
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, 0, 10);
+        
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
+    }
 }
