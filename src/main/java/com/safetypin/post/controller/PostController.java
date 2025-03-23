@@ -3,7 +3,6 @@ package com.safetypin.post.controller;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +19,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -35,8 +36,46 @@ public class PostController {
     }
 
     @GetMapping("/all")
-    public List<Post> findAll() {
-        return postService.findAll();
+    public ResponseEntity<PostResponse> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Post> postsPage = postService.findAllPaginated(pageable);
+
+            List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
+                    .map(post -> {
+                        Map<String, Object> postData = new HashMap<>();
+                        postData.put("id", post.getId());
+                        postData.put("title", post.getTitle());
+                        postData.put("caption", post.getCaption());
+                        postData.put("latitude", post.getLatitude());
+                        postData.put("longitude", post.getLongitude());
+                        postData.put("createdAt", post.getCreatedAt());
+                        postData.put("category", post.getCategory());
+                        return postData;
+                    })
+                    .collect(Collectors.toList());
+
+            Map<String, Object> paginationData = Map.of(
+                    "content", formattedPosts,
+                    "totalPages", postsPage.getTotalPages(),
+                    "totalElements", postsPage.getTotalElements(),
+                    "currentPage", postsPage.getNumber(),
+                    "pageSize", postsPage.getSize(),
+                    "hasNext", postsPage.hasNext(),
+                    "hasPrevious", postsPage.hasPrevious()
+            );
+
+            PostResponse response = new PostResponse(true, null, paginationData);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(response);
+        } catch (Exception e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, "Error retrieving posts: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        }
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -44,7 +83,7 @@ public class PostController {
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(required = false, defaultValue = "10.0") Double radius,
-            Category category,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(defaultValue = "0") int page,
@@ -72,7 +111,18 @@ public class PostController {
             Page<Map<String, Object>> posts = postService.findPostsByLocation(
                     lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
 
-            PostResponse postResponse = new PostResponse(true, null, posts);
+            // Create response with pagination metadata
+            Map<String, Object> paginationData = Map.of(
+                    "content", posts.getContent(),
+                    "totalPages", posts.getTotalPages(),
+                    "totalElements", posts.getTotalElements(),
+                    "currentPage", posts.getNumber(),
+                    "pageSize", posts.getSize(),
+                    "hasNext", posts.hasNext(),
+                    "hasPrevious", posts.hasPrevious()
+            );
+
+            PostResponse postResponse = new PostResponse(true, null, paginationData);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
@@ -101,29 +151,40 @@ public class PostController {
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest request) {
         try {
-            // Validation is moved to service layer to use custom exceptions
-            Post createdPost = postService.createPost(
+            Post post = postService.createPost(
                     request.getTitle(),
                     request.getCaption(),
                     request.getLatitude(),
                     request.getLongitude(),
-                    request.getCategory());
+                    request.getCategory()
+            );
 
-            PostResponse postResponse = new PostResponse(
-                    true, "Post created successfully", createdPost);
+            PostResponse response = new PostResponse(
+                    true,
+                    "Post created successfully",
+                    post
+            );
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(postResponse);
+                    .body(response);
         } catch (InvalidPostDataException e) {
             PostResponse errorResponse = new PostResponse(
-                    false, "Invalid post data: " + e.getMessage(), null);
+                    false,
+                    e.getMessage(),
+                    null
+            );
+
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
         } catch (Exception e) {
             PostResponse errorResponse = new PostResponse(
-                    false, "Error creating post: " + e.getMessage(), null);
+                    false,
+                    "Error creating post: " + e.getMessage(),
+                    null
+            );
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);

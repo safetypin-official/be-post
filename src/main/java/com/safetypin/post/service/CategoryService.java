@@ -12,10 +12,12 @@ public interface CategoryService {
     Category createCategory(String categoryName);
 
     Category getCategoryByName(String categoryName);
+
     List<Category> getAllCategories();
 
     Category updateCategory(Category category) throws CategoryException;
 
     void deleteCategory(Category category) throws CategoryException;
 
+    void deleteCategoryByName(String categoryName) throws CategoryException;
 }

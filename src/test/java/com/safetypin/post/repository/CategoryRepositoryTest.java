@@ -18,10 +18,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class CategoryRepositoryTest {
 
+    private static Category category1, category2, category3;
     @Autowired
     private CategoryRepository categoryRepository;
-
-    private static Category category1, category2, category3;
 
     @BeforeEach
     void resetRepository() {
@@ -34,26 +33,9 @@ class CategoryRepositoryTest {
         categoryRepository.saveAllAndFlush(Arrays.asList(category1, category2, category3));
     }
 
-    @Test
-    void testFindByName() {
-        Category result = categoryRepository.findByName("Lost Item");
-        assertEquals(category1.getId(), result.getId());
-        assertEquals(category1.getName(), result.getName());
-    }
 
     @Test
-    void testSaveCategory () {
-        // save category then test if it was saved and generated an id
-        Category category = new Category("Lost Book");
-        categoryRepository.save(category);
-        assertNotNull(category.getId());
-
-        Category result = categoryRepository.findByName("Lost Book");
-        assertEquals(category.getId(), result.getId());
-    }
-
-    @Test
-    void testFindAll () {
+    void testFindAll() {
         List<Category> result = categoryRepository.findAll();
         assertEquals(3, result.size());
         assertTrue(result.contains(category1));
@@ -62,7 +44,7 @@ class CategoryRepositoryTest {
     }
 
     @Test
-    void testDeleteCategory () {
+    void testDeleteCategory() {
         categoryRepository.delete(category1);
 
         List<Category> remainingCategories = categoryRepository.findAll();

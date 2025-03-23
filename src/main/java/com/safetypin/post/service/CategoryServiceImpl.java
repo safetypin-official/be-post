@@ -36,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category getCategoryByName(String categoryName)  {
+    public Category getCategoryByName(String categoryName) {
         return categoryRepository.findByName(categoryName);
     }
 
@@ -47,22 +47,34 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category updateCategory(Category category) throws CategoryException {
-        Optional<Category> toUpdate = categoryRepository.findById(category.getId());
+        Optional<Category> toUpdate = categoryRepository.findById(category.getName());
 
         if (toUpdate.isPresent()) {
             Category updatedCategory = toUpdate.get();
-            updatedCategory.setName(category.getName());
+            updatedCategory.setDescription(category.getDescription());
             return categoryRepository.save(updatedCategory);
         } else {
-            log.error("Category with id: {}, not found", category.getId());
+            log.error("Category with name: {}, not found", category.getName());
             throw new CategoryException("Category not found");
         }
     }
 
     @Override
     public void deleteCategory(Category category) throws CategoryException {
-        if (!categoryRepository.existsById(category.getId())) {
-            throw new CategoryException("Category with id: " + category.getId() + " not found");
+        if (!categoryRepository.existsById(category.getName())) {
+            throw new CategoryException("Category with name: " + category.getName() + " not found");
+        }
+
+        categoryRepository.delete(category);
+        log.info("Category: {}; deleted", category);
+    }
+
+    @Override
+    public void deleteCategoryByName(String categoryName) throws CategoryException {
+        Category category = categoryRepository.findByName(categoryName);
+        if (category == null) {
+            log.error("Category with name: {}, not found", categoryName);
+            throw new CategoryException("Category with name: " + categoryName + " not found");
         }
 
         categoryRepository.delete(category);
