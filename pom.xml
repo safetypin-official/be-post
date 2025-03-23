@@ -194,6 +194,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.20.19</version> <!-- Gunakan versi terbaru jika ada -->
+		</dependency>
+
 	</dependencies>
 
 	<build>
