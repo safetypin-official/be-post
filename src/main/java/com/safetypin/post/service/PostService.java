@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public interface PostService {
@@ -27,4 +28,6 @@ public interface PostService {
             Double userLat, Double userLon, Pageable pageable);
 
     Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable);
+
+    Post findById(UUID id);
 }

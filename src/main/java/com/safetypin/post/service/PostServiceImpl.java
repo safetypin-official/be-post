@@ -2,6 +2,7 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
@@ -226,5 +227,11 @@ public class PostServiceImpl implements PostService {
             log.error("Error saving post: {}", e.getMessage());
             throw new PostException("Failed to save the post: " + e.getMessage());
         }
+    }
+
+    @Override
+    public Post findById(UUID id) {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new PostNotFoundException("Post not found with id: " + id));
     }
 }
