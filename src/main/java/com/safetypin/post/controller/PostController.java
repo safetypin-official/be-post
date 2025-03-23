@@ -65,7 +65,7 @@ public class PostController {
     private Pageable createPageable(int page, int size) {
         return PageRequest.of(page, size);
     }
-    
+
     // Generic exception handler for controller methods
     private ResponseEntity<PostResponse> executeWithExceptionHandling(
             Supplier<ResponseEntity<PostResponse>> action,
@@ -80,7 +80,7 @@ public class PostController {
             return createErrorResponse(errorStatus, "Error processing request: " + e.getMessage());
         }
     }
-    
+
     // Helper method to create error responses
     private ResponseEntity<PostResponse> createErrorResponse(HttpStatus status, String message) {
         PostResponse errorResponse = new PostResponse(false, message, null);
@@ -88,7 +88,7 @@ public class PostController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(errorResponse);
     }
-    
+
     // Helper method to create success responses
     private ResponseEntity<PostResponse> createSuccessResponse(Object data) {
         PostResponse response = new PostResponse(true, null, data);
@@ -96,7 +96,7 @@ public class PostController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    
+
     // Helper method to validate location parameters
     private void validateLocationParams(Double lat, Double lon) {
         if (lat == null || lon == null) {
@@ -118,7 +118,7 @@ public class PostController {
 
             Map<String, Object> paginationData = createPaginationData(
                     new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements()));
-            
+
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -154,7 +154,7 @@ public class PostController {
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
-            
+
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -165,20 +165,20 @@ public class PostController {
             @RequestParam Double lon,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         return executeWithExceptionHandling(() -> {
             // Validate location parameters
             validateLocationParams(lat, lon);
-            
+
             // Set up pagination
             Pageable pageable = createPageable(page, size);
-            
+
             // Get posts sorted by distance
             Page<Map<String, Object>> posts = postService.findPostsByDistanceFeed(lat, lon, pageable);
-            
+
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
-            
+
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -187,17 +187,17 @@ public class PostController {
     public ResponseEntity<PostResponse> getPostsFeedByTimestamp(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         return executeWithExceptionHandling(() -> {
             // Set up pagination
             Pageable pageable = createPageable(page, size);
-            
+
             // Get posts sorted by timestamp
             Page<Map<String, Object>> posts = postService.findPostsByTimestampFeed(pageable);
-            
+
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
-            
+
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }

@@ -19,17 +19,15 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
+    private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final GeometryFactory geometryFactory;
-    
-    private static final String DISTANCE_KEY = "distance";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory) {
@@ -135,35 +133,35 @@ public class PostServiceImpl implements PostService {
     public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, Pageable pageable) {
         // Get all posts
         List<Post> allPosts = postRepository.findAll();
-        
+
         // Calculate distance and create result objects
         List<Map<String, Object>> postsWithDistance = allPosts.stream()
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
-                    
+
                     // Use helper method instead of duplicated code
                     Map<String, Object> postData = mapPostToData(post);
                     result.put("post", postData);
-                    
+
                     // Calculate distance from user
                     double distance = DistanceCalculator.calculateDistance(
                             userLat, userLon, post.getLatitude(), post.getLongitude());
                     result.put(DISTANCE_KEY, distance);
-                    
+
                     return result;
                 })
                 // Sort by distance (nearest first)
                 .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
                 .toList();
-        
+
         // Manual pagination
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
-        
+
         // Create sub-list for current page - handle case when start might be out of bounds
-        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ? 
+        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ?
                 Collections.emptyList() : postsWithDistance.subList(start, end);
-        
+
         // Return paginated result
         return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
     }
@@ -172,23 +170,23 @@ public class PostServiceImpl implements PostService {
     public Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable) {
         // Get posts sorted by timestamp (newest first)
         Page<Post> postsPage = postRepository.findAll(pageable);
-        
+
         // Transform Post entities to response format
         List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-            .map(post -> {
-                Map<String, Object> result = new HashMap<>();
-                
-                // Use helper method instead of duplicated code
-                Map<String, Object> postData = mapPostToData(post);
-                result.put("post", postData);
-                
-                return result;
-            })
-            .sorted(Comparator.comparing(post -> 
-                ((LocalDateTime)((Map<String, Object>)post.get("post")).get("createdAt")), 
-                Comparator.reverseOrder()))
-            .toList();
-        
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+
+                    return result;
+                })
+                .sorted(Comparator.comparing(post ->
+                                ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
+                        Comparator.reverseOrder()))
+                .toList();
+
         // Return paginated result
         return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());
     }

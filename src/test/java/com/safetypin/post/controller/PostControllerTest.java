@@ -362,13 +362,13 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(postService.findPostsByDistanceFeed(lat, lon, pageable))
                 .thenReturn(mockPage);
-                
+
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, page, size);
-        
+
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
@@ -376,7 +376,7 @@ class PostControllerTest {
         assertNotNull(postResponse.getData());
         verify(postService).findPostsByDistanceFeed(lat, lon, pageable);
     }
-    
+
     /**
      * Test missing latitude parameter
      */
@@ -384,7 +384,7 @@ class PostControllerTest {
     void getPostsFeedByDistance_MissingLatitude() {
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(null, 10.0, 0, 10);
-        
+
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
@@ -392,7 +392,7 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
         verifyNoInteractions(postService);
     }
-    
+
     /**
      * Test missing longitude parameter
      */
@@ -400,7 +400,7 @@ class PostControllerTest {
     void getPostsFeedByDistance_MissingLongitude() {
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(20.0, null, 0, 10);
-        
+
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
@@ -408,7 +408,7 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
         verifyNoInteractions(postService);
     }
-    
+
     /**
      * Test service throwing InvalidPostDataException
      */
@@ -419,17 +419,17 @@ class PostControllerTest {
         Double lon = 10.0;
         when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), any(Pageable.class)))
                 .thenThrow(new InvalidPostDataException("Invalid post data"));
-                
+
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, 0, 10);
-        
+
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
         assertFalse(errorResponse.isSuccess());
         assertEquals("Invalid post data", errorResponse.getMessage());
     }
-    
+
     /**
      * Test service throwing generic Exception
      */
@@ -441,10 +441,10 @@ class PostControllerTest {
         String errorMessage = "Database error";
         when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), any(Pageable.class)))
                 .thenThrow(new RuntimeException(errorMessage));
-                
+
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, 0, 10);
-        
+
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
@@ -461,13 +461,13 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
-        
+
         when(postService.findPostsByTimestampFeed(pageable))
                 .thenReturn(mockPage);
-                
+
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
-        
+
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
@@ -475,7 +475,7 @@ class PostControllerTest {
         assertNotNull(postResponse.getData());
         verify(postService).findPostsByTimestampFeed(pageable);
     }
-    
+
     /**
      * Test exception during retrieval of posts feed by timestamp
      */
@@ -485,13 +485,13 @@ class PostControllerTest {
         int page = 0;
         int size = 10;
         String errorMessage = "Database error";
-        
+
         when(postService.findPostsByTimestampFeed(any(Pageable.class)))
                 .thenThrow(new RuntimeException(errorMessage));
-                
+
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
-        
+
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
