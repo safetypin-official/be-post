@@ -656,4 +656,77 @@ class PostServiceTest {
         assertTrue(result.hasPrevious());
     }
 
+    @Test
+    void testFindPostsByTimestampFeed_Success() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Post> posts = Arrays.asList(post1, post2, post3);
+        Page<Post> postPage = new PageImpl<>(posts, pageable, posts.size());
+        
+        when(postRepository.findAll(pageable)).thenReturn(postPage);
+        
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(pageable);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.getContent().size());
+        verify(postRepository).findAll(pageable);
+        
+        // Verify sorting (newest first)
+        List<Map<String, Object>> resultContent = result.getContent();
+        
+        // Check that the first post has the most recent date (post3 has tomorrow date)
+        Map<String, Object> firstPostMap = resultContent.get(0);
+        Map<String, Object> firstPostData = (Map<String, Object>) firstPostMap.get("post");
+        assertEquals(post3.getCreatedAt(), firstPostData.get("createdAt"));
+        
+        // Check that the last post has the oldest date (post2 has yesterday date)
+        Map<String, Object> lastPostMap = resultContent.get(2);
+        Map<String, Object> lastPostData = (Map<String, Object>) lastPostMap.get("post");
+        assertEquals(post2.getCreatedAt(), lastPostData.get("createdAt"));
+    }
+
+    @Test
+    void testFindPostsByTimestampFeed_EmptyResult() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+        
+        when(postRepository.findAll(pageable)).thenReturn(emptyPage);
+        
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(pageable);
+        
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+        verify(postRepository).findAll(pageable);
+    }
+
+    @Test
+    void testFindPostsByTimestampFeed_Pagination() {
+        // Given
+        int pageSize = 2;
+        Pageable firstPageable = PageRequest.of(0, pageSize);
+        
+        List<Post> allPosts = Arrays.asList(post1, post2, post3);
+        Page<Post> firstPage = new PageImpl<>(
+                allPosts.subList(0, 2), firstPageable, allPosts.size());
+        
+        when(postRepository.findAll(firstPageable)).thenReturn(firstPage);
+        
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(firstPageable);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.getContent().size());
+        assertEquals(3, result.getTotalElements());
+        assertEquals(2, result.getTotalPages());
+        assertTrue(result.hasNext());
+        assertFalse(result.hasPrevious());
+        verify(postRepository).findAll(firstPageable);
+    }
 }

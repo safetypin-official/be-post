@@ -451,4 +451,51 @@ class PostControllerTest {
         assertFalse(errorResponse.isSuccess());
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
     }
+
+    /**
+     * Test successful retrieval of posts feed by timestamp
+     */
+    @Test
+    void getPostsFeedByTimestamp_Success() {
+        // Arrange
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+        
+        when(postService.findPostsByTimestampFeed(pageable))
+                .thenReturn(mockPage);
+                
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
+        
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        verify(postService).findPostsByTimestampFeed(pageable);
+    }
+    
+    /**
+     * Test exception during retrieval of posts feed by timestamp
+     */
+    @Test
+    void getPostsFeedByTimestamp_Exception() {
+        // Arrange
+        int page = 0;
+        int size = 10;
+        String errorMessage = "Database error";
+        
+        when(postService.findPostsByTimestampFeed(any(Pageable.class)))
+                .thenThrow(new RuntimeException(errorMessage));
+                
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
+        
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
+    }
 }
