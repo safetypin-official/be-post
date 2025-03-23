@@ -22,4 +22,9 @@ public interface PostService {
     List<Post> findAll();
 
     Page<Post> findAllPaginated(Pageable pageable);
+
+    Page<Map<String, Object>> findPostsByDistanceFeed(
+            Double userLat, Double userLon, Pageable pageable);
+
+    Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable);
 }

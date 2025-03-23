@@ -39,8 +39,7 @@ class CategoryServiceTest {
     void testCreateCategory_Success() {
         // Arrange
         when(categoryRepository.saveAndFlush(any(Category.class))).thenAnswer(invocation -> {
-            Category category = invocation.getArgument(0);
-            return category;
+            return invocation.<Category>getArgument(0);
         });
 
         // Act

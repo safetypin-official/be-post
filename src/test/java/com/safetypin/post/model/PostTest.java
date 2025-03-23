@@ -199,41 +199,41 @@ class PostTest {
 
     @Test
     void testBuilderThrowsExceptionWhenCoordinatesAreNotProvided() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            Post.builder()
-                    .caption("Test content")
-                    .title("Test title")
-                    .category("Test category")
-                    .build();
-        });
+        Post.Builder builder = Post.builder()
+                .caption("Test content")
+                .title("Test title")
+                .category("Test category");
+
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                builder::build);
 
         assertEquals("Both latitude and longitude must be provided", exception.getMessage());
     }
 
     @Test
     void testBuilderThrowsExceptionWhenOnlyLatitudeIsProvided() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            Post.builder()
-                    .caption("Test content")
-                    .title("Test title")
-                    .category("Test category")
-                    .latitude(20.0)
-                    .build();
-        });
+        Post.Builder builder = Post.builder()
+                .caption("Test content")
+                .title("Test title")
+                .category("Test category")
+                .latitude(20.0);
+
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                builder::build);
 
         assertEquals("Both latitude and longitude must be provided", exception.getMessage());
     }
 
     @Test
     void testBuilderThrowsExceptionWhenOnlyLongitudeIsProvided() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            Post.builder()
-                    .caption("Test content")
-                    .title("Test title")
-                    .category("Test category")
-                    .longitude(10.0)
-                    .build();
-        });
+        Post.Builder builder = Post.builder()
+                .caption("Test content")
+                .title("Test title")
+                .category("Test category")
+                .longitude(10.0);
+
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                builder::build);
 
         assertEquals("Both latitude and longitude must be provided", exception.getMessage());
     }

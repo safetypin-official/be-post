@@ -19,12 +19,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
+    private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final GeometryFactory geometryFactory;
@@ -34,6 +34,19 @@ public class PostServiceImpl implements PostService {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
+    }
+
+    // Add this helper method to map Post to Map
+    private Map<String, Object> mapPostToData(Post post) {
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("id", post.getId());
+        postData.put("title", post.getTitle());
+        postData.put("caption", post.getCaption());
+        postData.put("latitude", post.getLatitude());
+        postData.put("longitude", post.getLongitude());
+        postData.put("createdAt", post.getCreatedAt());
+        postData.put("category", post.getCategory());
+        return postData;
     }
 
     // find all (debugging purposes)
@@ -81,16 +94,8 @@ public class PostServiceImpl implements PostService {
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
 
-                    // Create post data with category name
-                    Map<String, Object> postData = new HashMap<>();
-                    postData.put("id", post.getId());
-                    postData.put("title", post.getTitle());
-                    postData.put("caption", post.getCaption());
-                    postData.put("latitude", post.getLatitude());
-                    postData.put("longitude", post.getLongitude());
-                    postData.put("createdAt", post.getCreatedAt());
-                    postData.put("category", post.getCategory()); // Now directly using the category name
-
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
                     result.put("post", postData);
 
                     double distance = 0.0;
@@ -98,9 +103,9 @@ public class PostServiceImpl implements PostService {
                         distance = DistanceCalculator.calculateDistance(
                                 centerLat, centerLon, post.getLatitude(), post.getLongitude()
                         );
-                        result.put("distance", distance);
+                        result.put(DISTANCE_KEY, distance);
                     } else {
-                        result.put("distance", distance);
+                        result.put(DISTANCE_KEY, distance);
                     }
 
                     // Return the result with the calculated distance and category name for filtering
@@ -114,7 +119,7 @@ public class PostServiceImpl implements PostService {
                                 entry.getValue().getValue().equalsIgnoreCase(category)))
                 // Extract just the result map
                 .map(AbstractMap.SimpleEntry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
         // Create a new page with the filtered results
         return new PageImpl<>(
@@ -122,6 +127,68 @@ public class PostServiceImpl implements PostService {
                 pageable,
                 filteredResults.size()
         );
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, Pageable pageable) {
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+
+        // Calculate distance and create result objects
+        List<Map<String, Object>> postsWithDistance = allPosts.stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+
+                    // Calculate distance from user
+                    double distance = DistanceCalculator.calculateDistance(
+                            userLat, userLon, post.getLatitude(), post.getLongitude());
+                    result.put(DISTANCE_KEY, distance);
+
+                    return result;
+                })
+                // Sort by distance (nearest first)
+                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
+                .toList();
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
+
+        // Create sub-list for current page - handle case when start might be out of bounds
+        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ?
+                Collections.emptyList() : postsWithDistance.subList(start, end);
+
+        // Return paginated result
+        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable) {
+        // Get posts sorted by timestamp (newest first)
+        Page<Post> postsPage = postRepository.findAll(pageable);
+
+        // Transform Post entities to response format
+        List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+
+                    return result;
+                })
+                .sorted(Comparator.comparing(post ->
+                                ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
+                        Comparator.reverseOrder()))
+                .toList();
+
+        // Return paginated result
+        return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());
     }
 
     @Override

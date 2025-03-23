@@ -10,6 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -21,10 +25,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -41,15 +43,41 @@ class PostServiceTest {
     private PostRepository postRepository;
     @Mock
     private CategoryRepository categoryRepository;
-    private GeometryFactory geometryFactory;    private final LocalDateTime
+    private GeometryFactory geometryFactory;
+    private PostServiceImpl postService;    private final LocalDateTime
             now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
-    private PostServiceImpl postService;
     private Post post1, post2, post3;
     private Post postWithoutLocation;
     private Category safetyCategory;
-    private Category crimeCategory;
+
+    /**
+     * Arguments provider for title and content validation tests
+     */
+    private static Stream<Arguments> titleAndContentValidationProvider() {
+        return Stream.of(
+                // title, content, fieldName, expectedMessage
+                Arguments.of(null, "Valid content", "title", "Title is required"),
+                Arguments.of("", "Valid content", "title", "Title is required"),
+                Arguments.of("   ", "Valid content", "title", "Title is required"),
+                Arguments.of("Valid title", null, "content", "Content is required"),
+                Arguments.of("Valid title", "", "content", "Content is required"),
+                Arguments.of("Valid title", "   ", "content", "Content is required")
+        );
+    }
+
+    /**
+     * Arguments provider for category validation tests
+     */
+    private static Stream<Arguments> categoryValidationProvider() {
+        return Stream.of(
+                // categoryName, expectedMessage
+                Arguments.of(null, "Category is required"),
+                Arguments.of("", "Category is required"),
+                Arguments.of("   ", "Category is required")
+        );
+    }
 
     @BeforeEach
     void setup() {
@@ -77,38 +105,37 @@ class PostServiceTest {
         postWithoutLocation.setCreatedAt(now);
 
         safetyCategory = new Category("Safety");
-        crimeCategory = new Category("Crime");
     }
 
-    @Test
-    void testCreatePost_NullTitle() {
+    @ParameterizedTest
+    @MethodSource("titleAndContentValidationProvider")
+    void testCreatePostTitleAndContentValidation(String title, String content, String fieldName, String expectedMessage) {
         // Given
-        String title = null;
-        String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
         Category category = safety;
 
         // When & Then
-        assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
+        assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
-    @Test
-    void testCreatePost_NullContent() {
+    @ParameterizedTest
+    @MethodSource("categoryValidationProvider")
+    void testCreatePostCategoryValidation(String categoryName, String expectedMessage) {
         // Given
         String title = "Test Post";
-        String content = null;
+        String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
-        Category category = safety;
 
         // When & Then
-        assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, categoryName)
         );
+        assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
@@ -122,9 +149,9 @@ class PostServiceTest {
         Category category = safety;
 
         // When & Then
-        assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
+        assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
@@ -142,74 +169,6 @@ class PostServiceTest {
     }
 
     @Test
-    void testCreatePost_EmptyTitle() {
-        // Given
-        String title = "";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Title is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_WhitespaceTitle() {
-        // Given
-        String title = "   ";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Title is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_EmptyContent() {
-        // Given
-        String title = "Test Post";
-        String content = "";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Content is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_WhitespaceContent() {
-        // Given
-        String title = "Test Post";
-        String content = "    ";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Content is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
     void testCreatePost_NullLongitude() {
         // Given
         String title = "Test Post";
@@ -219,61 +178,9 @@ class PostServiceTest {
         Category category = safety;
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_NullCategory() {
-        // Given
-        String title = "Test Post";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = null;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
-        );
-        assertEquals("Category is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_EmptyCategory() {
-        // Given
-        String title = "Test Post";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = "";
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
-        );
-        assertEquals("Category is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_WhitespaceCategory() {
-        // Given
-        String title = "Test Post";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = "   ";
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
-        );
-        assertEquals("Category is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
@@ -371,8 +278,6 @@ class PostServiceTest {
         verify(postRepository).findAll(pageable);
     }
 
-    // Test category UUID handling in findPostsByLocation
-
     @Test
     void testCreatePost_Success() {
         // Given
@@ -403,6 +308,8 @@ class PostServiceTest {
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
     }
+
+    // Test category UUID handling in findPostsByLocation
 
     @Test
     void testCreatePost_NonExistentCategory() {
@@ -523,6 +430,215 @@ class PostServiceTest {
         verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
     }
 
+    @Test
+    void testFindPostsByDistanceFeed_SuccessWithSorting() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create posts at different distances
+        Post nearPost = new Post();
+        nearPost.setLocation(geometryFactory.createPoint(new Coordinate(0.01, 0.01))); // very close
+        nearPost.setLatitude(0.01);
+        nearPost.setLongitude(0.01);
+        nearPost.setCategory("Safety");
+
+        Post midPost = new Post();
+        midPost.setLocation(geometryFactory.createPoint(new Coordinate(0.05, 0.05))); // medium distance
+        midPost.setLatitude(0.05);
+        midPost.setLongitude(0.05);
+        midPost.setCategory("Crime");
+
+        Post farPost = new Post();
+        farPost.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1))); // furthest
+        farPost.setLatitude(0.1);
+        farPost.setLongitude(0.1);
+        farPost.setCategory("Safety");
+
+        List<Post> allPosts = Arrays.asList(farPost, midPost, nearPost); // Intentionally unsorted
+
+        when(postRepository.findAll()).thenReturn(allPosts);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.getContent().size());
+
+        // Verify sorting (nearest first)
+        double firstDistance = (Double) result.getContent().get(0).get("distance");
+        double secondDistance = (Double) result.getContent().get(1).get("distance");
+        double thirdDistance = (Double) result.getContent().get(2).get("distance");
+
+        assertTrue(firstDistance < secondDistance);
+        assertTrue(secondDistance < thirdDistance);
+
+        // Verify content is correctly mapped
+        Map<String, Object> firstPost = (Map<String, Object>) result.getContent().get(0).get("post");
+        assertNotNull(firstPost);
+        assertEquals("Safety", firstPost.get("category"));
+        assertEquals(0.01, firstPost.get("latitude"));
+    }
+
+    @Test
+    void testFindPostsByDistanceFeed_EmptyResult() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(postRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    void testFindPostsByDistanceFeed_Pagination() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        int pageSize = 2;
+
+        // Create multiple posts
+        List<Post> allPosts = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            Post post = new Post();
+            post.setLocation(geometryFactory.createPoint(new Coordinate(0.01 * i, 0.01 * i)));
+            post.setLatitude(0.01 * i);
+            post.setLongitude(0.01 * i);
+            post.setCategory("Category " + i);
+            allPosts.add(post);
+        }
+
+        when(postRepository.findAll()).thenReturn(allPosts);
+
+        // When - First page
+        Page<Map<String, Object>> firstPageResult = postService.findPostsByDistanceFeed(
+                userLat, userLon, PageRequest.of(0, pageSize));
+
+        // Then - First page
+        assertEquals(2, firstPageResult.getContent().size());
+        assertEquals(5, firstPageResult.getTotalElements());
+        assertEquals(3, firstPageResult.getTotalPages());
+        assertTrue(firstPageResult.hasNext());
+        assertFalse(firstPageResult.hasPrevious());
+
+        // When - Second page
+        Page<Map<String, Object>> secondPageResult = postService.findPostsByDistanceFeed(
+                userLat, userLon, PageRequest.of(1, pageSize));
+
+        // Then - Second page
+        assertEquals(2, secondPageResult.getContent().size());
+        assertEquals(5, secondPageResult.getTotalElements());
+        assertEquals(1, secondPageResult.getNumber());
+        assertTrue(secondPageResult.hasNext());
+        assertTrue(secondPageResult.hasPrevious());
+    }
+
+    @Test
+    void testFindPostsByDistanceFeed_PaginationBeyondAvailableData() {
+        // Given
+        Double userLat = 0.0;
+        Double userLon = 0.0;
+        Pageable pageable = PageRequest.of(5, 10); // Page beyond available data
+
+        List<Post> allPosts = Arrays.asList(post1, post2, post3); // Just 3 posts
+
+        when(postRepository.findAll()).thenReturn(allPosts);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(3, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertFalse(result.hasNext());
+        assertTrue(result.hasPrevious());
+    }
+
+    @Test
+    void testFindPostsByTimestampFeed_Success() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Post> posts = Arrays.asList(post1, post2, post3);
+        Page<Post> postPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findAll(pageable)).thenReturn(postPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.getContent().size());
+        verify(postRepository).findAll(pageable);
+
+        // Verify sorting (newest first)
+        List<Map<String, Object>> resultContent = result.getContent();
+
+        // Check that the first post has the most recent date (post3 has tomorrow date)
+        Map<String, Object> firstPostMap = resultContent.get(0);
+        Map<String, Object> firstPostData = (Map<String, Object>) firstPostMap.get("post");
+        assertEquals(post3.getCreatedAt(), firstPostData.get("createdAt"));
+
+        // Check that the last post has the oldest date (post2 has yesterday date)
+        Map<String, Object> lastPostMap = resultContent.get(2);
+        Map<String, Object> lastPostData = (Map<String, Object>) lastPostMap.get("post");
+        assertEquals(post2.getCreatedAt(), lastPostData.get("createdAt"));
+    }
+
+    @Test
+    void testFindPostsByTimestampFeed_EmptyResult() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(postRepository.findAll(pageable)).thenReturn(emptyPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+        verify(postRepository).findAll(pageable);
+    }
+
+    @Test
+    void testFindPostsByTimestampFeed_Pagination() {
+        // Given
+        int pageSize = 2;
+        Pageable firstPageable = PageRequest.of(0, pageSize);
+
+        List<Post> allPosts = Arrays.asList(post1, post2, post3);
+        Page<Post> firstPage = new PageImpl<>(
+                allPosts.subList(0, 2), firstPageable, allPosts.size());
+
+        when(postRepository.findAll(firstPageable)).thenReturn(firstPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(firstPageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.getContent().size());
+        assertEquals(3, result.getTotalElements());
+        assertEquals(2, result.getTotalPages());
+        assertTrue(result.hasNext());
+        assertFalse(result.hasPrevious());
+        verify(postRepository).findAll(firstPageable);
+    }
 
 
 }
