@@ -3,6 +3,7 @@ package com.safetypin.post.controller;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
@@ -498,4 +499,83 @@ class PostControllerTest {
         assertFalse(errorResponse.isSuccess());
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
     }
+
+    /**
+     * Test successful retrieval of post by ID
+     */
+    @Test
+    void getPostById_Success() {
+        // Arrange
+        UUID postId = UUID.randomUUID();
+        mockPost.setId(postId);
+        
+        when(postService.findById(postId)).thenReturn(mockPost);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostById(postId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertNotNull(postResponse);
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> postData = (Map<String, Object>) postResponse.getData();
+        assertEquals(postId, postData.get("id"));
+        assertEquals(mockPost.getTitle(), postData.get("title"));
+        assertEquals(mockPost.getCaption(), postData.get("caption"));
+        assertEquals(mockPost.getLatitude(), postData.get("latitude"));
+        assertEquals(mockPost.getLongitude(), postData.get("longitude"));
+        assertEquals(mockPost.getCategory(), postData.get("category"));
+        
+        verify(postService).findById(postId);
+    }
+
+    /**
+     * Test post not found case
+     */
+    @Test
+    void getPostById_NotFound() {
+        // Arrange
+        UUID postId = UUID.randomUUID();
+        String errorMessage = "Post not found with id: " + postId;
+        
+        when(postService.findById(postId)).thenThrow(new PostNotFoundException(errorMessage));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostById(postId);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
+        assertFalse(errorResponse.isSuccess());
+        assertEquals(errorMessage, errorResponse.getMessage());
+        assertNull(errorResponse.getData());
+    }
+
+    /**
+     * Test general exception case
+     */
+    @Test
+    void getPostById_GeneralException() {
+        // Arrange
+        UUID postId = UUID.randomUUID();
+        String errorMessage = "Database connection error";
+        
+        when(postService.findById(postId)).thenThrow(new RuntimeException(errorMessage));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostById(postId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
+        assertNull(errorResponse.getData());
+    }   
 }
