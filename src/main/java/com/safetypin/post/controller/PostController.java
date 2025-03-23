@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -68,7 +67,7 @@ public class PostController {
     }
     
     // Generic exception handler for controller methods
-    private <T> ResponseEntity<PostResponse> executeWithExceptionHandling(
+    private ResponseEntity<PostResponse> executeWithExceptionHandling(
             Supplier<ResponseEntity<PostResponse>> action,
             HttpStatus errorStatus) {
         try {
@@ -115,7 +114,7 @@ public class PostController {
 
             List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
                     .map(this::formatPostData)
-                    .collect(Collectors.toList());
+                    .toList();
 
             Map<String, Object> paginationData = createPaginationData(
                     new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements()));

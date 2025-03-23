@@ -135,6 +135,9 @@ public class Post extends BasePost {
         private Double longitude;
 
         public Builder() {
+            /* This constructor is intentionally empty as it is used by the Builder pattern.
+             * No initialization is needed here since all fields are set via the builder methods.
+             */
         }
 
         public Builder id(UUID id) {

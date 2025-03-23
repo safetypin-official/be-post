@@ -10,6 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -22,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -46,7 +51,6 @@ class PostServiceTest {
     private Post post1, post2, post3;
     private Post postWithoutLocation;
     private Category safetyCategory;
-    private Category crimeCategory;
 
     @BeforeEach
     void setup() {
@@ -74,38 +78,64 @@ class PostServiceTest {
         postWithoutLocation.setCreatedAt(now);
 
         safetyCategory = new Category("Safety");
-        crimeCategory = new Category("Crime");
     }
 
-    @Test
-    void testCreatePost_NullTitle() {
+    /**
+     * Arguments provider for title and content validation tests
+     */
+    private static Stream<Arguments> titleAndContentValidationProvider() {
+        return Stream.of(
+            // title, content, fieldName, expectedMessage
+            Arguments.of(null, "Valid content", "title", "Title is required"),
+            Arguments.of("", "Valid content", "title", "Title is required"),
+            Arguments.of("   ", "Valid content", "title", "Title is required"),
+            Arguments.of("Valid title", null, "content", "Content is required"),
+            Arguments.of("Valid title", "", "content", "Content is required"),
+            Arguments.of("Valid title", "   ", "content", "Content is required")
+        );
+    }
+
+    /**
+     * Arguments provider for category validation tests
+     */
+    private static Stream<Arguments> categoryValidationProvider() {
+        return Stream.of(
+            // categoryName, expectedMessage
+            Arguments.of(null, "Category is required"),
+            Arguments.of("", "Category is required"),
+            Arguments.of("   ", "Category is required")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("titleAndContentValidationProvider")
+    void testCreatePostTitleAndContentValidation(String title, String content, String fieldName, String expectedMessage) {
         // Given
-        String title = null;
-        String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
         Category category = safety;
 
         // When & Then
-        assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
+        assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
-    @Test
-    void testCreatePost_NullContent() {
+    @ParameterizedTest
+    @MethodSource("categoryValidationProvider")
+    void testCreatePostCategoryValidation(String categoryName, String expectedMessage) {
         // Given
         String title = "Test Post";
-        String content = null;
+        String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
-        Category category = safety;
 
         // When & Then
-        assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, categoryName)
         );
+        assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
@@ -119,9 +149,9 @@ class PostServiceTest {
         Category category = safety;
 
         // When & Then
-        assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
+        assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
@@ -139,74 +169,6 @@ class PostServiceTest {
     }
 
     @Test
-    void testCreatePost_EmptyTitle() {
-        // Given
-        String title = "";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Title is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_WhitespaceTitle() {
-        // Given
-        String title = "   ";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Title is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_EmptyContent() {
-        // Given
-        String title = "Test Post";
-        String content = "";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Content is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_WhitespaceContent() {
-        // Given
-        String title = "Test Post";
-        String content = "    ";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        Category category = safety;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
-        assertEquals("Content is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
     void testCreatePost_NullLongitude() {
         // Given
         String title = "Test Post";
@@ -216,61 +178,9 @@ class PostServiceTest {
         Category category = safety;
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category.getName())
-        );
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_NullCategory() {
-        // Given
-        String title = "Test Post";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = null;
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
-        );
-        assertEquals("Category is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_EmptyCategory() {
-        // Given
-        String title = "Test Post";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = "";
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
-        );
-        assertEquals("Category is required", exception.getMessage());
-        verify(postRepository, never()).save(any(Post.class));
-    }
-
-    @Test
-    void testCreatePost_WhitespaceCategory() {
-        // Given
-        String title = "Test Post";
-        String content = "This is a test post";
-        Double latitude = 1.0;
-        Double longitude = 2.0;
-        String category = "   ";
-
-        // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, category)
-        );
-        assertEquals("Category is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
 
@@ -532,7 +442,7 @@ class PostServiceTest {
         nearPost.setLocation(geometryFactory.createPoint(new Coordinate(0.01, 0.01))); // very close
         nearPost.setLatitude(0.01);
         nearPost.setLongitude(0.01);
-        nearPost.setCategory("Safety");
+           nearPost.setCategory("Safety");
         
         Post midPost = new Post();
         midPost.setLocation(geometryFactory.createPoint(new Coordinate(0.05, 0.05))); // medium distance

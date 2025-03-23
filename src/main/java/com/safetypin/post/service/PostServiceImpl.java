@@ -28,6 +28,8 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final GeometryFactory geometryFactory;
+    
+    private static final String DISTANCE_KEY = "distance";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory) {
@@ -103,9 +105,9 @@ public class PostServiceImpl implements PostService {
                         distance = DistanceCalculator.calculateDistance(
                                 centerLat, centerLon, post.getLatitude(), post.getLongitude()
                         );
-                        result.put("distance", distance);
+                        result.put(DISTANCE_KEY, distance);
                     } else {
-                        result.put("distance", distance);
+                        result.put(DISTANCE_KEY, distance);
                     }
 
                     // Return the result with the calculated distance and category name for filtering
@@ -119,7 +121,7 @@ public class PostServiceImpl implements PostService {
                                 entry.getValue().getValue().equalsIgnoreCase(category)))
                 // Extract just the result map
                 .map(AbstractMap.SimpleEntry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
         // Create a new page with the filtered results
         return new PageImpl<>(
@@ -146,13 +148,13 @@ public class PostServiceImpl implements PostService {
                     // Calculate distance from user
                     double distance = DistanceCalculator.calculateDistance(
                             userLat, userLon, post.getLatitude(), post.getLongitude());
-                    result.put("distance", distance);
+                    result.put(DISTANCE_KEY, distance);
                     
                     return result;
                 })
                 // Sort by distance (nearest first)
-                .sorted(Comparator.comparingDouble(post -> (Double) post.get("distance")))
-                .collect(Collectors.toList());
+                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
+                .toList();
         
         // Manual pagination
         int start = (int) pageable.getOffset();
@@ -185,7 +187,7 @@ public class PostServiceImpl implements PostService {
             .sorted(Comparator.comparing(post -> 
                 ((LocalDateTime)((Map<String, Object>)post.get("post")).get("createdAt")), 
                 Comparator.reverseOrder()))
-            .collect(Collectors.toList());
+            .toList();
         
         // Return paginated result
         return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());

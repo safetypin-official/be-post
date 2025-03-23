@@ -67,12 +67,9 @@ public class DevDataSeeder implements CommandLineRunner {
         // Define categories as strings - these must match the names in the categories table
         String lostItem = "Lost Item";
         String infrastructureIssue = "Infrastructure Issue";
-        String crimeWatch = "Crime Watch";
         String lostBook = "Lost Book";
-        String lostPet = "Lost Pet";
         String serviceIssue = "Service Issue";
         String flooding = "Flooding";
-        String stolenVehicle = "Stolen Vehicle";
 
         // Create and save posts
         postRepository.saveAll(Arrays.asList(
