@@ -125,6 +125,51 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, Pageable pageable) {
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+        
+        // Calculate distance and create result objects
+        List<Map<String, Object>> postsWithDistance = allPosts.stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+                    
+                    // Create post data
+                    Map<String, Object> postData = new HashMap<>();
+                    postData.put("id", post.getId());
+                    postData.put("title", post.getTitle());
+                    postData.put("caption", post.getCaption());
+                    postData.put("latitude", post.getLatitude());
+                    postData.put("longitude", post.getLongitude());
+                    postData.put("createdAt", post.getCreatedAt());
+                    postData.put("category", post.getCategory());
+                    
+                    result.put("post", postData);
+                    
+                    // Calculate distance from user
+                    double distance = DistanceCalculator.calculateDistance(
+                            userLat, userLon, post.getLatitude(), post.getLongitude());
+                    result.put("distance", distance);
+                    
+                    return result;
+                })
+                // Sort by distance (nearest first)
+                .sorted(Comparator.comparingDouble(post -> (Double) post.get("distance")))
+                .collect(Collectors.toList());
+        
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
+        
+        // Create sub-list for current page - handle case when start might be out of bounds
+        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ? 
+                Collections.emptyList() : postsWithDistance.subList(start, end);
+        
+        // Return paginated result
+        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
+    }
+
+    @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");

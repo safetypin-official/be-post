@@ -148,6 +148,56 @@ public class PostController {
         }
     }
 
+    @GetMapping("/feed/distance")
+    public ResponseEntity<PostResponse> getPostsFeedByDistance(
+            @RequestParam Double lat,
+            @RequestParam Double lon,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        try {
+            // Validate location parameters
+            if (lat == null || lon == null) {
+                throw new InvalidPostDataException("Latitude and longitude are required");
+            }
+            
+            // Set up pagination
+            Pageable pageable = PageRequest.of(page, size);
+            
+            // Get posts sorted by distance
+            Page<Map<String, Object>> posts = postService.findPostsByDistanceFeed(lat, lon, pageable);
+            
+            // Create response with pagination metadata
+            Map<String, Object> paginationData = Map.of(
+                    "content", posts.getContent(),
+                    "totalPages", posts.getTotalPages(),
+                    "totalElements", posts.getTotalElements(),
+                    "currentPage", posts.getNumber(),
+                    "pageSize", posts.getSize(),
+                    "hasNext", posts.hasNext(),
+                    "hasPrevious", posts.hasPrevious()
+            );
+            
+            PostResponse postResponse = new PostResponse(true, null, paginationData);
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(postResponse);
+        } catch (InvalidPostDataException e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        } catch (Exception e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, "Error processing request: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        }
+    }
+
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest request) {
         try {
