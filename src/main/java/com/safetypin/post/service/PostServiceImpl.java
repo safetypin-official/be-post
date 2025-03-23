@@ -36,6 +36,19 @@ public class PostServiceImpl implements PostService {
         this.geometryFactory = geometryFactory;
     }
 
+    // Add this helper method to map Post to Map
+    private Map<String, Object> mapPostToData(Post post) {
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("id", post.getId());
+        postData.put("title", post.getTitle());
+        postData.put("caption", post.getCaption());
+        postData.put("latitude", post.getLatitude());
+        postData.put("longitude", post.getLongitude());
+        postData.put("createdAt", post.getCreatedAt());
+        postData.put("category", post.getCategory());
+        return postData;
+    }
+
     // find all (debugging purposes)
     @Override
     public List<Post> findAll() {
@@ -81,16 +94,8 @@ public class PostServiceImpl implements PostService {
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
 
-                    // Create post data with category name
-                    Map<String, Object> postData = new HashMap<>();
-                    postData.put("id", post.getId());
-                    postData.put("title", post.getTitle());
-                    postData.put("caption", post.getCaption());
-                    postData.put("latitude", post.getLatitude());
-                    postData.put("longitude", post.getLongitude());
-                    postData.put("createdAt", post.getCreatedAt());
-                    postData.put("category", post.getCategory()); // Now directly using the category name
-
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
                     result.put("post", postData);
 
                     double distance = 0.0;
@@ -134,16 +139,8 @@ public class PostServiceImpl implements PostService {
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
                     
-                    // Create post data
-                    Map<String, Object> postData = new HashMap<>();
-                    postData.put("id", post.getId());
-                    postData.put("title", post.getTitle());
-                    postData.put("caption", post.getCaption());
-                    postData.put("latitude", post.getLatitude());
-                    postData.put("longitude", post.getLongitude());
-                    postData.put("createdAt", post.getCreatedAt());
-                    postData.put("category", post.getCategory());
-                    
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
                     result.put("post", postData);
                     
                     // Calculate distance from user
@@ -179,16 +176,8 @@ public class PostServiceImpl implements PostService {
             .map(post -> {
                 Map<String, Object> result = new HashMap<>();
                 
-                // Create post data
-                Map<String, Object> postData = new HashMap<>();
-                postData.put("id", post.getId());
-                postData.put("title", post.getTitle());
-                postData.put("caption", post.getCaption());
-                postData.put("latitude", post.getLatitude());
-                postData.put("longitude", post.getLongitude());
-                postData.put("createdAt", post.getCreatedAt());
-                postData.put("category", post.getCategory());
-                
+                // Use helper method instead of duplicated code
+                Map<String, Object> postData = mapPostToData(post);
                 result.put("post", postData);
                 
                 return result;
