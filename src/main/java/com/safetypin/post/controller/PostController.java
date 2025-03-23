@@ -198,6 +198,43 @@ public class PostController {
         }
     }
 
+    @GetMapping("/feed/timestamp")
+    public ResponseEntity<PostResponse> getPostsFeedByTimestamp(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        try {
+            // Set up pagination
+            Pageable pageable = PageRequest.of(page, size);
+            
+            // Get posts sorted by timestamp
+            Page<Map<String, Object>> posts = postService.findPostsByTimestampFeed(pageable);
+            
+            // Create response with pagination metadata
+            Map<String, Object> paginationData = Map.of(
+                    "content", posts.getContent(),
+                    "totalPages", posts.getTotalPages(),
+                    "totalElements", posts.getTotalElements(),
+                    "currentPage", posts.getNumber(),
+                    "pageSize", posts.getSize(),
+                    "hasNext", posts.hasNext(),
+                    "hasPrevious", posts.hasPrevious()
+            );
+            
+            PostResponse postResponse = new PostResponse(true, null, paginationData);
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(postResponse);
+        } catch (Exception e) {
+            PostResponse errorResponse = new PostResponse(
+                    false, "Error processing request: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        }
+    }
+
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest request) {
         try {

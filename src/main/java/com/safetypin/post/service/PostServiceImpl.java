@@ -170,6 +170,39 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable) {
+        // Get posts sorted by timestamp (newest first)
+        Page<Post> postsPage = postRepository.findAll(pageable);
+        
+        // Transform Post entities to response format
+        List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
+            .map(post -> {
+                Map<String, Object> result = new HashMap<>();
+                
+                // Create post data
+                Map<String, Object> postData = new HashMap<>();
+                postData.put("id", post.getId());
+                postData.put("title", post.getTitle());
+                postData.put("caption", post.getCaption());
+                postData.put("latitude", post.getLatitude());
+                postData.put("longitude", post.getLongitude());
+                postData.put("createdAt", post.getCreatedAt());
+                postData.put("category", post.getCategory());
+                
+                result.put("post", postData);
+                
+                return result;
+            })
+            .sorted(Comparator.comparing(post -> 
+                ((LocalDateTime)((Map<String, Object>)post.get("post")).get("createdAt")), 
+                Comparator.reverseOrder()))
+            .collect(Collectors.toList());
+        
+        // Return paginated result
+        return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());
+    }
+
+    @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");

@@ -25,4 +25,6 @@ public interface PostService {
 
     Page<Map<String, Object>> findPostsByDistanceFeed(
             Double userLat, Double userLon, Pageable pageable);
+            
+    Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable);
 }
