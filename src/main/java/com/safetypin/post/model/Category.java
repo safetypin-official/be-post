@@ -1,10 +1,11 @@
 package com.safetypin.post.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -14,12 +15,14 @@ import java.util.UUID;
 public class Category {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @Getter @Setter
     @Column(nullable = false, unique = true)
     private String name;
+
+    @Column
+    private String description;
+
+    @OneToMany(mappedBy = "category")
+    private List<Post> posts;
 
     public Category(String name) {
         this.name = name;

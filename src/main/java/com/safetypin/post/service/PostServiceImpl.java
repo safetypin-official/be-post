@@ -2,10 +2,11 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
-import com.safetypin.post.service.filter.*;
 import com.safetypin.post.utils.DistanceCalculator;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -13,25 +14,40 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
+    private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
     private final GeometryFactory geometryFactory;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, GeometryFactory geometryFactory) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory) {
         this.postRepository = postRepository;
+        this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
+    }
+
+    // Add this helper method to map Post to Map
+    private Map<String, Object> mapPostToData(Post post) {
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("id", post.getId());
+        postData.put("title", post.getTitle());
+        postData.put("caption", post.getCaption());
+        postData.put("latitude", post.getLatitude());
+        postData.put("longitude", post.getLongitude());
+        postData.put("createdAt", post.getCreatedAt());
+        postData.put("category", post.getCategory());
+        return postData;
     }
 
     // find all (debugging purposes)
@@ -40,153 +56,182 @@ public class PostServiceImpl implements PostService {
         return postRepository.findAll();
     }
 
+    // find all with pagination
+    @Override
+    public Page<Post> findAllPaginated(Pageable pageable) {
+        return postRepository.findAll(pageable);
+    }
+
     // find posts given filter
     @Override
     public Page<Map<String, Object>> findPostsByLocation(
             Double centerLat, Double centerLon, Double radius,
-            Category category, LocalDateTime dateFrom, LocalDateTime dateTo,
+            String category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable) {
+        Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
+        Page<Post> postsPage;
 
-        // create point
-        Point centerPoint = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
+        // Use a larger radius for database query to account for calculation differences
+        // The exact filtering will be done after calculating the actual distances
+        Double radiusInMeters = radius * 1000;
 
-        // get all posts within radius with page
-        Page<Post> posts = postRepository.findPostsWithFilter(
-                centerPoint, radius, category, dateFrom, dateTo, pageable);
-
-        // add distance to each posts
-        return posts.map(post -> {
-            Map<String, Object> result = new HashMap<>();
-            result.put("post", post);
-            Point postLocation = post.getLocation();
-            if (postLocation != null) {
-                double distance = DistanceCalculator.calculateDistance(
-                        centerLat, centerLon,
-                        postLocation.getY(), postLocation.getX()
-                );
-                result.put("distance", distance);
-            } else {
-                result.put("distance", null);
-            }
-            return result;
-        });
-    }
-
-    // DEPRECIATED
-    @Override
-    public Page<Post> searchPostsWithinRadius(Point center, Double radius, Pageable pageable) {
-        log.info(center.toString());
-        return postRepository.findPostsWithinPointAndRadius(center, radius, pageable);
-    }
-
-    // DEPRECIATED, only for test
-    @Override
-    public List<Post> getPostsWithinRadius(double latitude, double longitude, double radius) {
-        List<Post> allPosts = postRepository.findAll();
-        return allPosts.stream()
-                .filter(post -> {
-                    if (post.getLocation() == null) return false;
-                    double distance = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post.getLocation().getY(), post.getLocation().getX());
-                    return distance <= radius;
-                })
-                .toList();
-    }
-
-    // DEPRECIATED, use findPostByLocation instead
-    @Override
-    public List<Post> getPostsByCategory(Category category) {
-        return postRepository.findByCategory(category);
-    }
-
-    // DEPRECIATED, use findPostByLocation instead
-    @Override
-    public List<Post> getPostsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return postRepository.findByCreatedAtBetween(startDate, endDate);
-    }
-
-    // DEPRECIATED, only for test
-    @Override
-    public List<Post> getPostsWithFilters(double latitude, double longitude, double radius,
-                                          Category category, LocalDateTime startDate, LocalDateTime endDate) {
-        // Create a composite strategy
-        CompositeFilteringStrategy compositeStrategy = new CompositeFilteringStrategy();
-
-//        List<Post> candidatePosts;
-//        if (category != null && startDate != null && endDate != null) {
-//            candidatePosts = postRepository.findByTimestampBetweenAndCategory(startDate, endDate, category);
-//        } else if (category != null) {
-//            candidatePosts = postRepository.findByCategory(category);
-//        } else if (startDate != null && endDate != null) {
-//            candidatePosts = postRepository.findByCreatedAtBetween(startDate, endDate);
-//        } else {
-//            candidatePosts = postRepository.findAll();
-//        }
-
-        // Add date range filtering strategy if both dates are provided
-        if (startDate != null && endDate != null) {
-            compositeStrategy.addStrategy(new DateRangeFilteringStrategy(startDate, endDate));
-        }
-        if (category != null) {
-            compositeStrategy.addStrategy(new CategoryFilteringStrategy(category));
+        // Select appropriate query based on date parameters only, we'll filter by category later
+        if (dateFrom != null && dateTo != null) {
+            // Filter by date range only
+            postsPage = postRepository.findPostsByDateRange(
+                    center, radiusInMeters, dateFrom, dateTo, pageable);
+        } else {
+            // No date filters, just use radius
+            postsPage = postRepository.findPostsWithinRadius(center, radiusInMeters, pageable);
         }
 
-        // Apply all strategies to all posts
-        return filterPosts(compositeStrategy);
-        //return candidatePosts;
-    }
+        // Check if postsPage is null, return empty page if null
+        if (postsPage == null) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
 
-    // DEPRECIATED, only for test
-    @Override
-    public List<Post> getPostsByProximity(double latitude, double longitude) {
-        List<Post> allPosts = postRepository.findAll();
-        return allPosts.stream()
-                .filter(post -> post.getLocation() != null)
-                .sorted((post1, post2) -> {
-                    double dist1 = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post1.getLocation().getY(), post1.getLocation().getX());
-                    double dist2 = DistanceCalculator.calculateDistance(latitude, longitude,
-                            post2.getLocation().getY(), post2.getLocation().getX());
-                    return Double.compare(dist1, dist2);
+        // Transform Post entities to DTOs with distance, filtering by actual calculated distance and category
+        List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+
+                    double distance = 0.0;
+                    if (post.getLocation() != null) {
+                        distance = DistanceCalculator.calculateDistance(
+                                centerLat, centerLon, post.getLatitude(), post.getLongitude()
+                        );
+                        result.put(DISTANCE_KEY, distance);
+                    } else {
+                        result.put(DISTANCE_KEY, distance);
+                    }
+
+                    // Return the result with the calculated distance and category name for filtering
+                    return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
                 })
+                // Filter by the actual calculated distance (using the specified radius)
+                .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
+                // Filter by category if provided
+                .filter(entry -> category == null ||
+                        (entry.getValue().getValue() != null &&
+                                entry.getValue().getValue().equalsIgnoreCase(category)))
+                // Extract just the result map
+                .map(AbstractMap.SimpleEntry::getKey)
                 .toList();
+
+        // Create a new page with the filtered results
+        return new PageImpl<>(
+                filteredResults,
+                pageable,
+                filteredResults.size()
+        );
     }
 
     @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, Category category) {
+    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, Pageable pageable) {
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+
+        // Calculate distance and create result objects
+        List<Map<String, Object>> postsWithDistance = allPosts.stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+
+                    // Calculate distance from user
+                    double distance = DistanceCalculator.calculateDistance(
+                            userLat, userLon, post.getLatitude(), post.getLongitude());
+                    result.put(DISTANCE_KEY, distance);
+
+                    return result;
+                })
+                // Sort by distance (nearest first)
+                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
+                .toList();
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
+
+        // Create sub-list for current page - handle case when start might be out of bounds
+        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ?
+                Collections.emptyList() : postsWithDistance.subList(start, end);
+
+        // Return paginated result
+        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable) {
+        // Get posts sorted by timestamp (newest first)
+        Page<Post> postsPage = postRepository.findAll(pageable);
+
+        // Transform Post entities to response format
+        List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+
+                    return result;
+                })
+                .sorted(Comparator.comparing(post ->
+                                ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
+                        Comparator.reverseOrder()))
+                .toList();
+
+        // Return paginated result
+        return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());
+    }
+
+    @Override
+    public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
         if (title == null || title.trim().isEmpty()) {
-            throw new InvalidPostDataException("Post title is required");
+            throw new InvalidPostDataException("Title is required");
         }
-
         if (content == null || content.trim().isEmpty()) {
-            throw new InvalidPostDataException("Post content is required");
+            throw new InvalidPostDataException("Content is required");
         }
-
         if (latitude == null || longitude == null) {
             throw new InvalidPostDataException("Location coordinates are required");
         }
+        if (category == null || category.trim().isEmpty()) {
+            throw new InvalidPostDataException("Category is required");
+        }
 
-        try {
-            Post post = Post.builder()
+        // Verify that the category exists
+        Category categoryObj = categoryRepository.findByName(category);
+        if (categoryObj == null) {
+            throw new InvalidPostDataException("Category does not exist: " + category);
+        }
+
+        // Create the post
+        Post post = new Post.Builder()
                 .title(title)
                 .caption(content)
+                .location(latitude, longitude)
                 .category(category)
-                .createdAt(LocalDateTime.now())
-                .latitude(latitude)
-                .longitude(longitude)
                 .build();
 
+        try {
             return postRepository.save(post);
         } catch (Exception e) {
-            throw new PostException("Failed to create post: " + e.getMessage(), "POST_CREATION_ERROR", e);
+            log.error("Error saving post: {}", e.getMessage());
+            throw new PostException("Failed to save the post: " + e.getMessage());
         }
     }
 
-    // Implement the new strategy-based filtering method
     @Override
-    public List<Post> filterPosts(PostFilteringStrategy filterStrategy) {
-        List<Post> allPosts = postRepository.findAll();
-        return filterStrategy.filter(allPosts);
+    public Post findById(UUID id) {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new PostNotFoundException("Post not found with id: " + id));
     }
-
 }

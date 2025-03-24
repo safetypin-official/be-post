@@ -1,6 +1,5 @@
 package com.safetypin.post.repository;
 
-import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
@@ -16,23 +15,12 @@ import java.util.UUID;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, UUID> {
-    List<Post> findByCategory(Category category);
-
+    List<Post> findByCategory(String category);
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     // DEPRECIATED, use findPostsWithFilter instead
-    @Query(value = "SELECT p.* FROM posts p " +
-            "WHERE p.created_at BETWEEN :startTime AND :endTime " +
-            "AND p.category_id = :#{#category.id} ", nativeQuery = true)
-    List<Post> findByTimestampBetweenAndCategory(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("category") Category category);
-
-    // DEPRECIATED, use findPostsWithFilter instead
     // Get all posts within radius
-    // Updated spatial query to work with H2 for testing
     @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
             "FROM posts p " +
             "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
@@ -43,23 +31,92 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("distanceMeters") Double distanceMeters,
             Pageable pageable);
 
-
-    // get posts with filter
-    @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
+    // get posts with filter - Updated to use name instead of category_id
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
             "FROM posts p " +
-            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
-            "AND p.category_id = :#{#category.id} " +
-            "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
-            "ORDER BY distance ASC, p.id ASC",
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND (:category IS NULL OR p.name = :category) " +
+            "AND ((:dateFrom IS NULL OR :dateTo IS NULL) OR " +
+            "     p.created_at BETWEEN :dateFrom AND :dateTo) " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
             nativeQuery = true)
     Page<Post> findPostsWithFilter(
             @Param("point") Point point,
             @Param("distanceMeters") Double distanceMeters,
-            @Param("category") Category category,
+            @Param("category") String category,
             @Param("dateFrom") LocalDateTime dateFrom,
             @Param("dateTo") LocalDateTime dateTo,
             Pageable pageable);
 
+    // Filter by category only - Simplified since name is in posts table directly
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
+            "FROM posts p " +
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND p.name = :category " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
+            nativeQuery = true)
+    Page<Post> findPostsByCategory(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("category") String category,
+            Pageable pageable);
 
+    // Filter by dates only
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
+            "FROM posts p " +
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
+            nativeQuery = true)
+    Page<Post> findPostsByDateRange(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            Pageable pageable);
 
+    // Filter by both category and dates - Simplified
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
+            "FROM posts p " +
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND p.name = :category " +
+            "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
+            nativeQuery = true)
+    Page<Post> findPostsByCategoryAndDateRange(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("category") String category,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            Pageable pageable);
+
+    // Find posts with category
+    @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
+            "FROM posts p " +
+            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
+            "ORDER BY distance ASC, p.id ASC",
+            nativeQuery = true)
+    Page<Post> findPostsWithinRadius(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            Pageable pageable);
+
+    // Find posts with date range
+    @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
+            "FROM posts p " +
+            "WHERE ST_DWithin(p.location, :point, :distanceMeters) = true " +
+            "AND p.created_at BETWEEN :dateFrom AND :dateTo " +
+            "ORDER BY distance ASC, p.id ASC",
+            nativeQuery = true)
+    Page<Post> findPostsWithinRadiusByDateRange(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            Pageable pageable);
 }
