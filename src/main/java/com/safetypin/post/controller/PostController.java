@@ -3,6 +3,7 @@ package com.safetypin.post.controller;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -74,6 +76,8 @@ public class PostController {
             return action.get();
         } catch (InvalidPostDataException e) {
             return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (PostNotFoundException e) {
+            return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (NumberFormatException e) {
             return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
         } catch (Exception e) {
@@ -222,6 +226,15 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(response);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
+        return executeWithExceptionHandling(() -> {
+            Post post = postService.findById(id);
+            Map<String, Object> postData = formatPostData(post);
+            return createSuccessResponse(postData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
