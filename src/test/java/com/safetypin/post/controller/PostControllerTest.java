@@ -578,4 +578,293 @@ class PostControllerTest {
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
         assertNull(errorResponse.getData());
     }   
+
+    /**
+     * Test successful search with keyword
+     */
+    @Test
+    void searchPosts_WithKeyword_Success() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        Double radius = 10.0;
+        String keyword = "safety";
+        List<String> categories = null;
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+
+        when(postService.searchPosts(lat, lon, radius, keyword, categories, pageable))
+                .thenReturn(mockPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, radius, keyword, categories, page, size);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        verify(postService).searchPosts(lat, lon, radius, keyword, categories, pageable);
+    }
+
+    /**
+     * Test successful search with categories
+     */
+    @Test
+    void searchPosts_WithCategories_Success() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        Double radius = 10.0;
+        String keyword = null;
+        List<String> categories = List.of("safety", "emergency");
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+
+        when(postService.searchPosts(lat, lon, radius, keyword, categories, pageable))
+                .thenReturn(mockPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, radius, keyword, categories, page, size);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        verify(postService).searchPosts(lat, lon, radius, keyword, categories, pageable);
+    }
+
+    /**
+     * Test successful search with both keyword and categories
+     */
+    @Test
+    void searchPosts_WithKeywordAndCategories_Success() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        Double radius = 10.0;
+        String keyword = "emergency";
+        List<String> categories = List.of("safety", "alert");
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+
+        when(postService.searchPosts(lat, lon, radius, keyword, categories, pageable))
+                .thenReturn(mockPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, radius, keyword, categories, page, size);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        verify(postService).searchPosts(lat, lon, radius, keyword, categories, pageable);
+    }
+
+    /**
+     * Test search with custom pagination and radius
+     */
+    @Test
+    void searchPosts_WithCustomParameters_Success() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        Double radius = 25.0;
+        String keyword = "test";
+        List<String> categories = List.of("emergency");
+        int page = 2;
+        int size = 15;
+        Pageable pageable = PageRequest.of(page, size);
+
+        when(postService.searchPosts(lat, lon, radius, keyword, categories, pageable))
+                .thenReturn(mockPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, radius, keyword, categories, page, size);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        PostResponse postResponse = response.getBody();
+        assertTrue(postResponse.isSuccess());
+        assertNotNull(postResponse.getData());
+        verify(postService).searchPosts(lat, lon, radius, keyword, categories, pageable);
+    }
+
+    /**
+     * Test search with missing latitude
+     */
+    @Test
+    void searchPosts_MissingLatitude_ReturnsBadRequest() {
+        // Arrange
+        Double lat = null;
+        Double lon = 10.0;
+        String keyword = "test";
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+
+    /**
+     * Test search with missing longitude
+     */
+    @Test
+    void searchPosts_MissingLongitude_ReturnsBadRequest() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = null;
+        String keyword = "test";
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+
+    /**
+     * Test search with missing latitude and longitude
+     */
+    @Test
+    void searchPosts_MissingLatitudeAndLongitude_ReturnsBadRequest() {
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(null, null, 10.0, "test", null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Latitude and longitude are required", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+
+    /**
+     * Test search with no search parameters
+     */
+    @Test
+    void searchPosts_NoSearchParameters_ReturnsBadRequest() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        String keyword = null;
+        List<String> categories = null;
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, categories, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Please provide either a search keyword or at least one category", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+
+    /**
+     * Test search with empty search parameters
+     */
+    @Test
+    void searchPosts_EmptySearchParameters_ReturnsBadRequest() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        String keyword = "  "; // Empty after trim
+        List<String> categories = List.of(); // Empty list
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, categories, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Please provide either a search keyword or at least one category", errorResponse.getMessage());
+        verifyNoInteractions(postService);
+    }
+
+    /**
+     * Test search with service throwing InvalidPostDataException
+     */
+    @Test
+    void searchPosts_ServiceThrowsInvalidPostDataException() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        String keyword = "test";
+        String errorMessage = "Invalid search parameters";
+
+        when(postService.searchPosts(anyDouble(), anyDouble(), anyDouble(), anyString(), any(), any(Pageable.class)))
+                .thenThrow(new InvalidPostDataException(errorMessage));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals(errorMessage, errorResponse.getMessage());
+    }
+
+    /**
+     * Test search with service throwing RuntimeException
+     */
+    @Test
+    void searchPosts_ServiceThrowsRuntimeException() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        String keyword = "test";
+        String errorMessage = "Database connection error";
+
+        when(postService.searchPosts(anyDouble(), anyDouble(), anyDouble(), anyString(), any(), any(Pageable.class)))
+                .thenThrow(new RuntimeException(errorMessage));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
+    }
+
+    /**
+     * Test search with NumberFormatException
+     */
+    @Test
+    void searchPosts_NumberFormatException() {
+        // Arrange
+        Double lat = 20.0;
+        Double lon = 10.0;
+        String keyword = "test";
+
+        when(postService.searchPosts(anyDouble(), anyDouble(), anyDouble(), anyString(), any(), any(Pageable.class)))
+                .thenThrow(new NumberFormatException("Invalid number format"));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.searchPosts(lat, lon, 10.0, keyword, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        PostResponse errorResponse = response.getBody();
+        assertFalse(errorResponse.isSuccess());
+        assertEquals("Invalid location parameters", errorResponse.getMessage());
+    }
 }
