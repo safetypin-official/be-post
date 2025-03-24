@@ -119,4 +119,49 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             @Param("dateFrom") LocalDateTime dateFrom,
             @Param("dateTo") LocalDateTime dateTo,
             Pageable pageable);
+
+    // Search posts by keyword in title or caption
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
+            "FROM posts p " +
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "    to_tsvector('english', p.title || ' ' || p.caption) @@ plainto_tsquery('english', :keyword)) " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
+            nativeQuery = true)
+    Page<Post> searchPostsByKeyword(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    // Filter posts by categories
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
+            "FROM posts p " +
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND p.name IN :categories " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
+            nativeQuery = true)
+    Page<Post> searchPostsByCategories(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("categories") List<String> categories,
+            Pageable pageable);
+
+    // Search posts by keyword and filter by categories
+    @Query(value = "SELECT p.*, " +
+            "CASE WHEN p.location IS NOT NULL THEN ST_Distance(p.location, :point) ELSE NULL END AS distance " +
+            "FROM posts p " +
+            "WHERE (p.location IS NULL OR ST_DWithin(p.location, :point, :distanceMeters) = true) " +
+            "AND to_tsvector('english', p.title || ' ' || p.caption) @@ plainto_tsquery('english', :keyword) " +
+            "AND p.name IN :categories " +
+            "ORDER BY distance ASC NULLS LAST, p.id ASC",
+            nativeQuery = true)
+    Page<Post> searchPostsByKeywordAndCategories(
+            @Param("point") Point point,
+            @Param("distanceMeters") Double distanceMeters,
+            @Param("keyword") String keyword,
+            @Param("categories") List<String> categories,
+            Pageable pageable);
 }

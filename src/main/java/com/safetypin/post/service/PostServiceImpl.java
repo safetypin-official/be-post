@@ -37,8 +37,8 @@ public class PostServiceImpl implements PostService {
         this.geometryFactory = geometryFactory;
     }
 
-    // Add this helper method to map Post to Map
-    private Map<String, Object> mapPostToData(Post post) {
+    // Change from private to protected for testing
+    protected Map<String, Object> mapPostToData(Post post) {
         Map<String, Object> postData = new HashMap<>();
         postData.put("id", post.getId());
         postData.put("title", post.getTitle());
@@ -104,16 +104,22 @@ public class PostServiceImpl implements PostService {
                         distance = DistanceCalculator.calculateDistance(
                                 centerLat, centerLon, post.getLatitude(), post.getLongitude()
                         );
-                        result.put(DISTANCE_KEY, distance);
-                    } else {
-                        result.put(DISTANCE_KEY, distance);
                     }
+                    result.put(DISTANCE_KEY, distance);
 
                     // Return the result with the calculated distance and category name for filtering
                     return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
                 })
                 // Filter by the actual calculated distance (using the specified radius)
-                .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
+                // Add a check to exclude posts with null locations
+                .filter(entry -> {
+                    if (entry.getValue().getKey() == null || entry.getValue().getKey() > radiusInMeters / 1000)
+                        return false;
+                    Object postObj = entry.getKey().get("post");
+                    if (!(postObj instanceof Map<?, ?> postMap))
+                        return false;
+                    return postMap.get("latitude") != null && postMap.get("longitude") != null;
+                })
                 // Filter by category if provided
                 .filter(entry -> category == null ||
                         (entry.getValue().getValue() != null &&
@@ -233,5 +239,76 @@ public class PostServiceImpl implements PostService {
     public Post findById(UUID id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post not found with id: " + id));
+    }
+
+    @Override
+    public Page<Map<String, Object>> searchPosts(
+            Double centerLat, Double centerLon, Double radius,
+            String keyword, List<String> categories,
+            Pageable pageable) {
+        
+        Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
+        Double radiusInMeters = radius * 1000;
+        Page<Post> postsPage;
+        
+        // Validate categories if provided
+        if (categories != null && !categories.isEmpty()) {
+            validateCategories(categories);
+            
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                // Case 3: Both keyword and categories provided
+                postsPage = postRepository.searchPostsByKeywordAndCategories(
+                        center, radiusInMeters, keyword, categories, pageable);
+            } else {
+                // Case 2: Only categories provided
+                postsPage = postRepository.searchPostsByCategories(
+                        center, radiusInMeters, categories, pageable);
+            }
+        } else if (keyword != null && !keyword.trim().isEmpty()) {
+            // Case 1: Only keyword provided
+            postsPage = postRepository.searchPostsByKeyword(
+                    center, radiusInMeters, keyword, pageable);
+        } else {
+            // No search criteria provided, return empty result
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        
+        if (postsPage == null) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        
+        // Process results similar to findPostsByLocation
+        List<Map<String, Object>> results = postsPage.getContent().stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+                    Map<String, Object> postData = mapPostToData(post);
+                    result.put("post", postData);
+                    
+                    double distance = 0.0;
+                    // Check if post has a valid location with lat/long
+                    if (post.getLocation() != null && post.getLatitude() != null && post.getLongitude() != null) {
+                        distance = DistanceCalculator.calculateDistance(
+                                centerLat, centerLon, post.getLatitude(), post.getLongitude()
+                        );
+                    }
+                    result.put(DISTANCE_KEY, distance);
+                    
+                    return result;
+                })
+                // Don't filter posts without location - they should have distance=0.0 and be included
+                .filter(result -> (Double) result.get(DISTANCE_KEY) <= radius) // Filter by actual radius in km
+                .toList();
+        
+        return new PageImpl<>(results, pageable, results.size());
+    }
+    
+    // Helper method to validate that all categories exist
+    private void validateCategories(List<String> categories) {
+        for (String category : categories) {
+            Category categoryObj = categoryRepository.findByName(category);
+            if (categoryObj == null) {
+                throw new InvalidPostDataException("Category does not exist: " + category);
+            }
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
@@ -640,5 +641,400 @@ class PostServiceTest {
         verify(postRepository).findAll(firstPageable);
     }
 
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
+    @Test
+    void testSearchPosts_WithKeywordOnly() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<Post> posts = Arrays.asList(post1, post2);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.getContent().size());
+        verify(postRepository).searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable));
+    }
+
+    @Test
+    void testSearchPosts_WithCategoriesOnly() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = null;
+        List<String> categories = Arrays.asList("Safety", "Crime");
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<Post> posts = Arrays.asList(post1, post3);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+        when(categoryRepository.findByName("Crime")).thenReturn(crime);
+        when(postRepository.searchPostsByCategories(any(Point.class), anyDouble(), eq(categories), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(postRepository).searchPostsByCategories(any(Point.class), anyDouble(), eq(categories), eq(pageable));
+        verify(categoryRepository, times(2)).findByName(anyString());
+    }
+
+    @Test
+    void testSearchPosts_WithKeywordAndCategories() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = Arrays.asList("Safety");
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<Post> posts = Collections.singletonList(post1);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+        when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword), eq(categories), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword), eq(categories), eq(pageable));
+        verify(categoryRepository).findByName("Safety");
+    }
+
+    @Test
+    void testSearchPosts_NoSearchCriteria() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "";  // Empty keyword
+        List<String> categories = Collections.emptyList(); // Empty categories
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+        
+        // Verify no repository methods were called
+        verifyNoInteractions(postRepository);
+    }
+
+    @Test
+    void testSearchPosts_NullResultFromRepository() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
+                .thenReturn(null);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    void testSearchPosts_DistanceFiltering() {
+        // Given
+        Double centerLat = 0.1;
+        Double centerLon = 0.1;
+        Double radius = 5.0; // Small radius to filter out distant posts
+        String keyword = "test";
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // post1 is close, post2 and post3 are farther away
+        List<Post> posts = Arrays.asList(post1, post2, post3);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        // Only post1 should be within the small radius
+        assertEquals(1, result.getContent().size());
+        
+        Map<String, Object> postResult = result.getContent().get(0);
+        Map<String, Object> postData = (Map<String, Object>) postResult.get("post");
+        assertEquals(post1.getCategory(), postData.get("category"));
+    }
+
+    @Test
+    void testSearchPosts_Pagination() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = null;
+        int pageSize = 2;
+        Pageable pageable = PageRequest.of(0, pageSize);
+
+        // Create posts to fill multiple pages
+        List<Post> posts = Arrays.asList(post1, post2);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, 5); // 5 total elements but only 2 in this page
+
+        when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.getContent().size());
+        assertEquals(2, result.getTotalElements()); // This will be the size of the filtered results
+        assertEquals(1, result.getTotalPages());
+    }
+
+    // NEGATIVE TEST CASES FOR SEARCH POSTS
+
+    @Test
+    void testSearchPosts_NonExistentCategory() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = null;
+        List<String> categories = Arrays.asList("Safety", "NonExistentCategory");
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+        when(categoryRepository.findByName("NonExistentCategory")).thenReturn(null);
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.searchPosts(centerLat, centerLon, radius, keyword, categories, pageable)
+        );
+
+        assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
+        verify(categoryRepository, times(2)).findByName(anyString());
+        verify(postRepository, never()).searchPostsByCategories(any(), anyDouble(), any(), any());
+    }
+
+    @Test
+    void testSearchPosts_RepositoryException() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                postService.searchPosts(centerLat, centerLon, radius, keyword, categories, pageable)
+        );
+
+        assertEquals("Database error", exception.getMessage());
+    }
+
+    @Test
+    void testSearchPosts_EmptyCategoriesList() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = Collections.emptyList();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<Post> posts = Arrays.asList(post1, post2);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.getContent().size());
+        verify(postRepository).searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable));
+        // No category validation should happen
+        verifyNoInteractions(categoryRepository);
+    }
+
+    @Test
+    void testSearchPosts_WhitespaceKeyword() {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "   "; // Just whitespace
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // When
+        Page<Map<String, Object>> result = postService.searchPosts(
+                centerLat, centerLon, radius, keyword, categories, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getContent().isEmpty());
+        // Should be treated as no search criteria provided
+        verifyNoInteractions(postRepository);
+    }
+
+    @Test
+    void testFindById_Success() {
+        // Given
+        UUID id = UUID.randomUUID();
+        post1.setId(id);
+        
+        when(postRepository.findById(id)).thenReturn(Optional.of(post1));
+        
+        // When
+        Post result = postService.findById(id);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(id, result.getId());
+        assertEquals(post1.getCategory(), result.getCategory());
+        verify(postRepository).findById(id);
+    }
+    
+    @Test
+    void testFindById_NotFound() {
+        // Given
+        UUID id = UUID.randomUUID();
+        
+        when(postRepository.findById(id)).thenReturn(Optional.empty());
+        
+        // When & Then
+        PostNotFoundException exception = assertThrows(PostNotFoundException.class, () ->
+            postService.findById(id)
+        );
+        
+        // Verify exception message contains the ID
+        assertTrue(exception.getMessage().contains(id.toString()));
+        verify(postRepository).findById(id);
+    }
+
+    @Test
+    void testFindPostsByLocationWithNullLocation() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0; // 20 km
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create a post with null location for this test
+        Post postWithNullLocation = new Post();
+        postWithNullLocation.setLocation(null); // Force null location
+        postWithNullLocation.setCategory(safety.getName());
+        postWithNullLocation.setCreatedAt(now);
+
+        List<Post> posts = Collections.singletonList(postWithNullLocation);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, null, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        // The post should be filtered out during distance calculation/filtering
+        assertTrue(result.getContent().isEmpty());
+        
+        // Since null location results in distance = 0.0, verify post processing
+        verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
+    }
+
+    @Test
+    void testFindPostsByLocation_PostObjectNotMap() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0; // 20 km
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create a post with location
+        Post validPost = new Post();
+        validPost.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
+        validPost.setLatitude(0.1);
+        validPost.setLongitude(0.1);
+        validPost.setCategory(safety.getName());
+        
+        List<Post> posts = Collections.singletonList(validPost);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // Create a subclass of PostServiceImpl that overrides mapPostToData
+        PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory) {
+            @Override
+            protected Map<String, Object> mapPostToData(Post post) {
+                Map<String, Object> result = new HashMap<>();
+                // Put a non-Map object for the "post" key
+                result.put("post", "This is a string, not a map");
+                return result;
+            }
+        };
+
+        // When
+        Page<Map<String, Object>> result = customService.findPostsByLocation(
+                centerLat, centerLon, radius, null, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        // The post should be filtered out because "post" is not a Map
+        assertTrue(result.getContent().isEmpty());
+        verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
+    }
 }
