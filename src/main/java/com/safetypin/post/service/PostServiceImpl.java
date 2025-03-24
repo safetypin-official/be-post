@@ -37,8 +37,8 @@ public class PostServiceImpl implements PostService {
         this.geometryFactory = geometryFactory;
     }
 
-    // Add this helper method to map Post to Map
-    private Map<String, Object> mapPostToData(Post post) {
+    // Change from private to protected for testing
+    protected Map<String, Object> mapPostToData(Post post) {
         Map<String, Object> postData = new HashMap<>();
         postData.put("id", post.getId());
         postData.put("title", post.getTitle());
@@ -104,16 +104,22 @@ public class PostServiceImpl implements PostService {
                         distance = DistanceCalculator.calculateDistance(
                                 centerLat, centerLon, post.getLatitude(), post.getLongitude()
                         );
-                        result.put(DISTANCE_KEY, distance);
-                    } else {
-                        result.put(DISTANCE_KEY, distance);
                     }
+                    result.put(DISTANCE_KEY, distance);
 
                     // Return the result with the calculated distance and category name for filtering
                     return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
                 })
                 // Filter by the actual calculated distance (using the specified radius)
-                .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
+                // Add a check to exclude posts with null locations
+                .filter(entry -> {
+                    if (entry.getValue().getKey() == null || entry.getValue().getKey() > radiusInMeters / 1000)
+                        return false;
+                    Object postObj = entry.getKey().get("post");
+                    if (!(postObj instanceof Map<?, ?> postMap))
+                        return false;
+                    return postMap.get("latitude") != null && postMap.get("longitude") != null;
+                })
                 // Filter by category if provided
                 .filter(entry -> category == null ||
                         (entry.getValue().getValue() != null &&
