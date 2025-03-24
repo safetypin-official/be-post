@@ -34,10 +34,6 @@ public class Post extends BasePost {
     @Column(nullable = false, name = "name")
     private String category;
 
-    @ManyToOne
-    @JoinColumn(name = "name", referencedColumnName = "name", insertable = false, updatable = false)
-    private Category categoryEntity;
-
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
