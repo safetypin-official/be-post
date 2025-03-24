@@ -30,4 +30,9 @@ public interface PostService {
     Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable);
 
     Post findById(UUID id);
+
+    Page<Map<String, Object>> searchPosts(
+            Double centerLat, Double centerLon, Double radius,
+            String keyword, List<String> categories,
+            Pageable pageable);
 }
