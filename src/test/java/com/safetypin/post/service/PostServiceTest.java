@@ -2,6 +2,7 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
+import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
@@ -926,4 +927,114 @@ class PostServiceTest {
         verifyNoInteractions(postRepository);
     }
 
+    @Test
+    void testFindById_Success() {
+        // Given
+        UUID id = UUID.randomUUID();
+        post1.setId(id);
+        
+        when(postRepository.findById(id)).thenReturn(Optional.of(post1));
+        
+        // When
+        Post result = postService.findById(id);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(id, result.getId());
+        assertEquals(post1.getCategory(), result.getCategory());
+        verify(postRepository).findById(id);
+    }
+    
+    @Test
+    void testFindById_NotFound() {
+        // Given
+        UUID id = UUID.randomUUID();
+        
+        when(postRepository.findById(id)).thenReturn(Optional.empty());
+        
+        // When & Then
+        PostNotFoundException exception = assertThrows(PostNotFoundException.class, () ->
+            postService.findById(id)
+        );
+        
+        // Verify exception message contains the ID
+        assertTrue(exception.getMessage().contains(id.toString()));
+        verify(postRepository).findById(id);
+    }
+
+    @Test
+    void testFindPostsByLocationWithNullLocation() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0; // 20 km
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create a post with null location for this test
+        Post postWithNullLocation = new Post();
+        postWithNullLocation.setLocation(null); // Force null location
+        postWithNullLocation.setCategory(safety.getName());
+        postWithNullLocation.setCreatedAt(now);
+
+        List<Post> posts = Collections.singletonList(postWithNullLocation);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // When
+        Page<Map<String, Object>> result = postService.findPostsByLocation(
+                centerLat, centerLon, radius, null, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        // The post should be filtered out during distance calculation/filtering
+        assertTrue(result.getContent().isEmpty());
+        
+        // Since null location results in distance = 0.0, verify post processing
+        verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
+    }
+
+    @Test
+    void testFindPostsByLocation_PostObjectNotMap() {
+        // Given
+        double centerLat = 0.15;
+        double centerLon = 0.15;
+        double radius = 20.0; // 20 km
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // Create a post with location
+        Post validPost = new Post();
+        validPost.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
+        validPost.setLatitude(0.1);
+        validPost.setLongitude(0.1);
+        validPost.setCategory(safety.getName());
+        
+        List<Post> posts = Collections.singletonList(validPost);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // Create a subclass of PostServiceImpl that overrides mapPostToData
+        PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory) {
+            @Override
+            protected Map<String, Object> mapPostToData(Post post) {
+                Map<String, Object> result = new HashMap<>();
+                // Put a non-Map object for the "post" key
+                result.put("post", "This is a string, not a map");
+                return result;
+            }
+        };
+
+        // When
+        Page<Map<String, Object>> result = customService.findPostsByLocation(
+                centerLat, centerLon, radius, null, null, null, pageable);
+
+        // Then
+        assertNotNull(result);
+        // The post should be filtered out because "post" is not a Map
+        assertTrue(result.getContent().isEmpty());
+        verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
+    }
 }
