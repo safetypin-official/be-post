@@ -8,6 +8,7 @@ import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.utils.DistanceCalculator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -28,16 +29,18 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final GeometryFactory geometryFactory;
+    private final JwtService jwtService;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory, JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
+        this.jwtService = jwtService;
     }
 
     // Add this helper method to map Post to Map
-    private Map<String, Object> mapPostToData(Post post) {
+    private Map<String, Object> mapPostToData(Post post, UUID userId) {
         Map<String, Object> postData = new HashMap<>();
         postData.put("id", post.getId());
         postData.put("title", post.getTitle());
@@ -46,6 +49,9 @@ public class PostServiceImpl implements PostService {
         postData.put("longitude", post.getLongitude());
         postData.put("createdAt", post.getCreatedAt());
         postData.put("category", post.getCategory());
+        postData.put("upvoteCount", post.getUpvoteCount());
+        postData.put("downvoteCount", post.getDownvoteCount());
+        postData.put("currentVote", post.currentVote(userId));
         return postData;
     }
 
@@ -57,7 +63,7 @@ public class PostServiceImpl implements PostService {
 
     // find all with pagination
     @Override
-    public Page<Post> findAllPaginated(Pageable pageable) {
+    public Page<Post> findAllPaginated(String authorizationHeader, Pageable pageable) {
         return postRepository.findAll(pageable);
     }
 
@@ -66,7 +72,8 @@ public class PostServiceImpl implements PostService {
     public Page<Map<String, Object>> findPostsByLocation(
             Double centerLat, Double centerLon, Double radius,
             String category, LocalDateTime dateFrom, LocalDateTime dateTo,
-            Pageable pageable) {
+            String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
         Page<Post> postsPage;
 
@@ -95,7 +102,7 @@ public class PostServiceImpl implements PostService {
                     Map<String, Object> result = new HashMap<>();
 
                     // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post);
+                    Map<String, Object> postData = mapPostToData(post, userId);
                     result.put("post", postData);
 
                     double distance = 0.0;
@@ -130,7 +137,10 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, Pageable pageable) {
+    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+
+        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+
         // Get all posts
         List<Post> allPosts = postRepository.findAll();
 
@@ -140,7 +150,7 @@ public class PostServiceImpl implements PostService {
                     Map<String, Object> result = new HashMap<>();
 
                     // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post);
+                    Map<String, Object> postData = mapPostToData(post, userId);
                     result.put("post", postData);
 
                     // Calculate distance from user
@@ -167,7 +177,8 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable) {
+    public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         // Get posts sorted by timestamp (newest first)
         Page<Post> postsPage = postRepository.findAll(pageable);
 
@@ -177,7 +188,7 @@ public class PostServiceImpl implements PostService {
                     Map<String, Object> result = new HashMap<>();
 
                     // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post);
+                    Map<String, Object> postData = mapPostToData(post, userId);
                     result.put("post", postData);
 
                     return result;
