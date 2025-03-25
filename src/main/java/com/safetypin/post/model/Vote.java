@@ -15,6 +15,11 @@ import java.util.UUID;
 @EqualsAndHashCode
 public class Vote {
 
+    @EmbeddedId
+    private VoteId id;
+    @Column(nullable = false)
+    private boolean isUpvote; // true for upvote, false for downvote
+
     @Embeddable
     @Data
     @NoArgsConstructor
@@ -26,10 +31,4 @@ public class Vote {
         @JoinColumn(name = "post_id")
         private Post post;
     }
-
-    @EmbeddedId
-    private VoteId id;
-
-    @Column(nullable = false)
-    private boolean isUpvote; // true for upvote, false for downvote
 }

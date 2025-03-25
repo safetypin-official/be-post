@@ -10,13 +10,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.util.Date;
 import java.util.UUID;
 
 @Service
 @Configuration
 public class JwtService {
-    private static final long EXPIRATION_TIME = 1000L * 60 * 10; // 1000 milliseconds * 60 seconds * 10 minutes
 
     private final Key key;
 
@@ -47,7 +45,6 @@ public class JwtService {
         if (claims.getExpiration() == null) {
             throw new InvalidCredentialsException("Token has no expired date");
         }
-        boolean isExpired = claims.getExpiration().before(new Date(System.currentTimeMillis()));
 
         // handle valid uuid
         UUID userId;

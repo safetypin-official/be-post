@@ -48,12 +48,11 @@ class PostServiceTest {
     private JwtService jwtService;
     private GeometryFactory geometryFactory;
     private PostServiceImpl postService;
-    private final LocalDateTime
+    private Post post1, post2, post3;
+    private Post postWithoutLocation;    private final LocalDateTime
             now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
-    private Post post1, post2, post3;
-    private Post postWithoutLocation;
     private Category safetyCategory;
 
     /**
@@ -317,8 +316,6 @@ class PostServiceTest {
         verify(postRepository).save(any(Post.class));
     }
 
-    // Test category UUID handling in findPostsByLocation
-
     @Test
     void testCreatePost_NonExistentCategory() {
         // Given
@@ -361,6 +358,8 @@ class PostServiceTest {
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
     }
+
+    // Test category UUID handling in findPostsByLocation
 
     @Test
     void testFindPostsByLocationWithDateFilters() throws InvalidCredentialsException {
@@ -655,6 +654,8 @@ class PostServiceTest {
         assertFalse(result.hasPrevious());
         verify(postRepository).findAll(firstPageable);
     }
+
+
 
 
 }
