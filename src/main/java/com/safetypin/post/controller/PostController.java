@@ -155,7 +155,7 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // find posts
-            Page<Map<String, Object>> posts = null;
+            Page<Map<String, Object>> posts;
             try {
                 posts = postService.findPostsByLocation(
                         lat, lon, radiusToUse, category, fromDateTime, toDateTime, authorizationHeader, pageable);
@@ -186,7 +186,7 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by distance
-            Page<Map<String, Object>> posts = null;
+            Page<Map<String, Object>> posts;
             try {
                 posts = postService.findPostsByDistanceFeed(lat, lon, authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
@@ -211,7 +211,7 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by timestamp
-            Page<Map<String, Object>> posts = null;
+            Page<Map<String, Object>> posts;
             try {
                 posts = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
@@ -250,6 +250,6 @@ public class PostController {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
+        return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters: " + ex.getMessage());
     }
 }

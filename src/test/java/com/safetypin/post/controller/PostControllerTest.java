@@ -81,6 +81,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
+        assertNotNull(errorResponse);
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
@@ -94,6 +95,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
+        assertNotNull(errorResponse);
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
@@ -106,6 +108,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
+        assertNotNull(errorResponse);
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
     }
 
@@ -212,6 +215,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
+        assertNotNull(errorResponse);
         assertEquals("Invalid location parameters", errorResponse.getMessage());
     }
 
@@ -231,6 +235,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
+        assertNotNull(errorResponse);
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
     }
 
@@ -245,6 +250,7 @@ class PostControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
+        assertNotNull(errorResponse);
         assertEquals("Invalid location parameters", errorResponse.getMessage());
     }
 
@@ -294,7 +300,7 @@ class PostControllerTest {
      * Test for successful retrieval of all posts
      */
     @Test
-    void findAll_Success() throws InvalidCredentialsException {
+    void findAll_Success() {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
@@ -323,7 +329,7 @@ class PostControllerTest {
      * Test for exception during retrieval of all posts
      */
     @Test
-    void findAll_ExceptionThrown() throws InvalidCredentialsException {
+    void findAll_ExceptionThrown() {
         int page = 0;
         int size = 10;
         String errorMessage = "Database error";
@@ -335,6 +341,7 @@ class PostControllerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
         assertFalse(errorResponse.isSuccess());
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
         assertNull(errorResponse.getData());
@@ -363,6 +370,7 @@ class PostControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
+        assertNotNull(postResponse);
         assertTrue(postResponse.isSuccess());
         assertNotNull(postResponse.getData());
         verify(postService).findPostsByDistanceFeed(20.0, 10.0, authorizationHeader, pageable);
@@ -379,6 +387,7 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
         assertFalse(errorResponse.isSuccess());
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
         verifyNoInteractions(postService);
@@ -395,6 +404,7 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
         assertFalse(errorResponse.isSuccess());
         assertEquals("Latitude and longitude are required", errorResponse.getMessage());
         verifyNoInteractions(postService);
@@ -415,6 +425,7 @@ class PostControllerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
         assertFalse(errorResponse.isSuccess());
         assertEquals("Invalid post data", errorResponse.getMessage());
     }
@@ -435,6 +446,7 @@ class PostControllerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
         assertFalse(errorResponse.isSuccess());
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
     }
@@ -462,6 +474,7 @@ class PostControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
+        assertNotNull(postResponse);
         assertTrue(postResponse.isSuccess());
         assertNotNull(postResponse.getData());
         verify(postService).findPostsByTimestampFeed(authorizationHeader, pageable);
@@ -484,6 +497,7 @@ class PostControllerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
         assertFalse(errorResponse.isSuccess());
         assertEquals("Error processing request: " + errorMessage, errorResponse.getMessage());
     }
