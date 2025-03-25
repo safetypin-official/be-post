@@ -8,6 +8,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -37,6 +38,9 @@ public class Post extends BasePost {
     @ManyToOne
     @JoinColumn(name = "name", referencedColumnName = "name", insertable = false, updatable = false)
     private Category categoryEntity;
+
+    @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Vote> votes;
 
     // Additional fields as needed
 
@@ -120,6 +124,23 @@ public class Post extends BasePost {
         if (getCreatedAt() == null) {
             setCreatedAt(LocalDateTime.now());
         }
+    }
+
+    public Long getUpvoteCount() {
+        return votes == null ? 0 : votes.stream().filter(Vote::isUpvote).count();
+    }
+
+    public Long getDownvoteCount() {
+        return votes == null ? 0 : votes.stream().filter(v -> !v.isUpvote()).count();
+    }
+
+    public VoteType currentVote(UUID userId) {
+        if (votes == null) return VoteType.NONE;
+        return votes.stream()
+                .filter(v -> v.getId().getUserId().equals(userId))
+                .map(v -> (v.isUpvote()) ? VoteType.UPVOTE : VoteType.DOWNVOTE)
+                .findFirst()
+                .orElse(VoteType.NONE);
     }
 
     /**
