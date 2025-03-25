@@ -6,6 +6,7 @@ import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
+import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,10 +24,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -44,10 +42,14 @@ class PostControllerTest {
     private Page<Map<String, Object>> mockPage;
     private Post mockPost;
     private PostCreateRequest validRequest;
+    private String authorizationHeader;
+    private UUID testUserId;
 
     @BeforeEach
     void setUp() {
         mockPage = new PageImpl<>(new ArrayList<>());
+        testUserId = UUID.randomUUID();
+        authorizationHeader = "Bearer test-token";
 
         Category mockCategory = new Category();
         mockCategory.setName("safety");
@@ -58,14 +60,15 @@ class PostControllerTest {
         mockPost.setCaption("Test Caption");
         mockPost.setLatitude(20.0);
         mockPost.setLongitude(10.0);
-        mockPost.setCategory(mockCategory.getName()); // Changed from Category to String
+        mockPost.setCategory(mockCategory.getName());
+        mockPost.setPostedBy(testUserId);
 
         validRequest = new PostCreateRequest();
         validRequest.setTitle("Test Post");
         validRequest.setCaption("Test Caption");
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
-        validRequest.setCategory(mockCategory.getName()); // Changed from Category to String
+        validRequest.setCategory(mockCategory.getName());
     }
 
     /**
@@ -74,7 +77,7 @@ class PostControllerTest {
     @Test
     void whenGetPostsWithMissingLat_thenReturnBadRequest() {
         ResponseEntity<PostResponse> response = postController.getPosts(
-                null, 10.0, 10.0, null, null, null, 0, 10);
+                authorizationHeader, null, 10.0, 10.0, null, null, null, 0, 10);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
@@ -87,7 +90,7 @@ class PostControllerTest {
     @Test
     void whenGetPostsWithMissingLon_thenReturnBadRequest() {
         ResponseEntity<PostResponse> response = postController.getPosts(
-                20.0, null, 10.0, null, null, null, 0, 10);
+                authorizationHeader, 10.0, null, 10.0, null, null, null, 0, 10);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
@@ -99,7 +102,7 @@ class PostControllerTest {
      */
     @Test
     void whenGetPostsWithMissingLatAndLon_thenReturnBadRequest() {
-        ResponseEntity<PostResponse> response = postController.getPosts(null, null, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(authorizationHeader, null, null, null, null, null, null, 0, 10);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
 
@@ -110,7 +113,7 @@ class PostControllerTest {
      * Test using default radius
      */
     @Test
-    void whenGetPostsWithDefaultRadius_thenUseDefault() {
+    void whenGetPostsWithDefaultRadius_thenUseDefault() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
         Double radius = 10.0; // Default value
@@ -118,20 +121,20 @@ class PostControllerTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByLocation(lat, lon, radius, null, null, null, pageable))
+        when(postService.findPostsByLocation(lat, lon, radius, null, null, null, authorizationHeader, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, null, null, null, null, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(authorizationHeader, lat, lon, null, null, null, null, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(postService).findPostsByLocation(lat, lon, radius, null, null, null, pageable);
+        verify(postService).findPostsByLocation(lat, lon, radius, null, null, null, authorizationHeader, pageable);
     }
 
     /**
      * Test with only dateFrom
      */
     @Test
-    void whenGetPostsWithOnlyDateFrom_thenSetFromDateTime() {
+    void whenGetPostsWithOnlyDateFrom_thenSetFromDateTime() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
         Double radius = 10.0;
@@ -141,20 +144,20 @@ class PostControllerTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByLocation(lat, lon, radius, null, fromDateTime, null, pageable))
+        when(postService.findPostsByLocation(lat, lon, radius, null, fromDateTime, null, authorizationHeader, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, null, dateFrom, null, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(authorizationHeader, lat, lon, radius, null, dateFrom, null, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(postService).findPostsByLocation(lat, lon, radius, null, fromDateTime, null, pageable);
+        verify(postService).findPostsByLocation(lat, lon, radius, null, fromDateTime, null, authorizationHeader, pageable);
     }
 
     /**
      * Test with only dateTo
      */
     @Test
-    void whenGetPostsWithOnlyDateTo_thenSetToDateTime() {
+    void whenGetPostsWithOnlyDateTo_thenSetToDateTime() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
         Double radius = 10.0;
@@ -164,46 +167,47 @@ class PostControllerTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable))
+        when(postService.findPostsByLocation(lat, lon, radius, null, null, toDateTime, authorizationHeader, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, radius, null, null, dateTo, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(
+                authorizationHeader, lat, lon, radius, null, null, dateTo, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, pageable);
+        verify(postService).findPostsByLocation(lat, lon, radius, null, null, toDateTime, authorizationHeader, pageable);
     }
 
     /**
      * Test custom pagination
      */
     @Test
-    void whenGetPostsWithCustomPagination_thenUseCustomPageable() {
+    void whenGetPostsWithCustomPagination_thenUseCustomPageable() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
         int page = 2;
         int size = 25;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByLocation(lat, lon, 10.0, null, null, null, pageable))
+        when(postService.findPostsByLocation(lat, lon, 10.0, null, null, null, authorizationHeader, pageable))
                 .thenReturn(mockPage);
 
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, 10.0, null, null, null, page, size);
+        ResponseEntity<PostResponse> response = postController.getPosts(authorizationHeader, lat, lon, 10.0, null, null, null, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(postService).findPostsByLocation(lat, lon, 10.0, null, null, null, pageable);
+        verify(postService).findPostsByLocation(lat, lon, 10.0, null, null, null, authorizationHeader, pageable);
     }
 
     /**
      * Test NumberFormatException handling
      */
     @Test
-    void whenGetPostsAndNumberFormatExceptionThrown_thenReturnBadRequest() {
+    void whenGetPostsAndNumberFormatExceptionThrown_thenReturnBadRequest() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
-        when(postService.findPostsByLocation(anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), any()))
+        when(postService.findPostsByLocation(anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), anyString(), any()))
                 .thenThrow(new NumberFormatException("Invalid number"));
 
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(authorizationHeader, lat, lon, 10.0, null, null, null, 0, 10);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
@@ -215,14 +219,14 @@ class PostControllerTest {
      * Test general exception handling
      */
     @Test
-    void whenGetPostsAndGeneralExceptionThrown_thenReturnInternalServerError() {
+    void whenGetPostsAndGeneralExceptionThrown_thenReturnInternalServerError() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
         String errorMessage = "Database connection failed";
-        when(postService.findPostsByLocation(anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), any()))
+        when(postService.findPostsByLocation(anyDouble(), anyDouble(), anyDouble(), any(), any(), any(), anyString(), any()))
                 .thenThrow(new RuntimeException(errorMessage));
 
-        ResponseEntity<PostResponse> response = postController.getPosts(lat, lon, 10.0, null, null, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPosts(authorizationHeader, lat, lon, 10.0, null, null, null, 0, 10);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
@@ -246,51 +250,42 @@ class PostControllerTest {
 
     @Test
     void createPost_Success() {
-        // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), any()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
                 .thenReturn(mockPost);
 
-        // Act
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
 
-        // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Post created successfully", response.getBody().getMessage());
         assertNotNull(response.getBody().getData());
     }
 
     @Test
     void createPost_ExceptionThrown() {
-        // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), any()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
                 .thenThrow(new InvalidPostDataException("Test exception"));
 
-        // Act
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
 
-        // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Test exception", response.getBody().getMessage());
         assertNull(response.getBody().getData());
     }
 
     @Test
     void createPost_RuntimeException() {
-        // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), any()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
                 .thenThrow(new RuntimeException("Unexpected runtime exception"));
 
-        // Act
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
 
-        // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Error processing request: Unexpected runtime exception", response.getBody().getMessage());
         assertNull(response.getBody().getData());
     }
@@ -299,8 +294,7 @@ class PostControllerTest {
      * Test for successful retrieval of all posts
      */
     @Test
-    void findAll_Success() {
-        // Arrange
+    void findAll_Success() throws InvalidCredentialsException {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
@@ -309,12 +303,10 @@ class PostControllerTest {
         postList.add(mockPost);
         Page<Post> postPage = new PageImpl<>(postList, pageable, 1);
 
-        when(postService.findAllPaginated(pageable)).thenReturn(postPage);
+        when(postService.findAllPaginated(authorizationHeader, pageable)).thenReturn(postPage);
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.findAll(page, size);
+        ResponseEntity<PostResponse> response = postController.findAll(authorizationHeader, page, size);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
         assert postResponse != null;
@@ -331,19 +323,16 @@ class PostControllerTest {
      * Test for exception during retrieval of all posts
      */
     @Test
-    void findAll_ExceptionThrown() {
-        // Arrange
+    void findAll_ExceptionThrown() throws InvalidCredentialsException {
         int page = 0;
         int size = 10;
         String errorMessage = "Database error";
 
-        when(postService.findAllPaginated(any(Pageable.class)))
+        when(postService.findAllPaginated(anyString(), any(Pageable.class)))
                 .thenThrow(new RuntimeException(errorMessage));
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.findAll(page, size);
+        ResponseEntity<PostResponse> response = postController.findAll(authorizationHeader, page, size);
 
-        // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
         assertFalse(errorResponse.isSuccess());
@@ -355,26 +344,28 @@ class PostControllerTest {
      * Test successful retrieval of posts feed by distance
      */
     @Test
-    void getPostsFeedByDistance_Success() {
-        // Arrange
-        Double lat = 20.0;
-        Double lon = 10.0;
+    void getPostsFeedByDistance_Success() throws InvalidCredentialsException {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByDistanceFeed(lat, lon, pageable))
+        List<Map<String, Object>> content = new ArrayList<>();
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("post", new HashMap<>());
+        content.add(postData);
+        Page<Map<String, Object>> mockPage = new PageImpl<>(content, pageable, 1);
+
+        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), anyString(), any(Pageable.class)))
                 .thenReturn(mockPage);
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, page, size);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                authorizationHeader, 20.0, 10.0, page, size);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
         assertTrue(postResponse.isSuccess());
         assertNotNull(postResponse.getData());
-        verify(postService).findPostsByDistanceFeed(lat, lon, pageable);
+        verify(postService).findPostsByDistanceFeed(20.0, 10.0, authorizationHeader, pageable);
     }
 
     /**
@@ -383,7 +374,7 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_MissingLatitude() {
         // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(null, 10.0, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(authorizationHeader, null, 10.0, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -399,7 +390,7 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_MissingLongitude() {
         // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(20.0, null, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(authorizationHeader, 20.0, null, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -413,17 +404,15 @@ class PostControllerTest {
      * Test service throwing InvalidPostDataException
      */
     @Test
-    void getPostsFeedByDistance_InvalidPostDataException() {
-        // Arrange
+    void getPostsFeedByDistance_InvalidPostDataException() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
-        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), any(Pageable.class)))
+        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), anyString(), any(Pageable.class)))
                 .thenThrow(new InvalidPostDataException("Invalid post data"));
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                authorizationHeader, lat, lon, 0, 10);
 
-        // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
         assertFalse(errorResponse.isSuccess());
@@ -434,18 +423,16 @@ class PostControllerTest {
      * Test service throwing generic Exception
      */
     @Test
-    void getPostsFeedByDistance_GenericException() {
-        // Arrange
+    void getPostsFeedByDistance_GenericException() throws InvalidCredentialsException {
         Double lat = 20.0;
         Double lon = 10.0;
         String errorMessage = "Database error";
-        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), any(Pageable.class)))
+        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), anyString(), any(Pageable.class)))
                 .thenThrow(new RuntimeException(errorMessage));
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(lat, lon, 0, 10);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                authorizationHeader, lat, lon, 0, 10);
 
-        // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
         assertFalse(errorResponse.isSuccess());
@@ -456,43 +443,45 @@ class PostControllerTest {
      * Test successful retrieval of posts feed by timestamp
      */
     @Test
-    void getPostsFeedByTimestamp_Success() {
-        // Arrange
+    void getPostsFeedByTimestamp_Success() throws InvalidCredentialsException {
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByTimestampFeed(pageable))
+        List<Map<String, Object>> content = new ArrayList<>();
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("post", new HashMap<>());
+        content.add(postData);
+        Page<Map<String, Object>> mockPage = new PageImpl<>(content, pageable, 1);
+
+        when(postService.findPostsByTimestampFeed(authorizationHeader, pageable))
                 .thenReturn(mockPage);
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(
+                authorizationHeader, page, size);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
         assertTrue(postResponse.isSuccess());
         assertNotNull(postResponse.getData());
-        verify(postService).findPostsByTimestampFeed(pageable);
+        verify(postService).findPostsByTimestampFeed(authorizationHeader, pageable);
     }
 
     /**
      * Test exception during retrieval of posts feed by timestamp
      */
     @Test
-    void getPostsFeedByTimestamp_Exception() {
-        // Arrange
+    void getPostsFeedByTimestamp_Exception() throws InvalidCredentialsException {
         int page = 0;
         int size = 10;
         String errorMessage = "Database error";
 
-        when(postService.findPostsByTimestampFeed(any(Pageable.class)))
+        when(postService.findPostsByTimestampFeed(anyString(), any(Pageable.class)))
                 .thenThrow(new RuntimeException(errorMessage));
 
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(
+                authorizationHeader, page, size);
 
-        // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
         assertFalse(errorResponse.isSuccess());
