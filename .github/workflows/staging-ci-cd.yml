@@ -115,4 +115,6 @@ jobs:
       
       - name: Update Service
         run: |
+          ls -l /home/ppl/docker-compose.yml
+          ls -l
           docker compose -f /home/ppl/docker-compose.yml up -d post-service
