@@ -22,14 +22,22 @@ public class VoteController {
         this.voteService = voteService;
     }
 
-    @PostMapping("/create-vote")
-    public ResponseEntity<PostResponse> createVote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId, @RequestParam boolean isUpvote) {
+    @PostMapping("/upvote")
+    public ResponseEntity<PostResponse> upvote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId) {
         try {
-            return createSuccessResponse(voteService.createVote(authorizationHeader, postId, isUpvote));
+            return createSuccessResponse(voteService.createVote(authorizationHeader, postId, true));
         } catch (Exception e) {
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
 
+    @PostMapping("/downvote")
+    public ResponseEntity<PostResponse> downvote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId) {
+        try {
+            return createSuccessResponse(voteService.createVote(authorizationHeader, postId, false));
+        } catch (Exception e) {
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     @PostMapping("/cancel-vote")
@@ -41,6 +49,7 @@ public class VoteController {
         }
 
     }
+
 
     // Helper method to create success responses
     private ResponseEntity<PostResponse> createSuccessResponse(String message) {

@@ -250,6 +250,6 @@ public class PostController {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters: " + ex.getMessage());
+        return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
     }
 }

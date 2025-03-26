@@ -39,18 +39,17 @@ class VoteControllerTest {
     @Test
     void testVoteEndpoint_Upvote_Success() throws InvalidCredentialsException {
         // Given
-        boolean isUpvote = true;
         String expectedMessage = "Vote recorded successfully";
 
-        when(voteService.createVote(authorizationHeader, postId, isUpvote)).thenReturn(expectedMessage);
+        when(voteService.createVote(authorizationHeader, postId, true)).thenReturn(expectedMessage);
 
         // When
-        ResponseEntity<PostResponse> response = voteController.createVote(authorizationHeader, postId, isUpvote);
+        ResponseEntity<PostResponse> response = voteController.upvote(authorizationHeader, postId);
 
         // Then
         assertEquals(200, response.getStatusCode().value());
         assertEquals(expectedMessage, Objects.requireNonNull(response.getBody()).getMessage());
-        verify(voteService, times(1)).createVote(authorizationHeader, postId, isUpvote);
+        verify(voteService, times(1)).createVote(authorizationHeader, postId, true);
     }
 
     @Test
@@ -62,7 +61,7 @@ class VoteControllerTest {
         when(voteService.createVote(authorizationHeader, postId, isUpvote)).thenReturn(expectedMessage);
 
         // When
-        ResponseEntity<PostResponse> response = voteController.createVote(authorizationHeader, postId, isUpvote);
+        ResponseEntity<PostResponse> response = voteController.downvote(authorizationHeader, postId);
 
         // Then
         assertEquals(200, response.getStatusCode().value());
@@ -73,48 +72,45 @@ class VoteControllerTest {
     @Test
     void testVoteEndpoint_AlreadyVoted_NoChange() throws InvalidCredentialsException {
         // Given
-        boolean isUpvote = true;
         String expectedMessage = "User already up voted that post. Vote remains unchanged";
 
-        when(voteService.createVote(authorizationHeader, postId, isUpvote)).thenReturn(expectedMessage);
+        when(voteService.createVote(authorizationHeader, postId, true)).thenReturn(expectedMessage);
 
         // When
-        ResponseEntity<PostResponse> response = voteController.createVote(authorizationHeader, postId, isUpvote);
+        ResponseEntity<PostResponse> response = voteController.upvote(authorizationHeader, postId);
 
         // Then
         assertEquals(200, response.getStatusCode().value());
         assertEquals(expectedMessage, Objects.requireNonNull(response.getBody()).getMessage());
-        verify(voteService, times(1)).createVote(authorizationHeader, postId, isUpvote);
+        verify(voteService, times(1)).createVote(authorizationHeader, postId, true);
     }
 
     @Test
     void testVoteEndpoint_InvalidToken_ThrowsException() throws InvalidCredentialsException {
         // Given
-        boolean isUpvote = true;
         when(voteService.createVote(any(), any(), anyBoolean()))
                 .thenThrow(new InvalidCredentialsException("Invalid token"));
 
         // When
-        ResponseEntity<PostResponse> response = voteController.createVote(authorizationHeader, postId, isUpvote);
+        ResponseEntity<PostResponse> response = voteController.upvote(authorizationHeader, postId);
 
         // Then
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode()); // Ensure correct status
-        assertEquals("Invalid token", response.getBody().getMessage()); // Assuming createErrorResponse() sets the message
+        assertEquals("Invalid token", Objects.requireNonNull(response.getBody()).getMessage()); // Assuming createErrorResponse() sets the message
     }
 
     @Test
     void testVoteEndpoint_NullAuthorizationHeader_ThrowsException() throws InvalidCredentialsException {
         // Given
-        boolean isUpvote = true;
-        when(voteService.createVote(authorizationHeader, postId, isUpvote))
+        when(voteService.createVote(authorizationHeader, postId, true))
                 .thenThrow(new InvalidCredentialsException("Authorization header is invalid"));
 
         // When
-        ResponseEntity<PostResponse> response = voteController.createVote(authorizationHeader, postId, isUpvote);
+        ResponseEntity<PostResponse> response = voteController.upvote(authorizationHeader, postId);
 
         // Then
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode()); // Ensure correct status
-        assertEquals("Authorization header is invalid", response.getBody().getMessage()); // Assuming createErrorResponse() s
+        assertEquals("Authorization header is invalid", Objects.requireNonNull(response.getBody()).getMessage()); // Assuming createErrorResponse() s
     }
 
     @Test
@@ -126,7 +122,7 @@ class VoteControllerTest {
                 .thenThrow(new InvalidCredentialsException("Authorization header is invalid"));
 
         // When
-        ResponseEntity<PostResponse> response = voteController.createVote(emptyHeader, postId, isUpvote);
+        ResponseEntity<PostResponse> response = voteController.upvote(emptyHeader, postId);
 
         // Then
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode()); // Ensure correct status
