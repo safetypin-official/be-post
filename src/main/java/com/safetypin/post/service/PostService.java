@@ -33,7 +33,7 @@ public interface PostService {
 
     Page<Map<String, Object>> searchPosts(
             Double centerLat, Double centerLon, Double radius,
-            String keyword, List<String> categories,
-            Pageable pageable);
+            String keyword, List<String> categories, String authorizationHeader, Pageable pageable) throws InvalidCredentialsException;
+
     Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable) throws InvalidCredentialsException;
 }

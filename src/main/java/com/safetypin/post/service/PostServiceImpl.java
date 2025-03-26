@@ -247,7 +247,7 @@ public class PostServiceImpl implements PostService {
             return postRepository.save(post);
         } catch (Exception e) {
             log.error("Error saving post: {}", e.getMessage());
-            throw new PostException("Failed to save the post: " + e.getMessage());
+            throw new PostException("Failed to save the post" + e.getMessage());
         }
     }
 
@@ -260,18 +260,38 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> searchPosts(
             Double centerLat, Double centerLon, Double radius,
-            String keyword, List<String> categories,
+            String keyword, List<String> categories, String authorizationHeader,
             Pageable pageable) {
+        
+        // Check if we have any search criteria
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+        boolean hasCategories = categories != null && !categories.isEmpty();
+        
+        // No search criteria provided, return empty result
+        if (!hasKeyword && !hasCategories) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        
+        // Validate categories first if provided
+        if (hasCategories) {
+            validateCategories(categories);
+        }
+        
+        // If we got here, categories are valid or none were provided
+        // Now get userId since we have valid search criteria
+        UUID userId;
+        try {
+            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+        } catch (InvalidCredentialsException e) {
+            throw new RuntimeException(e);
+        }
         
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
         Double radiusInMeters = radius * 1000;
         Page<Post> postsPage;
         
-        // Validate categories if provided
-        if (categories != null && !categories.isEmpty()) {
-            validateCategories(categories);
-            
-            if (keyword != null && !keyword.trim().isEmpty()) {
+        if (hasCategories) {
+            if (hasKeyword) {
                 // Case 3: Both keyword and categories provided
                 postsPage = postRepository.searchPostsByKeywordAndCategories(
                         center, radiusInMeters, keyword, categories, pageable);
@@ -280,13 +300,10 @@ public class PostServiceImpl implements PostService {
                 postsPage = postRepository.searchPostsByCategories(
                         center, radiusInMeters, categories, pageable);
             }
-        } else if (keyword != null && !keyword.trim().isEmpty()) {
+        } else {
             // Case 1: Only keyword provided
             postsPage = postRepository.searchPostsByKeyword(
                     center, radiusInMeters, keyword, pageable);
-        } else {
-            // No search criteria provided, return empty result
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
         
         if (postsPage == null) {
@@ -297,7 +314,7 @@ public class PostServiceImpl implements PostService {
         List<Map<String, Object>> results = postsPage.getContent().stream()
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
-                    Map<String, Object> postData = mapPostToData(post);
+                    Map<String, Object> postData = mapPostToData(post, userId);
                     result.put("post", postData);
                     
                     double distance = 0.0;
@@ -311,7 +328,6 @@ public class PostServiceImpl implements PostService {
                     
                     return result;
                 })
-                // Don't filter posts without location - they should have distance=0.0 and be included
                 .filter(result -> (Double) result.get(DISTANCE_KEY) <= radius) // Filter by actual radius in km
                 .toList();
         

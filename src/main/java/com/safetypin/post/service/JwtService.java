@@ -55,12 +55,6 @@ public class JwtService {
         }
 
         return userId;
-
-//        if (isExpired) {
-//            throw new InvalidCredentialsException("Token expired");
-//        } else {
-//
-//        }
     }
 
     // this is the method that's being called by outside

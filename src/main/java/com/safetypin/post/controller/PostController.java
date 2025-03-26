@@ -40,7 +40,6 @@ public class PostController {
 
     // Helper method to format post data
     private Map<String, Object> formatPostData(Post post) {
-        // TODO: fix duplicated code with PostServiceImpl.mapPostToData()
         Map<String, Object> postData = new HashMap<>();
         postData.put("id", post.getId());
         postData.put("title", post.getTitle());
@@ -53,7 +52,7 @@ public class PostController {
         return postData;
     }
 
-    // TODO: is creating Map manually necessary?
+
     // Helper method to create pagination data from a Page object
     private <T> Map<String, Object> createPaginationData(Page<T> page) {
         return Map.of(
@@ -160,7 +159,7 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // find posts
-            Page<Map<String, Object>> posts;
+            Page<Map<String, Object>> posts = null;
             try {
                 posts = postService.findPostsByLocation(
                         lat, lon, radiusToUse, category, fromDateTime, toDateTime, authorizationHeader, pageable);
@@ -191,7 +190,7 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by distance
-            Page<Map<String, Object>> posts;
+            Page<Map<String, Object>> posts = null;
             try {
                 posts = postService.findPostsByDistanceFeed(lat, lon, authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
@@ -216,7 +215,7 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by timestamp
-            Page<Map<String, Object>> posts;
+            Page<Map<String, Object>> posts = null;
             try {
                 posts = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
@@ -270,6 +269,7 @@ public class PostController {
 
     @GetMapping("/search")
     public ResponseEntity<PostResponse> searchPosts(
+            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(required = false, defaultValue = "10.0") Double radius,
@@ -292,9 +292,14 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
             
             // Search posts
-            Page<Map<String, Object>> posts = postService.searchPosts(
-                    lat, lon, radius, keyword, categories, pageable);
-            
+            Page<Map<String, Object>> posts = null;
+            try {
+                posts = postService.searchPosts(
+                        lat, lon, radius, keyword, categories, authorizationHeader, pageable);
+            } catch (InvalidCredentialsException e) {
+                throw new RuntimeException(e);
+            }
+
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
             

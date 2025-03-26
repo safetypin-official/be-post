@@ -40,7 +40,7 @@ public class VoteController {
         }
     }
 
-    @PostMapping("/cancel-vote")
+    @DeleteMapping("/cancel-vote")
     public ResponseEntity<PostResponse> cancelVote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId) {
         try {
             return createSuccessResponse(voteService.cancelVote(authorizationHeader, postId));

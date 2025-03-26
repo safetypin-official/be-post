@@ -70,6 +70,7 @@ class PostControllerTest {
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
         validRequest.setCategory(mockCategory.getName());
+        validRequest.setPostedBy(testUserId); // Add postedBy to valid request
     }
 
     /**
@@ -258,7 +259,7 @@ class PostControllerTest {
     @Test
     void createPost_Success() {
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenReturn(mockPost);
 
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
@@ -272,7 +273,7 @@ class PostControllerTest {
     @Test
     void createPost_ExceptionThrown() {
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenThrow(new InvalidPostDataException("Test exception"));
 
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
@@ -286,7 +287,7 @@ class PostControllerTest {
     @Test
     void createPost_RuntimeException() {
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenThrow(new RuntimeException("Unexpected runtime exception"));
 
         ResponseEntity<PostResponse> response = postController.createPost(validRequest);
@@ -456,41 +457,41 @@ class PostControllerTest {
      * Test successful retrieval of posts feed by timestamp
      */
     @Test
-    void getPostsFeedByTimestamp_Success() {
+    void getPostsFeedByTimestamp_Success() throws InvalidCredentialsException {
         // Arrange
         int page = 0;
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
 
-        when(postService.findPostsByTimestampFeed(pageable))
+        when(postService.findPostsByTimestampFeed(authorizationHeader, pageable))
                 .thenReturn(mockPage);
 
         // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(authorizationHeader, page, size);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         PostResponse postResponse = response.getBody();
         assertNotNull(postResponse);
         assertTrue(postResponse.isSuccess());
         assertNotNull(postResponse.getData());
-        verify(postService).findPostsByTimestampFeed(pageable);
+        verify(postService).findPostsByTimestampFeed(authorizationHeader, pageable);
     }
 
     /**
-     * Test successful search with both keyword and categories
+     * Test exception during timestamp feed retrieval
      */
     @Test
-    void getPostsFeedByTimestamp_Exception() {
+    void getPostsFeedByTimestamp_Exception() throws InvalidCredentialsException {
         // Arrange
         int page = 0;
         int size = 10;
         String errorMessage = "Database error";
 
-        when(postService.findPostsByTimestampFeed(any(Pageable.class)))
+        when(postService.findPostsByTimestampFeed(anyString(), any(Pageable.class)))
                 .thenThrow(new RuntimeException(errorMessage));
 
         // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(page, size);
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(authorizationHeader, page, size);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         PostResponse errorResponse = response.getBody();
