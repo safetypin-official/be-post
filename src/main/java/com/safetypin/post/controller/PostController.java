@@ -47,6 +47,7 @@ public class PostController {
         postData.put("longitude", post.getLongitude());
         postData.put("createdAt", post.getCreatedAt());
         postData.put("category", post.getCategory());
+        postData.put("postedBy", post.getPostedBy()); // Add postedBy to response
         return postData;
     }
 
@@ -214,7 +215,8 @@ public class PostController {
                     request.getCaption(),
                     request.getLatitude(),
                     request.getLongitude(),
-                    request.getCategory()
+                    request.getCategory(),
+                    request.getPostedBy() // Add postedBy parameter
             );
 
             PostResponse response = new PostResponse(

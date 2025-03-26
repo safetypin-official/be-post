@@ -127,6 +127,7 @@ public class Post extends BasePost {
         private LocalDateTime createdAt;
         private Double latitude;
         private Double longitude;
+        private UUID postedBy; // Add postedBy field
 
         public Builder() {
             /* This constructor is intentionally empty as it is used by the Builder pattern.
@@ -175,6 +176,11 @@ public class Post extends BasePost {
             return this;
         }
 
+        public Builder postedBy(UUID postedBy) {
+            this.postedBy = postedBy;
+            return this;
+        }
+
         public Post build() {
             Post post = new Post();
             post.setId(id);
@@ -182,6 +188,7 @@ public class Post extends BasePost {
             post.setTitle(title);
             post.setCategory(category);
             post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
+            post.setPostedBy(postedBy); // Set postedBy
 
             // Validate and set location
             if (latitude == null || longitude == null) {

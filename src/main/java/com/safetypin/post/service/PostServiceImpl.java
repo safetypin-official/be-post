@@ -47,6 +47,7 @@ public class PostServiceImpl implements PostService {
         postData.put("longitude", post.getLongitude());
         postData.put("createdAt", post.getCreatedAt());
         postData.put("category", post.getCategory());
+        postData.put("postedBy", post.getPostedBy()); // Add postedBy to response
         return postData;
     }
 
@@ -199,7 +200,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
+    public Post createPost(String title, String content, Double latitude, Double longitude, String category, UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -211,6 +212,9 @@ public class PostServiceImpl implements PostService {
         }
         if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
+        }
+        if (postedBy == null) {
+            throw new InvalidPostDataException("User ID (postedBy) is required");
         }
 
         // Verify that the category exists
@@ -225,6 +229,7 @@ public class PostServiceImpl implements PostService {
                 .caption(content)
                 .location(latitude, longitude)
                 .category(category)
+                .postedBy(postedBy) // Set the postedBy value
                 .build();
 
         try {

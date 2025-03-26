@@ -18,7 +18,7 @@ public interface PostService {
             String category, LocalDateTime dateFrom, LocalDateTime dateTo,
             Pageable pageable);
 
-    Post createPost(String title, String content, Double latitude, Double longitude, String category);
+    Post createPost(String title, String content, Double latitude, Double longitude, String category, UUID postedBy);
 
     List<Post> findAll();
 
