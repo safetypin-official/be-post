@@ -26,15 +26,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class S3ServiceImplTest {
 
-    @Mock
-    private DefaultCredentialsProvider credentialsProvider;
-
-    @InjectMocks
-    private S3ServiceImpl s3Service;
-
     private final String testBucketName = "test-bucket";
     private final String testRegion = "us-east-1";
     private final String testFileType = "jpeg";
+    @Mock
+    private DefaultCredentialsProvider credentialsProvider;
+    @InjectMocks
+    private S3ServiceImpl s3Service;
 
     @BeforeEach
     void setUp() {

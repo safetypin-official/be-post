@@ -8,6 +8,7 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,13 +45,15 @@ class PostServiceTest {
     private PostRepository postRepository;
     @Mock
     private CategoryRepository categoryRepository;
+    @Mock
+    private JwtService jwtService;
     private GeometryFactory geometryFactory;
-    private PostServiceImpl postService;    private final LocalDateTime
+    private PostServiceImpl postService;
+    private Post post1, post2, post3;
+    private Post postWithoutLocation;    private final LocalDateTime
             now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
-    private Post post1, post2, post3;
-    private Post postWithoutLocation;
     private Category safetyCategory;
 
     /**
@@ -83,7 +86,7 @@ class PostServiceTest {
     @BeforeEach
     void setup() {
         geometryFactory = new GeometryFactory();
-        postService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory);
+        postService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory, jwtService);
 
         // Create test posts with locations
         post1 = new Post();
@@ -192,19 +195,20 @@ class PostServiceTest {
 
     // Test findPostsByLocation with null repository response
     @Test
-    void testFindPostsByLocationWithNullResponse() {
+    void testFindPostsByLocationWithNullResponse() throws InvalidCredentialsException {
         // Given
         double centerLat = 0.15;
         double centerLon = 0.15;
         double radius = 20.0; // 20 km
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
                 .thenReturn(null);
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, null, null, pageable);
+                centerLat, centerLon, radius, null, null, null, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -213,13 +217,14 @@ class PostServiceTest {
 
     // Test findPostsByLocation with category filter
     @Test
-    void testFindPostsByLocationWithCategoryFilter() {
+    void testFindPostsByLocationWithCategoryFilter() throws InvalidCredentialsException {
         // Given
         double centerLat = 0.15;
         double centerLon = 0.15;
         double radius = 20.0; // 20 km
         String category = "Crime";
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -229,7 +234,7 @@ class PostServiceTest {
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, category, null, null, pageable);
+                centerLat, centerLon, radius, category, null, null, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -239,12 +244,13 @@ class PostServiceTest {
 
     // Test findPostsByLocation with distance filtering
     @Test
-    void testFindPostsByLocationWithDistanceFiltering() {
+    void testFindPostsByLocationWithDistanceFiltering() throws InvalidCredentialsException {
         // Given
         double centerLat = 0.1;  // Same as post1's latitude
         double centerLon = 0.1;  // Same as post1's longitude
         double radius = 5.0;     // Small radius to filter out post2 and post3
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -254,7 +260,7 @@ class PostServiceTest {
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, null, null, pageable);
+                centerLat, centerLon, radius, null, null, null, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -268,16 +274,17 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindAllPaginated() {
+    void testFindAllPaginated() throws InvalidCredentialsException {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> expectedPage = new PageImpl<>(posts, pageable, posts.size());
 
         when(postRepository.findAll(pageable)).thenReturn(expectedPage);
 
         // When
-        Page<Post> result = postService.findAllPaginated(pageable);
+        Page<Post> result = postService.findAllPaginated(authorizationHeader, pageable);
 
         // Then
         assertEquals(expectedPage, result);
@@ -315,8 +322,6 @@ class PostServiceTest {
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
     }
-
-    // Test category UUID handling in findPostsByLocation
 
     @Test
     void testCreatePost_NonExistentCategory() {
@@ -363,8 +368,10 @@ class PostServiceTest {
         verify(postRepository).save(any(Post.class));
     }
 
+    // Test category UUID handling in findPostsByLocation
+
     @Test
-    void testFindPostsByLocationWithDateFilters() {
+    void testFindPostsByLocationWithDateFilters() throws InvalidCredentialsException {
         // Given
         double centerLat = 0.15;
         double centerLon = 0.15;
@@ -372,6 +379,7 @@ class PostServiceTest {
         LocalDateTime dateFrom = yesterday;
         LocalDateTime dateTo = tomorrow;
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> posts = Arrays.asList(post1, post2);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -381,7 +389,7 @@ class PostServiceTest {
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, dateFrom, dateTo, pageable);
+                centerLat, centerLon, radius, null, dateFrom, dateTo, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -390,12 +398,13 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByLocationWithPostWithoutLocation() {
+    void testFindPostsByLocationWithPostWithoutLocation() throws InvalidCredentialsException {
         // Given
         double centerLat = 0.15;
         double centerLon = 0.15;
         double radius = 20.0; // 20 km
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> posts = Collections.singletonList(postWithoutLocation);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -405,7 +414,7 @@ class PostServiceTest {
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, null, null, pageable);
+                centerLat, centerLon, radius, null, null, null, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -414,14 +423,13 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByLocationWithDateFiltersNull() {
+    void testFindPostsByLocationWithDateFiltersNull() throws InvalidCredentialsException {
         // Given
         double centerLat = 0.15;
         double centerLon = 0.15;
         double radius = 20.0; // 20 km
-
-
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -431,7 +439,7 @@ class PostServiceTest {
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByLocation(
-                centerLat, centerLon, radius, null, null, null, pageable);
+                centerLat, centerLon, radius, null, null, null, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -440,11 +448,12 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByDistanceFeed_SuccessWithSorting() {
+    void testFindPostsByDistanceFeed_SuccessWithSorting() throws InvalidCredentialsException {
         // Given
         Double userLat = 0.0;
         Double userLon = 0.0;
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         // Create posts at different distances
         Post nearPost = new Post();
@@ -470,7 +479,7 @@ class PostServiceTest {
         when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -492,16 +501,17 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByDistanceFeed_EmptyResult() {
+    void testFindPostsByDistanceFeed_EmptyResult() throws InvalidCredentialsException {
         // Given
         Double userLat = 0.0;
         Double userLon = 0.0;
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
 
         when(postRepository.findAll()).thenReturn(Collections.emptyList());
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -510,11 +520,12 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByDistanceFeed_Pagination() {
+    void testFindPostsByDistanceFeed_Pagination() throws InvalidCredentialsException {
         // Given
         Double userLat = 0.0;
         Double userLon = 0.0;
         int pageSize = 2;
+        String authorizationHeader = "Bearer test-token";
 
         // Create multiple posts
         List<Post> allPosts = new ArrayList<>();
@@ -531,7 +542,7 @@ class PostServiceTest {
 
         // When - First page
         Page<Map<String, Object>> firstPageResult = postService.findPostsByDistanceFeed(
-                userLat, userLon, PageRequest.of(0, pageSize));
+                userLat, userLon, authorizationHeader, PageRequest.of(0, pageSize));
 
         // Then - First page
         assertEquals(2, firstPageResult.getContent().size());
@@ -542,7 +553,7 @@ class PostServiceTest {
 
         // When - Second page
         Page<Map<String, Object>> secondPageResult = postService.findPostsByDistanceFeed(
-                userLat, userLon, PageRequest.of(1, pageSize));
+                userLat, userLon, authorizationHeader, PageRequest.of(1, pageSize));
 
         // Then - Second page
         assertEquals(2, secondPageResult.getContent().size());
@@ -553,18 +564,19 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByDistanceFeed_PaginationBeyondAvailableData() {
+    void testFindPostsByDistanceFeed_PaginationBeyondAvailableData() throws InvalidCredentialsException {
         // Given
         Double userLat = 0.0;
         Double userLon = 0.0;
         Pageable pageable = PageRequest.of(5, 10); // Page beyond available data
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> allPosts = Arrays.asList(post1, post2, post3); // Just 3 posts
 
         when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, pageable);
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -576,16 +588,17 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByTimestampFeed_Success() {
+    void testFindPostsByTimestampFeed_Success() throws InvalidCredentialsException {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> postPage = new PageImpl<>(posts, pageable, posts.size());
 
         when(postRepository.findAll(pageable)).thenReturn(postPage);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(pageable);
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -607,15 +620,16 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByTimestampFeed_EmptyResult() {
+    void testFindPostsByTimestampFeed_EmptyResult() throws InvalidCredentialsException {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
         Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         when(postRepository.findAll(pageable)).thenReturn(emptyPage);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(pageable);
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
 
         // Then
         assertNotNull(result);
@@ -625,10 +639,11 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindPostsByTimestampFeed_Pagination() {
+    void testFindPostsByTimestampFeed_Pagination() throws InvalidCredentialsException {
         // Given
         int pageSize = 2;
         Pageable firstPageable = PageRequest.of(0, pageSize);
+        String authorizationHeader = "Bearer test-token";
 
         List<Post> allPosts = Arrays.asList(post1, post2, post3);
         Page<Post> firstPage = new PageImpl<>(
@@ -637,7 +652,7 @@ class PostServiceTest {
         when(postRepository.findAll(firstPageable)).thenReturn(firstPage);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(firstPageable);
+        Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, firstPageable);
 
         // Then
         assertNotNull(result);

@@ -7,6 +7,7 @@ import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +40,7 @@ public class PostController {
 
     // Helper method to format post data
     private Map<String, Object> formatPostData(Post post) {
+        // TODO: fix duplicated code with PostServiceImpl.mapPostToData()
         Map<String, Object> postData = new HashMap<>();
         postData.put("id", post.getId());
         postData.put("title", post.getTitle());
@@ -51,6 +53,7 @@ public class PostController {
         return postData;
     }
 
+    // TODO: is creating Map manually necessary?
     // Helper method to create pagination data from a Page object
     private <T> Map<String, Object> createPaginationData(Page<T> page) {
         return Map.of(
@@ -111,11 +114,13 @@ public class PostController {
 
     @GetMapping("/all")
     public ResponseEntity<PostResponse> findAll(
+            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size
+    ) {
         return executeWithExceptionHandling(() -> {
             Pageable pageable = createPageable(page, size);
-            Page<Post> postsPage = postService.findAllPaginated(pageable);
+            Page<Post> postsPage = postService.findAllPaginated(authorizationHeader, pageable);
 
             List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
                     .map(this::formatPostData)
@@ -130,6 +135,7 @@ public class PostController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> getPosts(
+            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(required = false, defaultValue = "10.0") Double radius,
@@ -154,8 +160,13 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // find posts
-            Page<Map<String, Object>> posts = postService.findPostsByLocation(
-                    lat, lon, radiusToUse, category, fromDateTime, toDateTime, pageable);
+            Page<Map<String, Object>> posts;
+            try {
+                posts = postService.findPostsByLocation(
+                        lat, lon, radiusToUse, category, fromDateTime, toDateTime, authorizationHeader, pageable);
+            } catch (InvalidCredentialsException e) {
+                throw new RuntimeException(e);
+            }
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -166,6 +177,7 @@ public class PostController {
 
     @GetMapping("/feed/distance")
     public ResponseEntity<PostResponse> getPostsFeedByDistance(
+            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(defaultValue = "0") int page,
@@ -179,7 +191,12 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by distance
-            Page<Map<String, Object>> posts = postService.findPostsByDistanceFeed(lat, lon, pageable);
+            Page<Map<String, Object>> posts;
+            try {
+                posts = postService.findPostsByDistanceFeed(lat, lon, authorizationHeader, pageable);
+            } catch (InvalidCredentialsException e) {
+                throw new RuntimeException(e);
+            }
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -190,6 +207,7 @@ public class PostController {
 
     @GetMapping("/feed/timestamp")
     public ResponseEntity<PostResponse> getPostsFeedByTimestamp(
+            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -198,7 +216,12 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by timestamp
-            Page<Map<String, Object>> posts = postService.findPostsByTimestampFeed(pageable);
+            Page<Map<String, Object>> posts;
+            try {
+                posts = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+            } catch (InvalidCredentialsException e) {
+                throw new RuntimeException(e);
+            }
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
