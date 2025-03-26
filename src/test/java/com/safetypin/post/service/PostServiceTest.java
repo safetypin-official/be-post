@@ -115,9 +115,11 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         Category category = safety;
+        UUID userId = UUID.randomUUID();
+
 
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(), userId);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -131,10 +133,11 @@ class PostServiceTest {
         String content = "This is a test post";
         Double latitude = 1.0;
         Double longitude = 2.0;
+        UUID userId = UUID.randomUUID();
 
         // When & Then
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName)
+                postService.createPost(title, content, latitude, longitude, categoryName, userId)
         );
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -148,9 +151,10 @@ class PostServiceTest {
         Double latitude = null;
         Double longitude = 2.0;
         Category category = safety;
+        UUID userId = UUID.randomUUID();
 
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(), userId);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -177,9 +181,10 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = null;
         Category category = safety;
+        UUID userId = UUID.randomUUID();
 
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName());
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(), userId);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -287,6 +292,7 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
 
         Post expectedPost = new Post();
         expectedPost.setTitle(title);
@@ -298,7 +304,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
 
         // When
-        Post result = postService.createPost(title, content, latitude, longitude, categoryName);
+        Post result = postService.createPost(title, content, latitude, longitude, categoryName, userId);
 
         // Then
         assertNotNull(result);
@@ -320,12 +326,13 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         String categoryName = "NonExistentCategory";
+        UUID userId = UUID.randomUUID();
 
         when(categoryRepository.findByName(categoryName)).thenReturn(null);
 
         // When & Then
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName)
+                postService.createPost(title, content, latitude, longitude, categoryName, userId)
         );
 
         assertEquals("Category does not exist: " + categoryName, exception.getMessage());
@@ -341,13 +348,14 @@ class PostServiceTest {
         Double latitude = 1.0;
         Double longitude = 2.0;
         String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
 
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenThrow(new RuntimeException("Database error"));
 
         // When & Then
         PostException exception = assertThrows(PostException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName)
+                postService.createPost(title, content, latitude, longitude, categoryName, userId)
         );
 
         assertTrue(exception.getMessage().contains("Failed to save the post"));
@@ -1036,5 +1044,24 @@ class PostServiceTest {
         // The post should be filtered out because "post" is not a Map
         assertTrue(result.getContent().isEmpty());
         verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
+    }
+
+    @Test
+    void testCreatePost_NullPostedBy() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID postedBy = null; // Null user ID
+
+        // When & Then
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
+                postService.createPost(title, content, latitude, longitude, categoryName, postedBy)
+        );
+        
+        assertEquals("User ID (postedBy) is required", exception.getMessage());
+        verify(postRepository, never()).save(any(Post.class));
     }
 }

@@ -60,6 +60,7 @@ class PostControllerTest {
         mockPost.setLatitude(20.0);
         mockPost.setLongitude(10.0);
         mockPost.setCategory(mockCategory.getName()); // Changed from Category to String
+        mockPost.setPostedBy(UUID.randomUUID()); // Set a UUID for postedBy
 
         validRequest = new PostCreateRequest();
         validRequest.setTitle("Test Post");
@@ -67,6 +68,7 @@ class PostControllerTest {
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
         validRequest.setCategory(mockCategory.getName()); // Changed from Category to String
+        validRequest.setPostedBy(UUID.randomUUID()); // Set a UUID for postedBy
     }
 
     /**
@@ -249,7 +251,7 @@ class PostControllerTest {
     void createPost_Success() {
         // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), any()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenReturn(mockPost);
 
         // Act
@@ -266,7 +268,7 @@ class PostControllerTest {
     void createPost_ExceptionThrown() {
         // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), any()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenThrow(new InvalidPostDataException("Test exception"));
 
         // Act
@@ -283,7 +285,7 @@ class PostControllerTest {
     void createPost_RuntimeException() {
         // Arrange
         when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), any()))
+                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenThrow(new RuntimeException("Unexpected runtime exception"));
 
         // Act
