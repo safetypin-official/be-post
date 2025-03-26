@@ -109,5 +109,5 @@ jobs:
           ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} -p ${{ secrets.SSH_PORT }} -t \
           'ssh -i ~/.ssh/akses_itf ${{ secrets.PPL_USERNAME }}@${{ secrets.PPL_HOST }} -t \
           "docker pull ${{ secrets.REGISTRY_USER }}/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} && \
-          docker compose -f /home/{{ secrets.PPL_USERNAME }}/docker-compose.yml up -d post-service"'
+          docker compose -f /home/ppl/docker-compose.yml up -d post-service"'
 
