@@ -23,12 +23,4 @@ public class PostCreateRequest {
     private String category;
 
     private UUID postedBy;
-
-    public UUID getPostedBy() {
-        return postedBy;
-    }
-
-    public void setPostedBy(UUID postedBy) {
-        this.postedBy = postedBy;
-    }
 }

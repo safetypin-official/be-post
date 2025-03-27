@@ -253,7 +253,7 @@ public class PostServiceImpl implements PostService {
             return postRepository.save(post);
         } catch (Exception e) {
             log.error("Error saving post: {}", e.getMessage());
-            throw new PostException("Failed to save the post" + e.getMessage());
+            throw new PostException("Failed to save the post: " + e.getMessage());
         }
     }
 
