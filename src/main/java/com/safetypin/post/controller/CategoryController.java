@@ -1,6 +1,5 @@
 package com.safetypin.post.controller;
 
-
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.service.CategoryService;
@@ -17,88 +16,81 @@ import java.util.List;
 @RestController
 @RequestMapping("/posts/category")
 public class CategoryController {
-    private final CategoryService categoryService;
+        private final CategoryService categoryService;
 
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
-    }
-
-    @GetMapping
-    public ResponseEntity<PostResponse> getAllCategories() {
-        try {
-            List<Category> categories = categoryService.getAllCategories();
-
-            // Convert categories to only include names
-            List<String> formattedCategories = categories.stream()
-                    .map(Category::getName)
-                    .toList();
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(new PostResponse(
-                            true,
-                            "Categories retrieved successfully",
-                            formattedCategories
-                    ));
-        } catch (Exception e) {
-            log.error("Error retrieving categories: {}", e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new PostResponse(
-                            false,
-                            "Error retrieving categories: " + e.getMessage(),
-                            null
-                    ));
-        }
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<PostResponse> createCategory(
-            @RequestParam String categoryName
-    ) {
-        Category createdCategory;
-
-        try {
-            createdCategory = categoryService.createCategory(categoryName);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(new PostResponse(
-                    false, "Category creation failed", e.getMessage()
-            ));
+        public CategoryController(CategoryService categoryService) {
+                this.categoryService = categoryService;
         }
 
-        return ResponseEntity.ok(new PostResponse(
-                true, "Category created", createdCategory
-        ));
-    }
+        @GetMapping
+        public ResponseEntity<PostResponse> getAllCategories() {
+                try {
+                        List<Category> categories = categoryService.getAllCategories();
 
-    @PutMapping("/{oldCategoryName}")
-    public ResponseEntity<PostResponse> updateCategory(
-            @PathVariable String oldCategoryName,
-            @RequestParam String newCategoryName) {
-        Category updatedCategory;
+                        // Convert categories to only include names
+                        List<String> formattedCategories = categories.stream()
+                                        .map(Category::getName)
+                                        .toList();
 
-        try {
-            updatedCategory = categoryService.updateCategoryName(oldCategoryName, newCategoryName);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(new PostResponse(
-                    false, "Category update failed", e.getMessage()
-            ));
+                        return ResponseEntity.ok()
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .body(new PostResponse(
+                                                        true,
+                                                        "Categories retrieved successfully",
+                                                        formattedCategories));
+                } catch (Exception e) {
+                        log.error("Error retrieving categories: {}", e.getMessage());
+                        return ResponseEntity
+                                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body(new PostResponse(
+                                                        false,
+                                                        "Error retrieving categories: " + e.getMessage(),
+                                                        null));
+                }
         }
 
-        return ResponseEntity.ok(new PostResponse(
-                true, "Category updated successfully", updatedCategory
-        ));
-    }
+        @PostMapping("/create")
+        public ResponseEntity<PostResponse> createCategory(
+                        @RequestParam String categoryName) {
+                Category createdCategory;
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        PostResponse errorResponse = new PostResponse(
-                false, "Invalid category parameters", null);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(errorResponse);
-    }
+                try {
+                        createdCategory = categoryService.createCategory(categoryName);
+                } catch (Exception e) {
+                        log.error(e.getMessage());
+                        return ResponseEntity.badRequest().body(new PostResponse(
+                                        false, "Category creation failed", e.getMessage()));
+                }
+
+                return ResponseEntity.ok(new PostResponse(
+                                true, "Category created", createdCategory));
+        }
+
+        @PutMapping("/update")
+        public ResponseEntity<PostResponse> updateCategory(
+                        @RequestParam String oldCategoryName,
+                        @RequestParam String newCategoryName) {
+                Category updatedCategory;
+
+                try {
+                        updatedCategory = categoryService.updateCategoryName(oldCategoryName, newCategoryName);
+                } catch (Exception e) {
+                        log.error(e.getMessage());
+                        return ResponseEntity.badRequest().body(new PostResponse(
+                                        false, "Category update failed", e.getMessage()));
+                }
+
+                return ResponseEntity.ok(new PostResponse(
+                                true, "Category updated successfully", updatedCategory));
+        }
+
+        @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+        public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+                PostResponse errorResponse = new PostResponse(
+                                false, "Invalid category parameters", null);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(errorResponse);
+        }
 
 }

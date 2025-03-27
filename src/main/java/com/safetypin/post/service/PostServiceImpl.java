@@ -33,7 +33,8 @@ public class PostServiceImpl implements PostService {
     private final JwtService jwtService;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory, JwtService jwtService) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
+            GeometryFactory geometryFactory, JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
@@ -83,7 +84,8 @@ public class PostServiceImpl implements PostService {
         // The exact filtering will be done after calculating the actual distances
         Double radiusInMeters = radius * 1000;
 
-        // Select appropriate query based on date parameters only, we'll filter by category later
+        // Select appropriate query based on date parameters only, we'll filter by
+        // category later
         if (dateFrom != null && dateTo != null) {
             // Filter by date range only
             postsPage = postRepository.findPostsByDateRange(
@@ -98,7 +100,8 @@ public class PostServiceImpl implements PostService {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
-        // Transform Post entities to DTOs with distance, filtering by actual calculated distance and category
+        // Transform Post entities to DTOs with distance, filtering by actual calculated
+        // distance and category
         List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
@@ -110,12 +113,12 @@ public class PostServiceImpl implements PostService {
                     double distance = 0.0;
                     if (post.getLocation() != null) {
                         distance = DistanceCalculator.calculateDistance(
-                                centerLat, centerLon, post.getLatitude(), post.getLongitude()
-                        );
+                                centerLat, centerLon, post.getLatitude(), post.getLongitude());
                     }
                     result.put(DISTANCE_KEY, distance);
 
-                    // Return the result with the calculated distance and category name for filtering
+                    // Return the result with the calculated distance and category name for
+                    // filtering
                     return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
                 })
                 // Filter by the actual calculated distance (using the specified radius)
@@ -140,12 +143,12 @@ public class PostServiceImpl implements PostService {
         return new PageImpl<>(
                 filteredResults,
                 pageable,
-                filteredResults.size()
-        );
+                filteredResults.size());
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader,
+            Pageable pageable) throws InvalidCredentialsException {
 
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
 
@@ -176,16 +179,18 @@ public class PostServiceImpl implements PostService {
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
 
-        // Create sub-list for current page - handle case when start might be out of bounds
-        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ?
-                Collections.emptyList() : postsWithDistance.subList(start, end);
+        // Create sub-list for current page - handle case when start might be out of
+        // bounds
+        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ? Collections.emptyList()
+                : postsWithDistance.subList(start, end);
 
         // Return paginated result
         return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+    public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable)
+            throws InvalidCredentialsException {
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         // Get posts sorted by timestamp (newest first)
         Page<Post> postsPage = postRepository.findAll(pageable);
@@ -201,8 +206,8 @@ public class PostServiceImpl implements PostService {
 
                     return result;
                 })
-                .sorted(Comparator.comparing(post ->
-                                ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
+                .sorted(Comparator.comparing(
+                        post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
                         Comparator.reverseOrder()))
                 .toList();
 
@@ -211,7 +216,8 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, String category, UUID postedBy) {
+    public Post createPost(String title, String content, Double latitude, Double longitude, String category,
+            UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -262,34 +268,34 @@ public class PostServiceImpl implements PostService {
             Double centerLat, Double centerLon, Double radius,
             String keyword, List<String> categories, String authorizationHeader,
             Pageable pageable) {
-        
+
         // Check if we have any search criteria
         boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
         boolean hasCategories = categories != null && !categories.isEmpty();
-        
+
         // No search criteria provided, return empty result
         if (!hasKeyword && !hasCategories) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
-        
+
         // Validate categories first if provided
         if (hasCategories) {
             validateCategories(categories);
         }
-        
+
         // If we got here, categories are valid or none were provided
         // Now get userId since we have valid search criteria
         UUID userId;
         try {
             userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         } catch (InvalidCredentialsException e) {
-            throw new RuntimeException(e);
+            throw new PostException("Authentication error while searching posts: " + e.getMessage(), e);
         }
-        
+
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
         Double radiusInMeters = radius * 1000;
         Page<Post> postsPage;
-        
+
         if (hasCategories) {
             if (hasKeyword) {
                 // Case 3: Both keyword and categories provided
@@ -305,35 +311,34 @@ public class PostServiceImpl implements PostService {
             postsPage = postRepository.searchPostsByKeyword(
                     center, radiusInMeters, keyword, pageable);
         }
-        
+
         if (postsPage == null) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
-        
+
         // Process results similar to findPostsByLocation
         List<Map<String, Object>> results = postsPage.getContent().stream()
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
                     Map<String, Object> postData = mapPostToData(post, userId);
                     result.put("post", postData);
-                    
+
                     double distance = 0.0;
                     // Check if post has a valid location with lat/long
                     if (post.getLocation() != null && post.getLatitude() != null && post.getLongitude() != null) {
                         distance = DistanceCalculator.calculateDistance(
-                                centerLat, centerLon, post.getLatitude(), post.getLongitude()
-                        );
+                                centerLat, centerLon, post.getLatitude(), post.getLongitude());
                     }
                     result.put(DISTANCE_KEY, distance);
-                    
+
                     return result;
                 })
                 .filter(result -> (Double) result.get(DISTANCE_KEY) <= radius) // Filter by actual radius in km
                 .toList();
-        
+
         return new PageImpl<>(results, pageable, results.size());
     }
-    
+
     // Helper method to validate that all categories exist
     private void validateCategories(List<String> categories) {
         for (String category : categories) {

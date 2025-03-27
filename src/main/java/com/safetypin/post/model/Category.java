@@ -21,7 +21,7 @@ public class Category {
     @Column
     private String description;
 
-    @OneToMany(mappedBy = "category")
+    @OneToMany(mappedBy = "categoryEntity")
     private List<Post> posts;
 
     public Category(String name) {
