@@ -274,7 +274,7 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindAllPaginated() throws InvalidCredentialsException {
+    void testFindAllPaginated(){
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         String authorizationHeader = "Bearer test-token";
@@ -765,7 +765,7 @@ class PostServiceTest {
     }
 
     @Test
-    void testSearchPosts_NoSearchCriteria() throws InvalidCredentialsException {
+    void testSearchPosts_NoSearchCriteria() {
         // Given
         Double centerLat = 0.15;
         Double centerLon = 0.15;

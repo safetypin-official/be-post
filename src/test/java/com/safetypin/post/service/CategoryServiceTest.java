@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -107,86 +106,82 @@ class CategoryServiceTest {
         verify(categoryRepository, times(1)).findAll();
     }
 
-
     @Test
-    void testDeleteCategoryByName_Success() {
+    void testUpdateCategoryName_Success() {
         // Arrange
+        String newCategoryName = "Updated Category";
+        Category updatedCategory = new Category(newCategoryName);
+        updatedCategory.setDescription(testCategory.getDescription());
+        
         when(categoryRepository.findByName(testCategoryName)).thenReturn(testCategory);
-        doNothing().when(categoryRepository).delete(testCategory);
-
+        when(categoryRepository.existsById(newCategoryName)).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenReturn(updatedCategory);
+        
         // Act
-        categoryService.deleteCategoryByName(testCategoryName);
-
-        // Assert
-        verify(categoryRepository, times(1)).findByName(testCategoryName);
-        verify(categoryRepository, times(1)).delete(testCategory);
-    }
-
-    @Test
-    void testDeleteCategoryByName_NotFound() {
-        // Arrange
-        when(categoryRepository.findByName(testCategoryName)).thenReturn(null);
-
-        // Act & Assert
-        assertThrows(CategoryException.class, () -> categoryService.deleteCategoryByName(testCategoryName));
-        verify(categoryRepository, times(1)).findByName(testCategoryName);
-        verify(categoryRepository, never()).delete(any(Category.class));
-    }
-
-    @Test
-    void testUpdateCategory_Success() {
-        // Arrange
-        Category categoryToUpdate = new Category(testCategoryName);
-        categoryToUpdate.setDescription("Updated description");
-
-        when(categoryRepository.findById(testCategoryName)).thenReturn(Optional.of(testCategory));
-        when(categoryRepository.save(any(Category.class))).thenReturn(categoryToUpdate);
-
-        // Act
-        Category result = categoryService.updateCategory(categoryToUpdate);
-
+        Category result = categoryService.updateCategoryName(testCategoryName, newCategoryName);
+        
         // Assert
         assertNotNull(result);
-        assertEquals("Updated description", result.getDescription());
-        verify(categoryRepository, times(1)).findById(testCategoryName);
+        assertEquals(newCategoryName, result.getName());
+        verify(categoryRepository, times(1)).findByName(testCategoryName);
+        verify(categoryRepository, times(1)).existsById(newCategoryName);
         verify(categoryRepository, times(1)).save(any(Category.class));
-    }
-
-    @Test
-    void testUpdateCategory_NotFound() {
-        // Arrange
-        Category categoryToUpdate = new Category(testCategoryName);
-
-        when(categoryRepository.findById(testCategoryName)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(CategoryException.class, () -> categoryService.updateCategory(categoryToUpdate));
-        verify(categoryRepository, times(1)).findById(testCategoryName);
-        verify(categoryRepository, never()).save(any(Category.class));
-    }
-
-    @Test
-    void testDeleteCategory_Success() {
-        // Arrange
-        when(categoryRepository.existsById(testCategoryName)).thenReturn(true);
-        doNothing().when(categoryRepository).delete(testCategory);
-
-        // Act
-        categoryService.deleteCategory(testCategory);
-
-        // Assert
-        verify(categoryRepository, times(1)).existsById(testCategoryName);
         verify(categoryRepository, times(1)).delete(testCategory);
     }
-
+    
     @Test
-    void testDeleteCategory_NotFound() {
+    void testUpdateCategoryName_CategoryNotFound() {
         // Arrange
-        when(categoryRepository.existsById(testCategoryName)).thenReturn(false);
-
+        String newCategoryName = "Updated Category";
+        when(categoryRepository.findByName(testCategoryName)).thenReturn(null);
+        
         // Act & Assert
-        assertThrows(CategoryException.class, () -> categoryService.deleteCategory(testCategory));
+        CategoryException exception = assertThrows(CategoryException.class, 
+            () -> categoryService.updateCategoryName(testCategoryName, newCategoryName));
+        assertEquals("Category not found", exception.getMessage());
+        verify(categoryRepository, times(1)).findByName(testCategoryName);
+        verify(categoryRepository, never()).existsById(any());
+        verify(categoryRepository, never()).save(any());
+        verify(categoryRepository, never()).delete(any());
+    }
+    
+    @Test
+    void testUpdateCategoryName_NewNameAlreadyExists() {
+        // Arrange
+        String newCategoryName = "Existing Category";
+        
+        when(categoryRepository.findByName(testCategoryName)).thenReturn(testCategory);
+        when(categoryRepository.existsById(newCategoryName)).thenReturn(true);
+        
+        // Act & Assert
+        CategoryException exception = assertThrows(CategoryException.class, 
+            () -> categoryService.updateCategoryName(testCategoryName, newCategoryName));
+        assertEquals("Category with name " + newCategoryName + " already exists", exception.getMessage());
+        verify(categoryRepository, times(1)).findByName(testCategoryName);
+        verify(categoryRepository, times(1)).existsById(newCategoryName);
+        verify(categoryRepository, never()).save(any());
+        verify(categoryRepository, never()).delete(any());
+    }
+    
+    @Test
+    void testUpdateCategoryName_SameNameProvided() {
+        // Arrange
+        Category updatedCategory = new Category(testCategoryName);
+        updatedCategory.setDescription(testCategory.getDescription());
+        
+        when(categoryRepository.findByName(testCategoryName)).thenReturn(testCategory);
+        when(categoryRepository.existsById(testCategoryName)).thenReturn(true);
+        when(categoryRepository.save(any(Category.class))).thenReturn(updatedCategory);
+        
+        // Act
+        Category result = categoryService.updateCategoryName(testCategoryName, testCategoryName);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(testCategoryName, result.getName());
+        verify(categoryRepository, times(1)).findByName(testCategoryName);
         verify(categoryRepository, times(1)).existsById(testCategoryName);
-        verify(categoryRepository, never()).delete(any(Category.class));
+        verify(categoryRepository, times(1)).save(any(Category.class));
+        verify(categoryRepository, never()).delete(any());
     }
 }
