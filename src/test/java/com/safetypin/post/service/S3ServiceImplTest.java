@@ -26,21 +26,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class S3ServiceImplTest {
 
+    private final String testBucketName = "test-bucket";
+    private final String testFileType = "jpeg";
     @Mock
     private DefaultCredentialsProvider credentialsProvider;
-
     @InjectMocks
     private S3ServiceImpl s3Service;
-
-    private final String testBucketName = "test-bucket";
-    private final String testRegion = "us-east-1";
-    private final String testFileType = "jpeg";
 
     @BeforeEach
     void setUp() {
         // Set up the test environment with lenient mock settings
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(s3Service, "bucketName", testBucketName);
+        String testRegion = "us-east-1";
         ReflectionTestUtils.setField(s3Service, "region", testRegion);
     }
 

@@ -15,6 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -50,10 +51,20 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Categories retrieved successfully", response.getBody().getMessage());
 
-        List<String> responseData = (List<String>) response.getBody().getData();
+        // check cast
+        Object data = response.getBody().getData();
+        List<?> responseData;
+        if (data instanceof List<?>) {
+            responseData = ((List<?>) data).stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .toList();
+        } else {
+            throw new IllegalArgumentException("Unexpected data type: " + data.getClass());
+        }
         assertEquals(2, responseData.size());
         assertEquals("Category 1", responseData.get(0));
         assertEquals("Category 2", responseData.get(1));
@@ -71,7 +82,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Error retrieving categories"));
         assertNull(response.getBody().getData());
 
@@ -91,7 +102,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category created", response.getBody().getMessage());
         assertEquals(category, response.getBody().getData());
 
@@ -108,7 +119,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category creation failed", response.getBody().getMessage());
         assertEquals("Test error", response.getBody().getData());
 
@@ -128,7 +139,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Category updated"));
         assertEquals(category, response.getBody().getData());
 
@@ -148,7 +159,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category update failed", response.getBody().getMessage());
         assertEquals("Test error", response.getBody().getData());
 
@@ -165,7 +176,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category TestCategory deleted", response.getBody().getMessage());
         assertNull(response.getBody().getData());
 
@@ -182,7 +193,7 @@ class CategoryControllerTest {
 
         // Verify
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category deletion failed", response.getBody().getMessage());
         assertEquals("Test error", response.getBody().getData());
 
@@ -202,6 +213,7 @@ class CategoryControllerTest {
         assertEquals(MediaType.APPLICATION_JSON, response.getHeaders().getContentType());
 
         PostResponse body = response.getBody();
+        assert body != null;
         assertFalse(body.isSuccess());
         assertEquals("Invalid category parameters", body.getMessage());
         assertNull(body.getData());

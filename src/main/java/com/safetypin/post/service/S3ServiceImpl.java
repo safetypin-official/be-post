@@ -33,19 +33,19 @@ public class S3ServiceImpl implements S3Service {
             String fileName = UUID.randomUUID() + "." + fileType;
             log.debug("Generated unique filename: {}", fileName);
 
-            PresignedPutObjectRequest preSignedRequest = presigner.presignPutObject(builder -> 
-            builder.signatureDuration(Duration.ofMinutes(10))
-                    .putObjectRequest(req -> req
-                        .bucket(bucketName)
-                        .key(fileName)
-                        .contentType("image/" + fileType)
-                    )
+            PresignedPutObjectRequest preSignedRequest = presigner.presignPutObject(builder ->
+                    builder.signatureDuration(Duration.ofMinutes(10))
+                            .putObjectRequest(req -> req
+                                    .bucket(bucketName)
+                                    .key(fileName)
+                                    .contentType("image/" + fileType)
+                            )
             );
 
             URL presignedUrl = preSignedRequest.url();
             log.info("Successfully generated presigned URL for bucket: {}, key: {}", bucketName, fileName);
             log.debug("Presigned URL: {}", presignedUrl);
-            
+
             return presignedUrl;
         } catch (Exception e) {
             log.error("Error generating presigned URL for file type: {}", fileType, e);

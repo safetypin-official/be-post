@@ -97,7 +97,7 @@ class DevDataSeederTest {
         // Assert
         verify(postRepository).saveAll(postCaptor.capture());
         List<Post> savedPosts = postCaptor.getValue();
-        assertEquals(6, savedPosts.size());
+        assertEquals(15, savedPosts.size());
 
         // Verify first post content
         assertEquals("Dompet saya hilang di sekitar Margonda, tolong hubungi jika menemukan!", savedPosts.get(0).getCaption());
