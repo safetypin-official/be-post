@@ -103,6 +103,7 @@ public class PostServiceImpl implements PostService {
         // Transform Post entities to DTOs with distance, filtering by actual calculated
         // distance and category
         List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
+                .filter(Objects::nonNull) // Filter out null posts
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
 
@@ -287,7 +288,7 @@ public class PostServiceImpl implements PostService {
         UUID userId;
         try {
             userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-        } catch (InvalidCredentialsException e) {
+        } catch (InvalidCredentialsException | RuntimeException e) {
             throw new PostException("Authentication error while searching posts: " + e.getMessage(), e);
         }
 
