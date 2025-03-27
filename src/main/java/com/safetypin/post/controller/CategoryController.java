@@ -66,7 +66,7 @@ public class CategoryController {
                                 true, "Category created", createdCategory));
         }
 
-        @PutMapping("/update")
+        @PutMapping("/rename")
         public ResponseEntity<PostResponse> updateCategory(
                         @RequestParam String oldCategoryName,
                         @RequestParam String newCategoryName) {
@@ -77,11 +77,11 @@ public class CategoryController {
                 } catch (Exception e) {
                         log.error(e.getMessage());
                         return ResponseEntity.badRequest().body(new PostResponse(
-                                        false, "Category update failed", e.getMessage()));
+                                        false, "Category rename failed", e.getMessage()));
                 }
 
                 return ResponseEntity.ok(new PostResponse(
-                                true, "Category updated successfully", updatedCategory));
+                                true, "Category renamed successfully", updatedCategory));
         }
 
         @ExceptionHandler(MethodArgumentTypeMismatchException.class)

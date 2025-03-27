@@ -132,7 +132,7 @@ class CategoryControllerTest {
         // Verify
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
-        assertEquals("Category updated successfully", response.getBody().getMessage());
+        assertEquals("Category renamed successfully", response.getBody().getMessage());
         assertEquals(updatedCategory, response.getBody().getData());
         
         verify(categoryService, times(1)).updateCategoryName(oldCategoryName, newCategoryName);
@@ -153,7 +153,7 @@ class CategoryControllerTest {
         // Verify
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
-        assertEquals("Category update failed", response.getBody().getMessage());
+        assertEquals("Category rename failed", response.getBody().getMessage());
         assertEquals("Update error", response.getBody().getData());
         
         verify(categoryService, times(1)).updateCategoryName(oldCategoryName, newCategoryName);
