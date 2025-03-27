@@ -124,8 +124,7 @@ public class PostServiceImpl implements PostService {
                     if (entry.getValue().getKey() == null || entry.getValue().getKey() > radiusInMeters / 1000)
                         return false;
                     Object postObj = entry.getKey().get("post");
-                    if (!(postObj instanceof Map<?, ?> postMap))
-                        return false;
+                    Map<?, ?> postMap = (Map<?, ?>) postObj;
                     return postMap.get("latitude") != null && postMap.get("longitude") != null;
                 })
                 // Filter by category if provided

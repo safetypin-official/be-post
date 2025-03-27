@@ -66,10 +66,7 @@ class PostServiceTest {
                 Arguments.of("Valid title", "", "content", "Content is required"),
                 Arguments.of("Valid title", "   ", "content", "Content is required")
         );
-    }    private final LocalDateTime
-            now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     /**
      * Arguments provider for category validation tests
@@ -213,7 +210,10 @@ class PostServiceTest {
         // Then
         assertNotNull(result);
         assertTrue(result.getContent().isEmpty());
-    }
+    }    private final LocalDateTime
+            now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     // Test findPostsByLocation with category filter
     @Test
@@ -419,8 +419,6 @@ class PostServiceTest {
         // Post without location should be filtered out because distance check would fail
         assertEquals(0, result.getContent().size());
     }
-
-    // Test category UUID handling in findPostsByLocation
 
     @Test
     void testFindPostsByLocationWithDateFiltersNull() throws InvalidCredentialsException {
@@ -664,6 +662,8 @@ class PostServiceTest {
         verify(postRepository).findAll(firstPageable);
     }
 
+    // Test category UUID handling in findPostsByLocation
+
     @Test
     void testSearchPosts_WithKeywordOnly() throws InvalidCredentialsException {
         // Given
@@ -693,6 +693,33 @@ class PostServiceTest {
         assertEquals(2, result.getContent().size());
         verify(postRepository).searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable));
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+    }
+
+    @Test
+    void testErrorAuthorizationHeader() throws InvalidCredentialsException {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test";
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer test-token";
+        UUID userId = UUID.randomUUID();
+        Throwable error = new InvalidCredentialsException("failed parsing header");
+
+        when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenThrow(error);
+
+        List<Post> posts = Arrays.asList(post1, post2);
+        Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+
+        // When
+        assertThrows(RuntimeException.class, () -> {
+            Page<Map<String, Object>> result = postService.searchPosts(
+                    centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+        });
+
     }
 
     @Test
@@ -728,8 +755,6 @@ class PostServiceTest {
         verify(categoryRepository, times(2)).findByName(anyString());
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
     }
-
-    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testSearchPosts_WithKeywordAndCategories() throws InvalidCredentialsException {
@@ -969,6 +994,8 @@ class PostServiceTest {
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
     }
 
+    // POSITIVE TEST CASES FOR SEARCH POSTS
+
     @Test
     void testSearchPosts_WhitespaceKeyword() {
         // Given
@@ -1028,6 +1055,7 @@ class PostServiceTest {
                 return result;
             }
         };
+
 
         // When
         Page<Map<String, Object>> result = customService.findPostsByLocation(
