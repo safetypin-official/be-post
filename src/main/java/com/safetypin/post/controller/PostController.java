@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 public class PostController {
 
     private final PostService postService;
+    private static final String AUTH_FAILED_MESSAGE = "Authentication failed: ";
 
     public PostController(PostService postService) {
         this.postService = postService;
@@ -52,7 +53,6 @@ public class PostController {
         return postData;
     }
 
-
     // Helper method to create pagination data from a Page object
     private <T> Map<String, Object> createPaginationData(Page<T> page) {
         return Map.of(
@@ -62,8 +62,7 @@ public class PostController {
                 "currentPage", page.getNumber(),
                 "pageSize", page.getSize(),
                 "hasNext", page.hasNext(),
-                "hasPrevious", page.hasPrevious()
-        );
+                "hasPrevious", page.hasPrevious());
     }
 
     // Helper method to create a pageable object
@@ -115,8 +114,7 @@ public class PostController {
     public ResponseEntity<PostResponse> findAll(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return executeWithExceptionHandling(() -> {
             Pageable pageable = createPageable(page, size);
             Page<Post> postsPage = postService.findAllPaginated(authorizationHeader, pageable);
@@ -126,7 +124,8 @@ public class PostController {
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
-                    new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements()));
+                    new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable,
+                            postsPage.getTotalElements()));
 
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -164,7 +163,7 @@ public class PostController {
                 posts = postService.findPostsByLocation(
                         lat, lon, radiusToUse, category, fromDateTime, toDateTime, authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
-                throw new RuntimeException(e);
+                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
 
             // Create response with pagination data
@@ -194,7 +193,7 @@ public class PostController {
             try {
                 posts = postService.findPostsByDistanceFeed(lat, lon, authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
-                throw new RuntimeException(e);
+                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
 
             // Create response with pagination data
@@ -219,7 +218,7 @@ public class PostController {
             try {
                 posts = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
-                throw new RuntimeException(e);
+                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
 
             // Create response with pagination data
@@ -244,8 +243,7 @@ public class PostController {
             PostResponse response = new PostResponse(
                     true,
                     "Post created successfully",
-                    post
-            );
+                    post);
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -277,32 +275,35 @@ public class PostController {
             @RequestParam(required = false) List<String> categories,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         return executeWithExceptionHandling(() -> {
             // Validate parameters
             validateLocationParams(lat, lon);
-            
+
             // Validate that at least one search parameter is provided
-            if ((keyword == null || keyword.trim().isEmpty()) && 
-                (categories == null || categories.isEmpty())) {
+            if ((keyword == null || keyword.trim().isEmpty()) &&
+                    (categories == null || categories.isEmpty())) {
                 throw new InvalidPostDataException("Please provide either a search keyword or at least one category");
             }
-            
+
+            // Explicitly handle null radius
+            Double radiusToUse = radius != null ? radius : 10.0;
+
             // Create pageable for pagination
             Pageable pageable = createPageable(page, size);
-            
+
             // Search posts
             Page<Map<String, Object>> posts = null;
             try {
                 posts = postService.searchPosts(
-                        lat, lon, radius, keyword, categories, authorizationHeader, pageable);
+                        lat, lon, radiusToUse, keyword, categories, authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
-                throw new RuntimeException(e);
+                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
-            
+
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }

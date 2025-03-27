@@ -45,39 +45,33 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.findAll();
     }
 
-    @Override
-    public Category updateCategory(Category category) throws CategoryException {
-        Optional<Category> toUpdate = categoryRepository.findById(category.getName());
 
-        if (toUpdate.isPresent()) {
-            Category updatedCategory = toUpdate.get();
-            updatedCategory.setDescription(category.getDescription());
-            return categoryRepository.save(updatedCategory);
-        } else {
-            log.error("Category with name: {}, not found", category.getName());
+    @Override
+    public Category updateCategoryName(String oldCategoryName, String newCategoryName) throws CategoryException {
+        Category category = getCategoryByName(oldCategoryName);
+        
+        if (category == null) {
+            log.error("Category with name: {}, not found", oldCategoryName);
             throw new CategoryException("Category not found");
         }
-    }
-
-    @Override
-    public void deleteCategory(Category category) throws CategoryException {
-        if (!categoryRepository.existsById(category.getName())) {
-            throw new CategoryException("Category with name: " + category.getName() + " not found");
+        
+        // Check if new name already exists and is different from old name
+        if (categoryRepository.existsById(newCategoryName) && !oldCategoryName.equals(newCategoryName)) {
+            throw new CategoryException("Category with name " + newCategoryName + " already exists");
         }
-
-        categoryRepository.delete(category);
-        log.info("Category: {}; deleted", category);
-    }
-
-    @Override
-    public void deleteCategoryByName(String categoryName) throws CategoryException {
-        Category category = categoryRepository.findByName(categoryName);
-        if (category == null) {
-            log.error("Category with name: {}, not found", categoryName);
-            throw new CategoryException("Category with name: " + categoryName + " not found");
+        
+        // Create new category with new name but same description
+        Category newCategory = new Category(newCategoryName);
+        newCategory.setDescription(category.getDescription());
+        
+        // Save new category
+        categoryRepository.save(newCategory);
+        
+        // Delete old category if names are different
+        if (!oldCategoryName.equals(newCategoryName)) {
+            categoryRepository.delete(category);
         }
-
-        categoryRepository.delete(category);
-        log.info("Category: {}; deleted", category);
+        
+        return newCategory;
     }
 }

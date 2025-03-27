@@ -72,14 +72,14 @@ public class CategoryController {
         ));
     }
 
-    @PostMapping("/update")
+    @PutMapping("/{oldCategoryName}")
     public ResponseEntity<PostResponse> updateCategory(
-            @RequestBody Category category
-    ) {
+            @PathVariable String oldCategoryName,
+            @RequestParam String newCategoryName) {
         Category updatedCategory;
 
         try {
-            updatedCategory = categoryService.updateCategory(category);
+            updatedCategory = categoryService.updateCategoryName(oldCategoryName, newCategoryName);
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(new PostResponse(
@@ -88,29 +88,9 @@ public class CategoryController {
         }
 
         return ResponseEntity.ok(new PostResponse(
-                true, "Category updated to " + category, updatedCategory
+                true, "Category updated successfully", updatedCategory
         ));
     }
-
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<PostResponse> deleteCategory(
-            @RequestParam String categoryName
-    ) {
-        try {
-            categoryService.deleteCategoryByName(categoryName);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(new PostResponse(
-                    false, "Category deletion failed", e.getMessage()
-            ));
-        }
-
-        return ResponseEntity.ok(new PostResponse(
-                true, "Category " + categoryName + " deleted", null
-        ));
-    }
-
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
