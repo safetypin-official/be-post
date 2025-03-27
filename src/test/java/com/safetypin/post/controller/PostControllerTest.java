@@ -3,9 +3,9 @@ package com.safetypin.post.controller;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.service.JwtService;
 import com.safetypin.post.service.PostService;
 import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +39,8 @@ class PostControllerTest {
 
     @InjectMocks
     private PostController postController;
+    @Mock
+    private JwtService jwtService;
 
     private Page<Map<String, Object>> mockPage;
     private Post mockPost;
@@ -46,11 +48,12 @@ class PostControllerTest {
     private String authorizationHeader;
     private UUID testUserId;
 
+
     @BeforeEach
     void setUp() {
         mockPage = new PageImpl<>(new ArrayList<>());
-        testUserId = UUID.randomUUID();
         authorizationHeader = "Bearer test-token";
+        testUserId = UUID.randomUUID();
 
         Category mockCategory = new Category();
         mockCategory.setName("safety");
@@ -62,7 +65,6 @@ class PostControllerTest {
         mockPost.setLatitude(20.0);
         mockPost.setLongitude(10.0);
         mockPost.setCategory(mockCategory.getName());
-        mockPost.setPostedBy(testUserId);
 
         validRequest = new PostCreateRequest();
         validRequest.setTitle("Test Post");
@@ -70,7 +72,6 @@ class PostControllerTest {
         validRequest.setLatitude(20.0);
         validRequest.setLongitude(10.0);
         validRequest.setCategory(mockCategory.getName());
-        validRequest.setPostedBy(testUserId); // Add postedBy to valid request
     }
 
     /**
@@ -258,11 +259,16 @@ class PostControllerTest {
 
     @Test
     void createPost_Success() {
+        try {
+            doReturn(testUserId).when(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+        } catch (InvalidCredentialsException e) {
+            fail(e.getMessage());
+        }
         when(postService.createPost(
                 anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenReturn(mockPost);
 
-        ResponseEntity<PostResponse> response = postController.createPost(validRequest);
+        ResponseEntity<PostResponse> response = postController.createPost(authorizationHeader, validRequest);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
@@ -272,11 +278,16 @@ class PostControllerTest {
 
     @Test
     void createPost_ExceptionThrown() {
+        try {
+            doReturn(testUserId).when(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+        } catch (InvalidCredentialsException e) {
+            fail(e.getMessage());
+        }
         when(postService.createPost(
                 anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenThrow(new InvalidPostDataException("Test exception"));
 
-        ResponseEntity<PostResponse> response = postController.createPost(validRequest);
+        ResponseEntity<PostResponse> response = postController.createPost(authorizationHeader, validRequest);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
@@ -286,11 +297,16 @@ class PostControllerTest {
 
     @Test
     void createPost_RuntimeException() {
+        try {
+            doReturn(testUserId).when(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+        } catch (InvalidCredentialsException e) {
+            fail(e.getMessage());
+        }
         when(postService.createPost(
                 anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
                 .thenThrow(new RuntimeException("Unexpected runtime exception"));
 
-        ResponseEntity<PostResponse> response = postController.createPost(validRequest);
+        ResponseEntity<PostResponse> response = postController.createPost(authorizationHeader, validRequest);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
