@@ -43,4 +43,27 @@ public class VoteTest {
     void testCurrentVote_NoVote() {
         assertEquals(VoteType.NONE, post.currentVote(user3));
     }
+
+    @Test
+    void testUpvoteCountZero() {
+
+        Post post2 = new Post();
+        assertEquals(0, post2.getUpvoteCount());
+    }
+
+    @Test
+    void testDownvoteCountZero() {
+        Post post3 = new Post();
+        assertEquals(0, post3.getDownvoteCount());
+    }
+
+    @Test
+    void UpvoteCountMoreThanZero() {
+        assertEquals(1, post.getUpvoteCount());
+    }
+
+    @Test
+    void DownvoteCountMoreThanZero() {
+        assertEquals(1, post.getDownvoteCount());
+    }
 }

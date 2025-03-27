@@ -17,8 +17,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class CategoryControllerTest {
 
@@ -34,188 +37,101 @@ class CategoryControllerTest {
     }
 
     @Test
-    void getAllCategories_Success() {
-        // Setup
-        Category category1 = new Category();
-        category1.setName("Category 1");
-
-        Category category2 = new Category();
-        category2.setName("Category 2");
-
-        List<Category> categories = Arrays.asList(category1, category2);
-
+    void testGetAllCategories() {
+        List<Category> categories = Arrays.asList(new Category("Tech"), new Category("Health"));
         when(categoryService.getAllCategories()).thenReturn(categories);
 
-        // Execute
         ResponseEntity<PostResponse> response = categoryController.getAllCategories();
 
-        // Verify
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(200, response.getStatusCode().value());
         assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Categories retrieved successfully", response.getBody().getMessage());
-
-        // check cast
-        Object data = response.getBody().getData();
-        List<?> responseData;
-        if (data instanceof List<?>) {
-            responseData = ((List<?>) data).stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .toList();
-        } else {
-            throw new IllegalArgumentException("Unexpected data type: " + data.getClass());
-        }
-        assertEquals(2, responseData.size());
-        assertEquals("Category 1", responseData.get(0));
-        assertEquals("Category 2", responseData.get(1));
-
-        verify(categoryService, times(1)).getAllCategories();
+        assertEquals(Arrays.asList("Tech", "Health"), response.getBody().getData());
     }
 
     @Test
-    void getAllCategories_Exception() {
-        // Setup
-        when(categoryService.getAllCategories()).thenThrow(new RuntimeException("Test error"));
+    void testFailedGetAllCategories() {
+        List<Category> categories = Arrays.asList(new Category("Tech"), new Category("Health"));
+        when(categoryService.getAllCategories()).thenThrow(new RuntimeException("Error A"));
 
-        // Execute
         ResponseEntity<PostResponse> response = categoryController.getAllCategories();
 
-        // Verify
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(500, response.getStatusCode().value());
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
-        assertTrue(response.getBody().getMessage().contains("Error retrieving categories"));
+        assertEquals("Error retrieving categories: Error A", response.getBody().getMessage());
         assertNull(response.getBody().getData());
 
-        verify(categoryService, times(1)).getAllCategories();
     }
 
     @Test
-    void createCategory_Success() {
-        // Setup
-        Category category = new Category();
-        category.setName("TestCategory");
+    void testCreateCategory() {
+        String categoryName = "Travel";
+        Category category = new Category(categoryName);
+        when(categoryService.createCategory(categoryName)).thenReturn(category);
 
-        when(categoryService.createCategory("TestCategory")).thenReturn(category);
+        ResponseEntity<PostResponse> response = categoryController.createCategory(categoryName);
 
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.createCategory("TestCategory");
-
-        // Verify
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(200, response.getStatusCode().value());
         assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category created", response.getBody().getMessage());
         assertEquals(category, response.getBody().getData());
-
-        verify(categoryService, times(1)).createCategory("TestCategory");
     }
 
     @Test
-    void createCategory_Exception() {
-        // Setup
-        when(categoryService.createCategory("TestCategory")).thenThrow(new RuntimeException("Test error"));
+    void testFailedToCreateCategory() {
+        String categoryName = "Travel";
+        Category category = new Category(categoryName);
+        when(categoryService.createCategory(categoryName)).thenThrow(new RuntimeException("Error B"));
 
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.createCategory("TestCategory");
+        ResponseEntity<PostResponse> response = categoryController.createCategory(categoryName);
 
-        // Verify
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(400, response.getStatusCode().value());
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Category creation failed", response.getBody().getMessage());
-        assertEquals("Test error", response.getBody().getData());
-
-        verify(categoryService, times(1)).createCategory("TestCategory");
+        assertEquals("Error B", response.getBody().getData());
     }
 
     @Test
-    void updateCategory_Success() {
-        // Setup
-        Category category = new Category();
-        category.setName("UpdatedCategory");
+    void testUpdateCategory() {
+        String oldCategoryName = "Tech";
+        String newCategoryName = "Technology";
+        Category updatedCategory = new Category(newCategoryName);
+        when(categoryService.updateCategoryName(oldCategoryName, newCategoryName)).thenReturn(updatedCategory);
 
-        when(categoryService.updateCategory(category)).thenReturn(category);
+        ResponseEntity<PostResponse> response = categoryController.updateCategory(oldCategoryName, newCategoryName);
 
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.updateCategory(category);
-
-        // Verify
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(200, response.getStatusCode().value());
         assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
-        assertTrue(response.getBody().getMessage().contains("Category updated"));
-        assertEquals(category, response.getBody().getData());
-
-        verify(categoryService, times(1)).updateCategory(category);
+        assertEquals("Category renamed successfully", response.getBody().getMessage());
+        assertEquals(updatedCategory, response.getBody().getData());
     }
 
     @Test
-    void updateCategory_Exception() {
-        // Setup
-        Category category = new Category();
-        category.setName("UpdatedCategory");
+    void testFailedToUpdateCategory() {
+        String oldCategoryName = "Tech";
+        String newCategoryName = "Technology";
+        Category updatedCategory = new Category(newCategoryName);
+        when(categoryService.updateCategoryName(oldCategoryName, newCategoryName)).thenThrow(new RuntimeException("Error C"));
 
-        when(categoryService.updateCategory(category)).thenThrow(new RuntimeException("Test error"));
+        ResponseEntity<PostResponse> response = categoryController.updateCategory(oldCategoryName, newCategoryName);
 
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.updateCategory(category);
-
-        // Verify
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(400, response.getStatusCode().value());
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
-        assertEquals("Category update failed", response.getBody().getMessage());
-        assertEquals("Test error", response.getBody().getData());
-
-        verify(categoryService, times(1)).updateCategory(category);
+        assertEquals("Category rename failed", response.getBody().getMessage());
+        assertEquals("Error C", response.getBody().getData());
     }
 
     @Test
-    void deleteCategory_Success() {
-        // Setup
-        doNothing().when(categoryService).deleteCategoryByName("TestCategory");
+    void testHandleArgumentTypeMismatch() {
+        MethodArgumentTypeMismatchException ex = mock(MethodArgumentTypeMismatchException.class);
 
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.deleteCategory("TestCategory");
+        ResponseEntity<PostResponse> response = categoryController.handleArgumentTypeMismatch(ex);
 
-        // Verify
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
-        assertEquals("Category TestCategory deleted", response.getBody().getMessage());
-        assertNull(response.getBody().getData());
-
-        verify(categoryService, times(1)).deleteCategoryByName("TestCategory");
-    }
-
-    @Test
-    void deleteCategory_Exception() {
-        // Setup
-        doThrow(new RuntimeException("Test error")).when(categoryService).deleteCategoryByName("TestCategory");
-
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.deleteCategory("TestCategory");
-
-        // Verify
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
-        assertEquals("Category deletion failed", response.getBody().getMessage());
-        assertEquals("Test error", response.getBody().getData());
-
-        verify(categoryService, times(1)).deleteCategoryByName("TestCategory");
-    }
-
-    @Test
-    void handleArgumentTypeMismatch_ReturnsErrorResponse() {
-        // Setup
-        MethodArgumentTypeMismatchException exception = mock(MethodArgumentTypeMismatchException.class);
-
-        // Execute
-        ResponseEntity<PostResponse> response = categoryController.handleArgumentTypeMismatch(exception);
-
-        // Verify
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(MediaType.APPLICATION_JSON, response.getHeaders().getContentType());
-
-        PostResponse body = response.getBody();
-        assert body != null;
-        assertFalse(body.isSuccess());
-        assertEquals("Invalid category parameters", body.getMessage());
-        assertNull(body.getData());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Invalid category parameters", response.getBody().getMessage());
+        assertNull(response.getBody().getData());
     }
 }

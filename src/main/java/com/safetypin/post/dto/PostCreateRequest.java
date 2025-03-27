@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,4 +27,6 @@ public class PostCreateRequest {
 
     @JsonProperty(value = "Category", required = true)
     private String category;
+
+    private UUID postedBy;
 }

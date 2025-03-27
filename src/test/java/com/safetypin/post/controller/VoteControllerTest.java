@@ -70,7 +70,7 @@ class VoteControllerTest {
     }
 
     @Test
-    void testVoteEndpoint_AlreadyVoted_NoChange() throws InvalidCredentialsException {
+    void testUpvoteEndpoint_AlreadyVoted_NoChange() throws InvalidCredentialsException {
         // Given
         String expectedMessage = "User already up voted that post. Vote remains unchanged";
 
@@ -86,7 +86,22 @@ class VoteControllerTest {
     }
 
     @Test
-    void testVoteEndpoint_InvalidToken_ThrowsException() throws InvalidCredentialsException {
+    void testDownvoteEndpoint_InvalidToken_ThrowsException() throws InvalidCredentialsException {
+        // Given
+        String expectedMessage = "Invalid Token";
+        when(voteService.createVote(authorizationHeader, postId, false)).thenThrow(new InvalidCredentialsException(expectedMessage));
+
+        // When
+        ResponseEntity<PostResponse> response = voteController.downvote(authorizationHeader, postId);
+
+        // Then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(expectedMessage, Objects.requireNonNull(response.getBody()).getMessage());
+        verify(voteService, times(1)).createVote(authorizationHeader, postId, false);
+    }
+
+    @Test
+    void testUpoteEndpoint_InvalidToken_ThrowsException() throws InvalidCredentialsException {
         // Given
         when(voteService.createVote(any(), any(), anyBoolean()))
                 .thenThrow(new InvalidCredentialsException("Invalid token"));

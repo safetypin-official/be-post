@@ -15,9 +15,5 @@ public interface CategoryService {
 
     List<Category> getAllCategories();
 
-    Category updateCategory(Category category) throws CategoryException;
-
-    void deleteCategory(Category category) throws CategoryException;
-
-    void deleteCategoryByName(String categoryName) throws CategoryException;
+    Category updateCategoryName(String oldCategoryName, String newCategoryName) throws CategoryException;
 }

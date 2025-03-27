@@ -20,7 +20,6 @@ public class JwtService {
 
     public JwtService(@Value("${jwt.secret:120c727764e959b6f15dfd537c43bde23a70c18f82318b4633009afbbdd8e250}") String secretKey) {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
-        System.out.println("SecretKey: " + secretKey);
     }
 
     public Claims parseToken(String token) throws InvalidCredentialsException {
