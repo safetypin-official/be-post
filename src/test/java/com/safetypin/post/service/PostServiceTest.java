@@ -50,10 +50,7 @@ class PostServiceTest {
     private GeometryFactory geometryFactory;
     private PostServiceImpl postService;
     private Post post1, post2, post3;
-    private Post postWithoutLocation;    private final LocalDateTime
-            now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    private Post postWithoutLocation;
     private Category safetyCategory;
 
     /**
@@ -69,7 +66,10 @@ class PostServiceTest {
                 Arguments.of("Valid title", "", "content", "Content is required"),
                 Arguments.of("Valid title", "   ", "content", "Content is required")
         );
-    }
+    }    private final LocalDateTime
+            now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     /**
      * Arguments provider for category validation tests
@@ -267,7 +267,7 @@ class PostServiceTest {
         // Only post1 should be within the small radius
         assertEquals(1, result.getContent().size());
 
-        Map<String, Object> postResult = result.getContent().get(0);
+        Map<String, Object> postResult = result.getContent().getFirst();
         Map<String, Object> postData = (Map<String, Object>) postResult.get("post");
         assertEquals(0.0, postResult.get("distance"));
         assertEquals(post1.getCategory(), postData.get("category"));
@@ -368,8 +368,6 @@ class PostServiceTest {
         verify(postRepository).save(any(Post.class));
     }
 
-    // Test category UUID handling in findPostsByLocation
-
     @Test
     void testFindPostsByLocationWithDateFilters() throws InvalidCredentialsException {
         // Given
@@ -421,6 +419,8 @@ class PostServiceTest {
         // Post without location should be filtered out because distance check would fail
         assertEquals(0, result.getContent().size());
     }
+
+    // Test category UUID handling in findPostsByLocation
 
     @Test
     void testFindPostsByLocationWithDateFiltersNull() throws InvalidCredentialsException {
@@ -494,7 +494,7 @@ class PostServiceTest {
         assertTrue(secondDistance < thirdDistance);
 
         // Verify content is correctly mapped
-        Map<String, Object> firstPost = (Map<String, Object>) result.getContent().get(0).get("post");
+        Map<String, Object> firstPost = (Map<String, Object>) result.getContent().getFirst().get("post");
         assertNotNull(firstPost);
         assertEquals("Safety", firstPost.get("category"));
         assertEquals(0.01, firstPost.get("latitude"));
@@ -609,7 +609,7 @@ class PostServiceTest {
         List<Map<String, Object>> resultContent = result.getContent();
 
         // Check that the first post has the most recent date (post3 has tomorrow date)
-        Map<String, Object> firstPostMap = resultContent.get(0);
+        Map<String, Object> firstPostMap = resultContent.getFirst();
         Map<String, Object> firstPostData = (Map<String, Object>) firstPostMap.get("post");
         assertEquals(post3.getCreatedAt(), firstPostData.get("createdAt"));
 
@@ -663,8 +663,6 @@ class PostServiceTest {
         assertFalse(result.hasPrevious());
         verify(postRepository).findAll(firstPageable);
     }
-
-    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testSearchPosts_WithKeywordOnly() throws InvalidCredentialsException {
@@ -731,6 +729,8 @@ class PostServiceTest {
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
     }
 
+    // POSITIVE TEST CASES FOR SEARCH POSTS
+
     @Test
     void testSearchPosts_WithKeywordAndCategories() throws InvalidCredentialsException {
         // Given
@@ -738,7 +738,7 @@ class PostServiceTest {
         Double centerLon = 0.15;
         Double radius = 20.0; // 20 km
         String keyword = "test";
-        List<String> categories = Arrays.asList("Safety");
+        List<String> categories = List.of("Safety");
         Pageable pageable = PageRequest.of(0, 10);
         String authorizationHeader = "Bearer test-token";
         UUID userId = UUID.randomUUID();
@@ -783,7 +783,7 @@ class PostServiceTest {
         assertNotNull(result);
         assertTrue(result.getContent().isEmpty());
         assertEquals(0, result.getTotalElements());
-        
+
         // Verify no repository methods were called
         verifyNoInteractions(postRepository);
         verifyNoInteractions(jwtService);
@@ -845,8 +845,8 @@ class PostServiceTest {
         assertNotNull(result);
         // Only post1 should be within the small radius
         assertEquals(1, result.getContent().size());
-        
-        Map<String, Object> postResult = result.getContent().get(0);
+
+        Map<String, Object> postResult = result.getContent().getFirst();
         Map<String, Object> postData = (Map<String, Object>) postResult.get("post");
         assertEquals(post1.getCategory(), postData.get("category"));
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -1011,7 +1011,7 @@ class PostServiceTest {
         validPost.setLatitude(0.1);
         validPost.setLongitude(0.1);
         validPost.setCategory(safety.getName());
-        
+
         List<Post> posts = Collections.singletonList(validPost);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
@@ -1045,31 +1045,31 @@ class PostServiceTest {
         // Given
         UUID id = UUID.randomUUID();
         post1.setId(id);
-        
+
         when(postRepository.findById(id)).thenReturn(Optional.of(post1));
-        
+
         // When
         Post result = postService.findById(id);
-        
+
         // Then
         assertNotNull(result);
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
     }
-    
+
     @Test
     void testFindById_NotFound() {
         // Given
         UUID id = UUID.randomUUID();
-        
+
         when(postRepository.findById(id)).thenReturn(Optional.empty());
-        
+
         // When & Then
         PostNotFoundException exception = assertThrows(PostNotFoundException.class, () ->
-            postService.findById(id)
+                postService.findById(id)
         );
-        
+
         // Verify exception message contains the ID
         assertTrue(exception.getMessage().contains(id.toString()));
         verify(postRepository).findById(id);
@@ -1104,7 +1104,7 @@ class PostServiceTest {
         assertNotNull(result);
         // The post should be filtered out during distance calculation/filtering
         assertTrue(result.getContent().isEmpty());
-        
+
         // Since null location results in distance = 0.0, verify post processing
         verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
     }
@@ -1123,8 +1123,12 @@ class PostServiceTest {
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
                 postService.createPost(title, content, latitude, longitude, categoryName, postedBy)
         );
-        
+
         assertEquals("User ID (postedBy) is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
+
+
+
+
 }

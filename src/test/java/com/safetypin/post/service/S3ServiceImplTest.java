@@ -27,7 +27,6 @@ import static org.mockito.Mockito.*;
 class S3ServiceImplTest {
 
     private final String testBucketName = "test-bucket";
-    private final String testRegion = "us-east-1";
     private final String testFileType = "jpeg";
     @Mock
     private DefaultCredentialsProvider credentialsProvider;
@@ -39,6 +38,7 @@ class S3ServiceImplTest {
         // Set up the test environment with lenient mock settings
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(s3Service, "bucketName", testBucketName);
+        String testRegion = "us-east-1";
         ReflectionTestUtils.setField(s3Service, "region", testRegion);
     }
 

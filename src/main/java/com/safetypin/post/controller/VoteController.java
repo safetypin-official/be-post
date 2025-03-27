@@ -16,7 +16,7 @@ import java.util.UUID;
 @RequestMapping("/vote")
 public class VoteController {
 
-    VoteService voteService;
+    final VoteService voteService;
 
     public VoteController(VoteService voteService) {
         this.voteService = voteService;
@@ -27,7 +27,7 @@ public class VoteController {
         try {
             return createSuccessResponse(voteService.createVote(authorizationHeader, postId, true));
         } catch (Exception e) {
-            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            return createErrorResponse(e.getMessage());
         }
     }
 
@@ -36,7 +36,7 @@ public class VoteController {
         try {
             return createSuccessResponse(voteService.createVote(authorizationHeader, postId, false));
         } catch (Exception e) {
-            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            return createErrorResponse(e.getMessage());
         }
     }
 
@@ -45,7 +45,7 @@ public class VoteController {
         try {
             return createSuccessResponse(voteService.cancelVote(authorizationHeader, postId));
         } catch (Exception e) {
-            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            return createErrorResponse(e.getMessage());
         }
 
     }
@@ -59,9 +59,9 @@ public class VoteController {
                 .body(response);
     }
 
-    private ResponseEntity<PostResponse> createErrorResponse(HttpStatus status, String message) {
+    private ResponseEntity<PostResponse> createErrorResponse(String message) {
         PostResponse errorResponse = new PostResponse(false, message, null);
-        return ResponseEntity.status(status)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(errorResponse);
     }

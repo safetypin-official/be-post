@@ -262,21 +262,21 @@ public class PostServiceImpl implements PostService {
             Double centerLat, Double centerLon, Double radius,
             String keyword, List<String> categories, String authorizationHeader,
             Pageable pageable) {
-        
+
         // Check if we have any search criteria
         boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
         boolean hasCategories = categories != null && !categories.isEmpty();
-        
+
         // No search criteria provided, return empty result
         if (!hasKeyword && !hasCategories) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
-        
+
         // Validate categories first if provided
         if (hasCategories) {
             validateCategories(categories);
         }
-        
+
         // If we got here, categories are valid or none were provided
         // Now get userId since we have valid search criteria
         UUID userId;
@@ -285,11 +285,11 @@ public class PostServiceImpl implements PostService {
         } catch (InvalidCredentialsException e) {
             throw new RuntimeException(e);
         }
-        
+
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
         Double radiusInMeters = radius * 1000;
         Page<Post> postsPage;
-        
+
         if (hasCategories) {
             if (hasKeyword) {
                 // Case 3: Both keyword and categories provided
@@ -305,18 +305,18 @@ public class PostServiceImpl implements PostService {
             postsPage = postRepository.searchPostsByKeyword(
                     center, radiusInMeters, keyword, pageable);
         }
-        
+
         if (postsPage == null) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
-        
+
         // Process results similar to findPostsByLocation
         List<Map<String, Object>> results = postsPage.getContent().stream()
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
                     Map<String, Object> postData = mapPostToData(post, userId);
                     result.put("post", postData);
-                    
+
                     double distance = 0.0;
                     // Check if post has a valid location with lat/long
                     if (post.getLocation() != null && post.getLatitude() != null && post.getLongitude() != null) {
@@ -325,15 +325,15 @@ public class PostServiceImpl implements PostService {
                         );
                     }
                     result.put(DISTANCE_KEY, distance);
-                    
+
                     return result;
                 })
                 .filter(result -> (Double) result.get(DISTANCE_KEY) <= radius) // Filter by actual radius in km
                 .toList();
-        
+
         return new PageImpl<>(results, pageable, results.size());
     }
-    
+
     // Helper method to validate that all categories exist
     private void validateCategories(List<String> categories) {
         for (String category : categories) {
