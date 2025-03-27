@@ -38,8 +38,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
-    private final Category
-            safety = new Category("Safety"),
+    private final Category safety = new Category("Safety"),
             crime = new Category("Crime");
     @Mock
     private PostRepository postRepository;
@@ -50,8 +49,8 @@ class PostServiceTest {
     private GeometryFactory geometryFactory;
     private PostServiceImpl postService;
     private Post post1, post2, post3;
-    private Post postWithoutLocation;    private final LocalDateTime
-            now = LocalDateTime.now(),
+    private Post postWithoutLocation;
+    private final LocalDateTime now = LocalDateTime.now(),
             yesterday = now.minusDays(1),
             tomorrow = now.plusDays(1);
     private Category safetyCategory;
@@ -67,8 +66,7 @@ class PostServiceTest {
                 Arguments.of("   ", "Valid content", "title", "Title is required"),
                 Arguments.of("Valid title", null, "content", "Content is required"),
                 Arguments.of("Valid title", "", "content", "Content is required"),
-                Arguments.of("Valid title", "   ", "content", "Content is required")
-        );
+                Arguments.of("Valid title", "   ", "content", "Content is required"));
     }
 
     /**
@@ -79,8 +77,7 @@ class PostServiceTest {
                 // categoryName, expectedMessage
                 Arguments.of(null, "Category is required"),
                 Arguments.of("", "Category is required"),
-                Arguments.of("   ", "Category is required")
-        );
+                Arguments.of("   ", "Category is required"));
     }
 
     @BeforeEach
@@ -113,16 +110,17 @@ class PostServiceTest {
 
     @ParameterizedTest
     @MethodSource("titleAndContentValidationProvider")
-    void testCreatePostTitleAndContentValidation(String title, String content, String fieldName, String expectedMessage) {
+    void testCreatePostTitleAndContentValidation(String title, String content, String fieldName,
+            String expectedMessage) {
         // Given
         Double latitude = 1.0;
         Double longitude = 2.0;
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
-
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(), userId);
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(),
+                userId);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -139,9 +137,8 @@ class PostServiceTest {
         UUID userId = UUID.randomUUID();
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName, userId)
-        );
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(title, content, latitude, longitude, categoryName, userId));
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
@@ -157,7 +154,8 @@ class PostServiceTest {
         UUID userId = UUID.randomUUID();
 
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(), userId);
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(),
+                userId);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -187,7 +185,8 @@ class PostServiceTest {
         UUID userId = UUID.randomUUID();
 
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(), userId);
+        Executable executable = () -> postService.createPost(title, content, latitude, longitude, category.getName(),
+                userId);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -246,9 +245,9 @@ class PostServiceTest {
     @Test
     void testFindPostsByLocationWithDistanceFiltering() throws InvalidCredentialsException {
         // Given
-        double centerLat = 0.1;  // Same as post1's latitude
-        double centerLon = 0.1;  // Same as post1's longitude
-        double radius = 5.0;     // Small radius to filter out post2 and post3
+        double centerLat = 0.1; // Same as post1's latitude
+        double centerLon = 0.1; // Same as post1's longitude
+        double radius = 5.0; // Small radius to filter out post2 and post3
         Pageable pageable = PageRequest.of(0, 10);
         String authorizationHeader = "Bearer test-token";
 
@@ -274,7 +273,7 @@ class PostServiceTest {
     }
 
     @Test
-    void testFindAllPaginated(){
+    void testFindAllPaginated() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         String authorizationHeader = "Bearer test-token";
@@ -336,9 +335,8 @@ class PostServiceTest {
         when(categoryRepository.findByName(categoryName)).thenReturn(null);
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName, userId)
-        );
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(title, content, latitude, longitude, categoryName, userId));
 
         assertEquals("Category does not exist: " + categoryName, exception.getMessage());
         verify(categoryRepository).findByName(categoryName);
@@ -359,9 +357,8 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenThrow(new RuntimeException("Database error"));
 
         // When & Then
-        PostException exception = assertThrows(PostException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName, userId)
-        );
+        PostException exception = assertThrows(PostException.class,
+                () -> postService.createPost(title, content, latitude, longitude, categoryName, userId));
 
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
@@ -394,7 +391,8 @@ class PostServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
-        verify(postRepository).findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo), eq(pageable));
+        verify(postRepository).findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo),
+                eq(pageable));
     }
 
     @Test
@@ -418,7 +416,8 @@ class PostServiceTest {
 
         // Then
         assertNotNull(result);
-        // Post without location should be filtered out because distance check would fail
+        // Post without location should be filtered out because distance check would
+        // fail
         assertEquals(0, result.getContent().size());
     }
 
@@ -479,7 +478,8 @@ class PostServiceTest {
         when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader, pageable);
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader,
+                pageable);
 
         // Then
         assertNotNull(result);
@@ -511,7 +511,8 @@ class PostServiceTest {
         when(postRepository.findAll()).thenReturn(Collections.emptyList());
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader, pageable);
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader,
+                pageable);
 
         // Then
         assertNotNull(result);
@@ -576,7 +577,8 @@ class PostServiceTest {
         when(postRepository.findAll()).thenReturn(allPosts);
 
         // When
-        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader, pageable);
+        Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(userLat, userLon, authorizationHeader,
+                pageable);
 
         // Then
         assertNotNull(result);
@@ -749,7 +751,8 @@ class PostServiceTest {
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
-        when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword), eq(categories), eq(pageable)))
+        when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
+                eq(categories), eq(pageable)))
                 .thenReturn(postsPage);
 
         // When
@@ -759,7 +762,8 @@ class PostServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword), eq(categories), eq(pageable));
+        verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
+                eq(categories), eq(pageable));
         verify(categoryRepository).findByName("Safety");
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
     }
@@ -770,7 +774,7 @@ class PostServiceTest {
         Double centerLat = 0.15;
         Double centerLon = 0.15;
         Double radius = 20.0; // 20 km
-        String keyword = "";  // Empty keyword
+        String keyword = ""; // Empty keyword
         List<String> categories = Collections.emptyList(); // Empty categories
         Pageable pageable = PageRequest.of(0, 10);
         String authorizationHeader = "Bearer test-token";
@@ -783,7 +787,7 @@ class PostServiceTest {
         assertNotNull(result);
         assertTrue(result.getContent().isEmpty());
         assertEquals(0, result.getTotalElements());
-        
+
         // Verify no repository methods were called
         verifyNoInteractions(postRepository);
         verifyNoInteractions(jwtService);
@@ -845,7 +849,7 @@ class PostServiceTest {
         assertNotNull(result);
         // Only post1 should be within the small radius
         assertEquals(1, result.getContent().size());
-        
+
         Map<String, Object> postResult = result.getContent().get(0);
         Map<String, Object> postData = (Map<String, Object>) postResult.get("post");
         assertEquals(post1.getCategory(), postData.get("category"));
@@ -901,9 +905,8 @@ class PostServiceTest {
         when(categoryRepository.findByName("NonExistentCategory")).thenReturn(null);
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.searchPosts(centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable)
-        );
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
+                .searchPosts(centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable));
 
         assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
         verify(categoryRepository, times(2)).findByName(anyString());
@@ -928,9 +931,8 @@ class PostServiceTest {
                 .thenThrow(new RuntimeException("Database error"));
 
         // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                postService.searchPosts(centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable)
-        );
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> postService.searchPosts(centerLat,
+                centerLon, radius, keyword, categories, authorizationHeader, pageable));
 
         assertEquals("Database error", exception.getMessage());
         verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -992,7 +994,8 @@ class PostServiceTest {
         verifyNoInteractions(jwtService);
     }
 
-    // Also need to update the PostServiceImpl test constructor method that's used in one test
+    // Also need to update the PostServiceImpl test constructor method that's used
+    // in one test
     @Test
     void testFindPostsByLocation_PostObjectNotMap() throws InvalidCredentialsException {
         // Given
@@ -1011,7 +1014,7 @@ class PostServiceTest {
         validPost.setLatitude(0.1);
         validPost.setLongitude(0.1);
         validPost.setCategory(safety.getName());
-        
+
         List<Post> posts = Collections.singletonList(validPost);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
@@ -1019,7 +1022,8 @@ class PostServiceTest {
                 .thenReturn(postsPage);
 
         // Create a subclass of PostServiceImpl that overrides mapPostToData
-        PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory, jwtService) {
+        PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
+                jwtService) {
             @Override
             protected Map<String, Object> mapPostToData(Post post, UUID userId) {
                 Map<String, Object> result = new HashMap<>();
@@ -1045,31 +1049,29 @@ class PostServiceTest {
         // Given
         UUID id = UUID.randomUUID();
         post1.setId(id);
-        
+
         when(postRepository.findById(id)).thenReturn(Optional.of(post1));
-        
+
         // When
         Post result = postService.findById(id);
-        
+
         // Then
         assertNotNull(result);
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
     }
-    
+
     @Test
     void testFindById_NotFound() {
         // Given
         UUID id = UUID.randomUUID();
-        
+
         when(postRepository.findById(id)).thenReturn(Optional.empty());
-        
+
         // When & Then
-        PostNotFoundException exception = assertThrows(PostNotFoundException.class, () ->
-            postService.findById(id)
-        );
-        
+        PostNotFoundException exception = assertThrows(PostNotFoundException.class, () -> postService.findById(id));
+
         // Verify exception message contains the ID
         assertTrue(exception.getMessage().contains(id.toString()));
         verify(postRepository).findById(id);
@@ -1104,7 +1106,7 @@ class PostServiceTest {
         assertNotNull(result);
         // The post should be filtered out during distance calculation/filtering
         assertTrue(result.getContent().isEmpty());
-        
+
         // Since null location results in distance = 0.0, verify post processing
         verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
     }
@@ -1120,11 +1122,40 @@ class PostServiceTest {
         UUID postedBy = null; // Null user ID
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () ->
-                postService.createPost(title, content, latitude, longitude, categoryName, postedBy)
-        );
-        
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(title, content, latitude, longitude, categoryName, postedBy));
+
         assertEquals("User ID (postedBy) is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testSearchPosts_AuthenticationError() throws InvalidCredentialsException {
+        // Given
+        Double centerLat = 0.15;
+        Double centerLon = 0.15;
+        Double radius = 20.0; // 20 km
+        String keyword = "test"; // Valid search criteria
+        List<String> categories = null;
+        Pageable pageable = PageRequest.of(0, 10);
+        String authorizationHeader = "Bearer invalid-token";
+
+        // Mock JWT service to throw an exception
+        String errorMessage = "Invalid token";
+        when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader))
+                .thenThrow(new InvalidCredentialsException(errorMessage));
+
+        // When & Then
+        PostException exception = assertThrows(PostException.class, () -> postService.searchPosts(centerLat, centerLon,
+                radius, keyword, categories, authorizationHeader, pageable));
+
+        // Verify the exception contains the original error message
+        assertTrue(exception.getMessage().contains(errorMessage));
+        assertTrue(exception.getMessage().contains("Authentication error while searching posts"));
+        assertEquals(InvalidCredentialsException.class, exception.getCause().getClass());
+
+        verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+        // Verify no repository methods were called after authentication failed
+        verifyNoInteractions(postRepository);
     }
 }

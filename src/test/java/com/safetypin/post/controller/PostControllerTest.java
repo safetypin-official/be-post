@@ -948,4 +948,93 @@ class PostControllerTest {
                                 eq(lat), eq(lon), eq(radius), eq(keyword), eq(categories),
                                 eq(authorizationHeader), any(Pageable.class));
         }
+
+        /**
+         * Test authentication failure for feed by distance endpoint
+         */
+        @Test
+        void getPostsFeedByDistance_AuthenticationFailure() throws InvalidCredentialsException {
+                // Arrange
+                Double lat = 20.0;
+                Double lon = 10.0;
+                String errorMessage = "Invalid token";
+
+                when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), anyString(), any(Pageable.class)))
+                                .thenThrow(new InvalidCredentialsException(errorMessage));
+
+                // Act
+                ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                                authorizationHeader, lat, lon, 0, 10);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                PostResponse errorResponse = response.getBody();
+                assertNotNull(errorResponse);
+                assertFalse(errorResponse.isSuccess());
+                assertEquals("Authentication failed: " + errorMessage, errorResponse.getMessage());
+                assertNull(errorResponse.getData());
+
+                verify(postService).findPostsByDistanceFeed(
+                                eq(lat), eq(lon), eq(authorizationHeader), any(Pageable.class));
+        }
+
+        /**
+         * Test authentication failure for feed by timestamp endpoint
+         */
+        @Test
+        void getPostsFeedByTimestamp_AuthenticationFailure() throws InvalidCredentialsException {
+                // Arrange
+                String errorMessage = "Invalid token";
+
+                when(postService.findPostsByTimestampFeed(anyString(), any(Pageable.class)))
+                                .thenThrow(new InvalidCredentialsException(errorMessage));
+
+                // Act
+                ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(
+                                authorizationHeader, 0, 10);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                PostResponse errorResponse = response.getBody();
+                assertNotNull(errorResponse);
+                assertFalse(errorResponse.isSuccess());
+                assertEquals("Authentication failed: " + errorMessage, errorResponse.getMessage());
+                assertNull(errorResponse.getData());
+
+                verify(postService).findPostsByTimestampFeed(
+                                eq(authorizationHeader), any(Pageable.class));
+        }
+
+        /**
+         * Test authentication failure during getPosts
+         */
+        @Test
+        void getPosts_AuthenticationFailure() throws InvalidCredentialsException {
+                // Arrange
+                Double lat = 20.0;
+                Double lon = 10.0;
+                Double radius = 5.0;
+                String errorMessage = "Invalid token";
+
+                when(postService.findPostsByLocation(
+                                anyDouble(), anyDouble(), anyDouble(), any(), any(), any(),
+                                anyString(), any(Pageable.class)))
+                                .thenThrow(new InvalidCredentialsException(errorMessage));
+
+                // Act
+                ResponseEntity<PostResponse> response = postController.getPosts(
+                                authorizationHeader, lat, lon, radius, null, null, null, 0, 10);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                PostResponse errorResponse = response.getBody();
+                assertNotNull(errorResponse);
+                assertFalse(errorResponse.isSuccess());
+                assertEquals("Authentication failed: " + errorMessage, errorResponse.getMessage());
+                assertNull(errorResponse.getData());
+
+                verify(postService).findPostsByLocation(
+                                eq(lat), eq(lon), eq(radius), eq(null), eq(null), eq(null),
+                                eq(authorizationHeader), any(Pageable.class));
+        }
 }

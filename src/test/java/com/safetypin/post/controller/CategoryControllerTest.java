@@ -162,7 +162,6 @@ class CategoryControllerTest {
     @Test
     void handleArgumentTypeMismatch_ReturnsErrorResponse() {
         // Setup
-        MethodParameter parameter = mock(MethodParameter.class);
         MethodArgumentTypeMismatchException exception = mock(MethodArgumentTypeMismatchException.class);
         
         // Execute
