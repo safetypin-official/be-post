@@ -325,10 +325,10 @@ public class PostServiceImpl implements PostService {
 
                     double distance = 0.0;
                     // Check if post has a valid location with lat/long
-                    if (post.getLocation() != null && post.getLatitude() != null && post.getLongitude() != null) {
-                        distance = DistanceCalculator.calculateDistance(
-                                centerLat, centerLon, post.getLatitude(), post.getLongitude());
-                    }
+
+                    distance = DistanceCalculator.calculateDistance(
+                            centerLat, centerLon, post.getLatitude(), post.getLongitude());
+
                     result.put(DISTANCE_KEY, distance);
 
                     return result;
