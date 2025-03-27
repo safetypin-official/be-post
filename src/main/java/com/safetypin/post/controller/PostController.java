@@ -5,10 +5,12 @@ import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.service.JwtService;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -33,9 +35,11 @@ import java.util.function.Supplier;
 public class PostController {
 
     private final PostService postService;
+    private final JwtService jwtService;
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, JwtService jwtService) {
         this.postService = postService;
+        this.jwtService = jwtService;
     }
 
     // Helper method to format post data
@@ -126,7 +130,7 @@ public class PostController {
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
-                    new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements()));
+                    new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements()));
 
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -230,7 +234,19 @@ public class PostController {
     }
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest request) {
+    public ResponseEntity<PostResponse> createPost(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestBody PostCreateRequest request) {
+        // authorize user
+        UUID userId = null;
+        try {
+            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+
+        } catch (Exception e) {
+            createErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage());
+        }
+
+        UUID finalUserId = userId;
         return executeWithExceptionHandling(() -> {
             Post post = postService.createPost(
                     request.getTitle(),
@@ -238,7 +254,7 @@ public class PostController {
                     request.getLatitude(),
                     request.getLongitude(),
                     request.getCategory(),
-                    request.getPostedBy() // Add postedBy parameter
+                    finalUserId // Add postedBy parameter
             );
 
             PostResponse response = new PostResponse(
@@ -277,20 +293,20 @@ public class PostController {
             @RequestParam(required = false) List<String> categories,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         return executeWithExceptionHandling(() -> {
             // Validate parameters
             validateLocationParams(lat, lon);
-            
+
             // Validate that at least one search parameter is provided
-            if ((keyword == null || keyword.trim().isEmpty()) && 
-                (categories == null || categories.isEmpty())) {
+            if ((keyword == null || keyword.trim().isEmpty()) &&
+                    (categories == null || categories.isEmpty())) {
                 throw new InvalidPostDataException("Please provide either a search keyword or at least one category");
             }
-            
+
             // Create pageable for pagination
             Pageable pageable = createPageable(page, size);
-            
+
             // Search posts
             Page<Map<String, Object>> posts = null;
             try {
@@ -302,7 +318,7 @@ public class PostController {
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
-            
+
             return createSuccessResponse(paginationData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }

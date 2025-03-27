@@ -1,10 +1,14 @@
 package com.safetypin.post.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class PostCreateRequest {
     @JsonProperty(value = "Title", required = true)
@@ -21,14 +25,4 @@ public class PostCreateRequest {
 
     @JsonProperty(value = "Category", required = true)
     private String category;
-
-    private UUID postedBy;
-
-    public UUID getPostedBy() {
-        return postedBy;
-    }
-
-    public void setPostedBy(UUID postedBy) {
-        this.postedBy = postedBy;
-    }
 }
