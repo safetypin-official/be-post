@@ -48,7 +48,7 @@ public class JWTUtil {
         // Check if token has expiration date
         Date expirationDate = claims.getExpiration();
         if (expirationDate == null) {
-            throw new InvalidCredentialsException("Invalid JWT token: No expiration date");
+            throw new InvalidCredentialsException("Invalid JWT token: No expiration time");
         }
 
         return claims;
