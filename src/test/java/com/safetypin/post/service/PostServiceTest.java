@@ -3,6 +3,7 @@ package com.safetypin.post.service;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
@@ -1753,27 +1754,6 @@ class PostServiceTest {
         }
 
         @Test
-        void testDeletePost_Unauthorized() {
-                // Given
-                UUID postId = UUID.randomUUID();
-                UUID postOwnerId = UUID.randomUUID();
-                UUID differentUserId = UUID.randomUUID(); // Different user attempting deletion
-                Post post = new Post();
-                post.setId(postId);
-                post.setPostedBy(postOwnerId);
-
-                when(postRepository.findById(postId)).thenReturn(Optional.of(post));
-
-                // When & Then
-                PostException exception = assertThrows(PostException.class,
-                                () -> postService.deletePost(postId, differentUserId));
-
-                assertEquals("User not authorized to delete this post", exception.getMessage());
-                verify(postRepository).findById(postId);
-                verify(postRepository, never()).delete(any(Post.class));
-        }
-
-        @Test
         void testSearchPosts_AuthenticationErrorFromInvalidCredentials() throws InvalidCredentialsException {
                 // Given
                 Double centerLat = 0.15;
@@ -1853,6 +1833,135 @@ class PostServiceTest {
                 verify(postRepository).searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
                                 eq(pageable));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+        }
+
+        @Test
+        void testDeletePost_UnauthorizedAccess() {
+                // Given
+                UUID postId = UUID.randomUUID();
+                UUID postOwnerId = UUID.randomUUID();
+                UUID differentUserId = UUID.randomUUID(); // Different user trying to delete the post
+
+                Post post = new Post();
+                post.setId(postId);
+                post.setPostedBy(postOwnerId); // Post belongs to a different user
+
+                when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+
+                // When & Then
+                UnauthorizedAccessException exception = assertThrows(UnauthorizedAccessException.class,
+                                () -> postService.deletePost(postId, differentUserId));
+
+                assertEquals("User not authorized to delete this post", exception.getMessage());
+                verify(postRepository).findById(postId);
+                verify(postRepository, never()).delete(any(Post.class));
+        }
+
+        @Test
+        void testDeletePost_PostNotFound() {
+                // Given
+                UUID postId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID();
+
+                when(postRepository.findById(postId)).thenReturn(Optional.empty());
+
+                // When & Then
+                PostNotFoundException exception = assertThrows(PostNotFoundException.class,
+                                () -> postService.deletePost(postId, userId));
+
+                assertTrue(exception.getMessage().contains(postId.toString()));
+                verify(postRepository).findById(postId);
+                verify(postRepository, never()).delete(any(Post.class));
+        }
+
+        @Test
+        void testValidateCategories_AllCategoriesExist() throws InvalidCredentialsException {
+                // Given
+                Double centerLat = 0.15;
+                Double centerLon = 0.15;
+                Double radius = 20.0;
+                String keyword = "test";
+                List<String> categories = Arrays.asList("Safety", "Crime");
+                Pageable pageable = PageRequest.of(0, 10);
+                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID();
+
+                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
+                when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+                when(categoryRepository.findByName("Crime")).thenReturn(crime);
+
+                List<Post> posts = Arrays.asList(post1, post2);
+                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+                when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
+                                eq(categories), eq(pageable))).thenReturn(postsPage);
+
+                // When
+                Page<Map<String, Object>> result = postService.searchPosts(
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(2, result.getContent().size());
+                verify(categoryRepository).findByName("Safety");
+                verify(categoryRepository).findByName("Crime");
+                verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
+                                eq(categories), eq(pageable));
+        }
+
+        @Test
+        void testValidateCategories_EmptyCategory() {
+                // Given
+                Double centerLat = 0.15;
+                Double centerLon = 0.15;
+                Double radius = 20.0;
+                String keyword = "test";
+                List<String> categories = Arrays.asList("Safety", ""); // One empty category
+                Pageable pageable = PageRequest.of(0, 10);
+                String authorizationHeader = "Bearer test-token";
+
+                when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+                when(categoryRepository.findByName("")).thenReturn(null);
+
+                // When & Then
+                InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
+
+                assertEquals("Category does not exist: ", exception.getMessage());
+                verify(categoryRepository).findByName("Safety");
+                verify(categoryRepository).findByName("");
+                verifyNoInteractions(postRepository);
+                verifyNoInteractions(jwtService);
+        }
+
+        @Test
+        void testValidateCategories_NonExistentCategoryAmongMany() {
+                // Given
+                Double centerLat = 0.15;
+                Double centerLon = 0.15;
+                Double radius = 20.0;
+                String keyword = "test";
+                // Multiple valid categories but one non-existent
+                List<String> categories = Arrays.asList("Safety", "Crime", "NonExistentCategory");
+                Pageable pageable = PageRequest.of(0, 10);
+                String authorizationHeader = "Bearer test-token";
+
+                when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+                when(categoryRepository.findByName("Crime")).thenReturn(crime);
+                when(categoryRepository.findByName("NonExistentCategory")).thenReturn(null);
+
+                // When & Then
+                InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
+
+                assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
+                verify(categoryRepository).findByName("Safety");
+                verify(categoryRepository).findByName("Crime");
+                verify(categoryRepository).findByName("NonExistentCategory");
+                verifyNoInteractions(postRepository);
+                verifyNoInteractions(jwtService);
         }
 
 }
