@@ -1,5 +1,6 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.dto.LocationFilter;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -35,7 +36,7 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-                           GeometryFactory geometryFactory, JwtService jwtService) {
+            GeometryFactory geometryFactory, JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
@@ -71,15 +72,19 @@ public class PostServiceImpl implements PostService {
         return postRepository.findAll(pageable);
     }
 
-    // find posts given filter
+    // Updated method using LocationFilter
     @Override
     public Page<Map<String, Object>> findPostsByLocation(
             Double centerLat, Double centerLon, Double radius,
-            String category, LocalDateTime dateFrom, LocalDateTime dateTo,
-            String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+            LocationFilter filter, String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
         Page<Post> postsPage;
+
+        // Extract filter values
+        String category = filter != null ? filter.getCategory() : null;
+        LocalDateTime dateFrom = filter != null ? filter.getDateFrom() : null;
+        LocalDateTime dateTo = filter != null ? filter.getDateTo() : null;
 
         // Use a larger radius for database query to account for calculation differences
         // The exact filtering will be done after calculating the actual distances
@@ -150,7 +155,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader,
-                                                             Pageable pageable) throws InvalidCredentialsException {
+            Pageable pageable) throws InvalidCredentialsException {
 
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
 
@@ -219,7 +224,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category,
-                           UUID postedBy) {
+            UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -298,18 +303,18 @@ public class PostServiceImpl implements PostService {
         Double radiusInMeters = radius * 1000;
         Page<Post> postsPage;
 
-        if (hasCategories) {
-            if (hasKeyword) {
-                // Case 3: Both keyword and categories provided
-                postsPage = postRepository.searchPostsByKeywordAndCategories(
-                        center, radiusInMeters, keyword, categories, pageable);
-            } else {
-                // Case 2: Only categories provided
-                postsPage = postRepository.searchPostsByCategories(
-                        center, radiusInMeters, categories, pageable);
-            }
-        } else {
-            // Case 1: Only keyword provided
+        // Case 1: Both keyword and categories provided
+        if (hasKeyword && hasCategories) {
+            postsPage = postRepository.searchPostsByKeywordAndCategories(
+                    center, radiusInMeters, keyword, categories, pageable);
+        }
+        // Case 2: Only categories provided
+        else if (hasCategories) {
+            postsPage = postRepository.searchPostsByCategories(
+                    center, radiusInMeters, categories, pageable);
+        }
+        // Case 3: Only keyword provided
+        else {
             postsPage = postRepository.searchPostsByKeyword(
                     center, radiusInMeters, keyword, pageable);
         }

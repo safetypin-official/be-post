@@ -2,15 +2,13 @@ package com.safetypin.post.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class VoteTest {
-    private static final GeometryFactory geometryFactory = new GeometryFactory();
+class VoteTest {
     private Post post;
     private UUID user1;
     private UUID user2;

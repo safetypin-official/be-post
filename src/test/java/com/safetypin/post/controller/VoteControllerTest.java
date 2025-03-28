@@ -207,7 +207,7 @@ class VoteControllerTest {
     void testCancelVoteEndpoint_EmptyAuthorizationHeader_ThrowsException() throws InvalidCredentialsException {
         // Given
         String emptyHeader = "";
-        when(voteService.cancelVote(eq(emptyHeader), eq(postId)))
+        when(voteService.cancelVote(emptyHeader, postId))
                 .thenThrow(new InvalidCredentialsException("Authorization header is invalid"));
 
         // When/Then

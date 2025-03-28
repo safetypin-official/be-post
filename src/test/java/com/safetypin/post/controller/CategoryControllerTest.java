@@ -51,7 +51,6 @@ class CategoryControllerTest {
 
     @Test
     void testFailedGetAllCategories() {
-        List<Category> categories = Arrays.asList(new Category("Tech"), new Category("Health"));
         when(categoryService.getAllCategories()).thenThrow(new RuntimeException("Error A"));
 
         ResponseEntity<PostResponse> response = categoryController.getAllCategories();
@@ -80,7 +79,6 @@ class CategoryControllerTest {
     @Test
     void testFailedToCreateCategory() {
         String categoryName = "Travel";
-        Category category = new Category(categoryName);
         when(categoryService.createCategory(categoryName)).thenThrow(new RuntimeException("Error B"));
 
         ResponseEntity<PostResponse> response = categoryController.createCategory(categoryName);
@@ -110,7 +108,6 @@ class CategoryControllerTest {
     void testFailedToUpdateCategory() {
         String oldCategoryName = "Tech";
         String newCategoryName = "Technology";
-        Category updatedCategory = new Category(newCategoryName);
         when(categoryService.updateCategoryName(oldCategoryName, newCategoryName)).thenThrow(new RuntimeException("Error C"));
 
         ResponseEntity<PostResponse> response = categoryController.updateCategory(oldCategoryName, newCategoryName);

@@ -1,5 +1,6 @@
 package com.safetypin.post.controller;
 
+import com.safetypin.post.dto.LocationFilter;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
@@ -160,6 +161,9 @@ public class PostController {
             LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
             LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
 
+            // Create location filter
+            LocationFilter filter = new LocationFilter(category, fromDateTime, toDateTime);
+
             // Create pageable
             Pageable pageable = createPageable(page, size);
 
@@ -167,7 +171,7 @@ public class PostController {
             Page<Map<String, Object>> posts = null;
             try {
                 posts = postService.findPostsByLocation(
-                        lat, lon, radiusToUse, category, fromDateTime, toDateTime, authorizationHeader, pageable);
+                        lat, lon, radiusToUse, filter, authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
                 throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
