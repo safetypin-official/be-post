@@ -15,11 +15,6 @@ import java.util.UUID;
 @Service
 public interface PostService {
 
-        Page<Map<String, Object>> findPostsByLocation(
-                        Double centerLat, Double centerLon, Double radius,
-                        LocationFilter filter, String authorizationHeader,
-                        Pageable pageable) throws InvalidCredentialsException;
-
         Post createPost(String title, String content, Double latitude, Double longitude, String category,
                         UUID postedBy);
 

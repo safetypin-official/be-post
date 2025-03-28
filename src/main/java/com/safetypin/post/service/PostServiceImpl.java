@@ -70,85 +70,6 @@ public class PostServiceImpl implements PostService {
         return postRepository.findAll(pageable);
     }
 
-    // Updated method using LocationFilter
-    @Override
-    public Page<Map<String, Object>> findPostsByLocation(
-            Double centerLat, Double centerLon, Double radius,
-            LocationFilter filter, String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-        Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-        Page<Post> postsPage;
-
-        // Extract filter values
-        String category = filter != null ? filter.getCategory() : null;
-        LocalDateTime dateFrom = filter != null ? filter.getDateFrom() : null;
-        LocalDateTime dateTo = filter != null ? filter.getDateTo() : null;
-
-        // Use a larger radius for database query to account for calculation differences
-        Double radiusInMeters = radius * 1000;
-
-        // Select appropriate query based on date parameters only, we'll filter by
-        // category later
-        if (dateFrom != null && dateTo != null) {
-            // Filter by date range only
-            postsPage = postRepository.findPostsByDateRange(
-                    center, radiusInMeters, dateFrom, dateTo, pageable);
-        } else {
-            // No date filters, just use radius
-            postsPage = postRepository.findPostsWithinRadius(center, radiusInMeters, pageable);
-        }
-
-        // Check if postsPage is null, return empty page if null
-        if (postsPage == null) {
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
-        }
-
-        // Transform Post entities to DTOs with distance, filtering by actual calculated
-        // distance and category
-        List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
-                .filter(Objects::nonNull) // Filter out null posts
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post, userId);
-                    result.put("post", postData);
-
-                    double distance = 0.0;
-                    if (post.getLocation() != null) {
-                        distance = DistanceCalculator.calculateDistance(
-                                centerLat, centerLon, post.getLatitude(), post.getLongitude());
-                    }
-                    result.put(DISTANCE_KEY, distance);
-
-                    // Return the result with the calculated distance and category name for
-                    // filtering
-                    return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
-                })
-                // Filter by the actual calculated distance (using the specified radius)
-                // Add a check to exclude posts with null locations
-                .filter(entry -> {
-                    if (entry.getValue().getKey() > radius)
-                        return false;
-                    Object postObj = entry.getKey().get("post");
-                    Map<?, ?> postMap = (Map<?, ?>) postObj;
-                    return postMap.get("latitude") != null && postMap.get("longitude") != null;
-                })
-                // Filter by category if provided
-                .filter(entry -> category == null ||
-                        (entry.getValue().getValue() != null &&
-                                entry.getValue().getValue().equalsIgnoreCase(category)))
-                // Extract just the result map
-                .map(AbstractMap.SimpleEntry::getKey)
-                .toList();
-
-        // Create a new page with the filtered results
-        return new PageImpl<>(
-                filteredResults,
-                pageable,
-                filteredResults.size());
-    }
-
     @Override
     public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable)
             throws InvalidCredentialsException {
@@ -280,8 +201,6 @@ public class PostServiceImpl implements PostService {
         if (postsPage == null) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
-
-        // Process results similar to findPostsByLocation
         List<Map<String, Object>> results = postsPage.getContent().stream()
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();

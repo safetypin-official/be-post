@@ -138,51 +138,6 @@ public class PostController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PostResponse> getPosts(
-            @RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam Double lat,
-            @RequestParam Double lon,
-            @RequestParam(required = false, defaultValue = "10.0") Double radius,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        return executeWithExceptionHandling(() -> {
-            // Explicitly handle null radius
-            Double radiusToUse = radius != null ? radius : 10.0;
-
-            // Validate lat and lon
-            validateLocationParams(lat, lon);
-
-            // convert LocalDate to localDateTime & handle null
-            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
-            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
-
-            // Create location filter
-            LocationFilter filter = new LocationFilter(category, fromDateTime, toDateTime);
-
-            // Create pageable
-            Pageable pageable = createPageable(page, size);
-
-            // find posts
-            Page<Map<String, Object>> posts = null;
-            try {
-                posts = postService.findPostsByLocation(
-                        lat, lon, radiusToUse, filter, authorizationHeader, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
-
-            // Create response with pagination data
-            Map<String, Object> paginationData = createPaginationData(posts);
-
-            return createSuccessResponse(paginationData);
-        }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
     @GetMapping("/feed/distance")
     public ResponseEntity<PostResponse> getPostsFeedByDistance(
             @RequestHeader("Authorization") String authorizationHeader,

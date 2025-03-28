@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
 class PostServiceTest {
 
         private final Category safety = new Category("Safety"),
-                crime = new Category("Crime");
+                        crime = new Category("Crime");
         @Mock
         private PostRepository postRepository;
         @Mock
@@ -59,13 +59,13 @@ class PostServiceTest {
          */
         private static Stream<Arguments> titleAndContentValidationProvider() {
                 return Stream.of(
-                        // title, content, fieldName, expectedMessage
-                        Arguments.of(null, "Valid content", "title", "Title is required"),
-                        Arguments.of("", "Valid content", "title", "Title is required"),
-                        Arguments.of("   ", "Valid content", "title", "Title is required"),
-                        Arguments.of("Valid title", null, "content", "Content is required"),
-                        Arguments.of("Valid title", "", "content", "Content is required"),
-                        Arguments.of("Valid title", "   ", "content", "Content is required"));
+                                // title, content, fieldName, expectedMessage
+                                Arguments.of(null, "Valid content", "title", "Title is required"),
+                                Arguments.of("", "Valid content", "title", "Title is required"),
+                                Arguments.of("   ", "Valid content", "title", "Title is required"),
+                                Arguments.of("Valid title", null, "content", "Content is required"),
+                                Arguments.of("Valid title", "", "content", "Content is required"),
+                                Arguments.of("Valid title", "   ", "content", "Content is required"));
         }
 
         /**
@@ -73,10 +73,10 @@ class PostServiceTest {
          */
         private static Stream<Arguments> categoryValidationProvider() {
                 return Stream.of(
-                        // categoryName, expectedMessage
-                        Arguments.of(null, "Category is required"),
-                        Arguments.of("", "Category is required"),
-                        Arguments.of("   ", "Category is required"));
+                                // categoryName, expectedMessage
+                                Arguments.of(null, "Category is required"),
+                                Arguments.of("", "Category is required"),
+                                Arguments.of("   ", "Category is required"));
         }
 
         @BeforeEach
@@ -110,7 +110,7 @@ class PostServiceTest {
         @ParameterizedTest
         @MethodSource("titleAndContentValidationProvider")
         void testCreatePostTitleAndContentValidation(String title, String content, String fieldName,
-                                                     String expectedMessage) {
+                        String expectedMessage) {
                 // Given
                 Double latitude = 1.0;
                 Double longitude = 2.0;
@@ -119,7 +119,7 @@ class PostServiceTest {
 
                 // When & Then
                 Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                        category.getName(), userId);
+                                category.getName(), userId);
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
                 assertEquals(expectedMessage, exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
@@ -137,7 +137,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                        .createPost(title, content, latitude, longitude, categoryName, userId));
+                                .createPost(title, content, latitude, longitude, categoryName, userId));
                 assertEquals(expectedMessage, exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
         }
@@ -154,7 +154,7 @@ class PostServiceTest {
 
                 // When & Then
                 Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                        category.getName(), userId);
+                                category.getName(), userId);
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
                 assertEquals("Location coordinates are required", exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
@@ -185,98 +185,15 @@ class PostServiceTest {
 
                 // When & Then
                 Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                        category.getName(), userId);
+                                category.getName(), userId);
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
                 assertEquals("Location coordinates are required", exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
         }
 
-        // Test findPostsByLocation with null repository response
-        @Test
-        void testFindPostsByLocationWithNullResponse() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(null);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.getContent().isEmpty());
-        }
-
-        // Test findPostsByLocation with category filter
-        @Test
-        void testFindPostsByLocationWithCategoryFilter() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                String category = "Crime";
-                LocationFilter filter = new LocationFilter(category, null, null);
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-
-                List<Post> posts = Arrays.asList(post1, post2, post3);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                // Only post2 has Crime category
-                assertEquals(1, result.getContent().size());
-        }
-
-        // Test findPostsByLocation with distance filtering
-        @Test
-        void testFindPostsByLocationWithDistanceFiltering() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.1; // Same as post1's latitude
-                double centerLon = 0.1; // Same as post1's longitude
-                double radius = 5.0; // Small radius to filter out post2 and post3
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-
-                List<Post> posts = Arrays.asList(post1, post2, post3);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                // Only post1 should be within the small radius
-                assertEquals(1, result.getContent().size());
-
-                Map<String, Object> postResult = result.getContent().getFirst();
-                Map<String, Object> postData = (Map<String, Object>) postResult.get("post");
-                assertEquals(0.0, postResult.get("distance"));
-                assertEquals(post1.getCategory(), postData.get("category"));
-        }
-
         private final LocalDateTime now = LocalDateTime.now(),
-                yesterday = now.minusDays(1),
-                tomorrow = now.plusDays(1);
+                        yesterday = now.minusDays(1),
+                        tomorrow = now.plusDays(1);
 
         @Test
         void testFindAllPaginated() {
@@ -342,7 +259,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                        .createPost(title, content, latitude, longitude, categoryName, userId));
+                                .createPost(title, content, latitude, longitude, categoryName, userId));
 
                 assertEquals("Category does not exist: " + categoryName, exception.getMessage());
                 verify(categoryRepository).findByName(categoryName);
@@ -364,94 +281,11 @@ class PostServiceTest {
 
                 // When & Then
                 PostException exception = assertThrows(PostException.class, () -> postService.createPost(title, content,
-                        latitude, longitude, categoryName, userId));
+                                latitude, longitude, categoryName, userId));
 
                 assertTrue(exception.getMessage().contains("Failed to save the post"));
                 verify(categoryRepository).findByName(categoryName);
                 verify(postRepository).save(any(Post.class));
-        }
-
-        @Test
-        void testFindPostsByLocationWithDateFilters() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                LocalDateTime dateFrom = yesterday;
-                LocalDateTime dateTo = tomorrow;
-                LocationFilter filter = new LocationFilter(null, dateFrom, dateTo);
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-
-                List<Post> posts = Arrays.asList(post1, post2);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo),
-                        eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(2, result.getContent().size());
-                verify(postRepository).findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo),
-                        eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocationWithPostWithoutLocation() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-
-                List<Post> posts = Collections.singletonList(postWithoutLocation);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                // Post without location should be filtered out because distance check would
-                // fail
-                assertEquals(0, result.getContent().size());
-        }
-
-        @Test
-        void testFindPostsByLocationWithDateFiltersNull() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-
-                List<Post> posts = Arrays.asList(post1, post2, post3);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(2, result.getContent().size());
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
         }
 
         @Test
@@ -491,11 +325,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenReturn(postsPage);
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -524,23 +358,21 @@ class PostServiceTest {
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(categoryRepository.findByName("Crime")).thenReturn(crime);
                 when(postRepository.searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                        eq(pageable)))
-                        .thenReturn(postsPage);
+                                eq(pageable)))
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size());
                 verify(postRepository).searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                        eq(pageable));
+                                eq(pageable));
                 verify(categoryRepository, times(2)).findByName(anyString());
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
-
-        // Test category UUID handling in findPostsByLocation
 
         @Test
         void testSearchPosts_WithKeywordAndCategories() throws InvalidCredentialsException {
@@ -561,18 +393,18 @@ class PostServiceTest {
 
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                        eq(categories), eq(pageable)))
-                        .thenReturn(postsPage);
+                                eq(categories), eq(pageable)))
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size());
                 verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                        eq(categories), eq(pageable));
+                                eq(categories), eq(pageable));
                 verify(categoryRepository).findByName("Safety");
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
@@ -590,7 +422,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -616,11 +448,11 @@ class PostServiceTest {
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenReturn(null);
+                                .thenReturn(null);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -648,11 +480,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenReturn(postsPage);
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -685,11 +517,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, 5); // 5 total elements but only 2 in this page
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenReturn(postsPage);
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -715,8 +547,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
                 verify(categoryRepository, times(2)).findByName(anyString());
@@ -738,12 +570,12 @@ class PostServiceTest {
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenThrow(new RuntimeException("Database error"));
+                                .thenThrow(new RuntimeException("Database error"));
 
                 // When & Then
                 RuntimeException exception = assertThrows(RuntimeException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Database error", exception.getMessage());
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -767,11 +599,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenReturn(postsPage);
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -795,7 +627,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -803,57 +635,6 @@ class PostServiceTest {
                 // Should be treated as no search criteria provided
                 verifyNoInteractions(postRepository);
                 verifyNoInteractions(jwtService);
-        }
-
-        // Also need to update the PostServiceImpl test constructor method that's used
-        // in one test
-        @Test
-        void testFindPostsByLocation_PostObjectNotMap() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a post with location
-                Post validPost = new Post();
-                validPost.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                validPost.setLatitude(0.1);
-                validPost.setLongitude(0.1);
-                validPost.setCategory(safety.getName());
-
-                List<Post> posts = Collections.singletonList(validPost);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // Create a subclass of PostServiceImpl that overrides mapPostToData
-                PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                        jwtService) {
-                        @Override
-                        protected Map<String, Object> mapPostToData(Post post, UUID userId) {
-                                Map<String, Object> result = new HashMap<>();
-                                // Put a non-Map object for the "post" key
-                                result.put("post", "This is a string, not a map");
-                                return result;
-                        }
-                };
-
-                // When
-                Page<Map<String, Object>> result = customService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                // The post should be filtered out because "post" is not a Map
-                assertTrue(result.getContent().isEmpty());
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
         }
 
         // POSITIVE TEST CASES FOR SEARCH POSTS
@@ -885,46 +666,11 @@ class PostServiceTest {
 
                 // When & Then
                 PostNotFoundException exception = assertThrows(PostNotFoundException.class,
-                        () -> postService.findById(id));
+                                () -> postService.findById(id));
 
                 // Verify exception message contains the ID
                 assertTrue(exception.getMessage().contains(id.toString()));
                 verify(postRepository).findById(id);
-        }
-
-        @Test
-        void testFindPostsByLocationWithNullLocation() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                LocationFilter filter = new LocationFilter(null, null, null);
-
-                // Create a post with null location for this test
-                Post postWithNullLocation = new Post();
-                postWithNullLocation.setLocation(null); // Force null location
-                postWithNullLocation.setCategory(safety.getName());
-                postWithNullLocation.setCreatedAt(now);
-
-                List<Post> posts = Collections.singletonList(postWithNullLocation);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-                String authorizationHeader = "Bearer test-token";
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                // The post should be filtered out during distance calculation/filtering
-                assertTrue(result.getContent().isEmpty());
-
-                // Since null location results in distance = 0.0, verify post processing
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
         }
 
         @Test
@@ -939,416 +685,10 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                        .createPost(title, content, latitude, longitude, categoryName, postedBy));
+                                .createPost(title, content, latitude, longitude, categoryName, postedBy));
 
                 assertEquals("User ID (postedBy) is required", exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
-        }
-
-        @Test
-        void testFindPostsByLocation_NullValueInDistance() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a post with location that has valid coordinates
-                // but we'll make our custom service handle it specially
-                Post postWithLocation = new Post();
-                postWithLocation.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                postWithLocation.setLatitude(0.1);
-                postWithLocation.setLongitude(0.1);
-                postWithLocation.setCategory(safety.getName());
-
-                List<Post> posts = Collections.singletonList(postWithLocation);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // Create a custom implementation that will return null for distance calculation
-                PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                        jwtService) {
-                        @Override
-                        protected Map<String, Object> mapPostToData(Post post, UUID userId) {
-                                Map<String, Object> postData = new HashMap<>();
-                                postData.put("id", post.getId());
-                                postData.put("title", post.getTitle());
-                                postData.put("caption", post.getCaption());
-                                // Explicitly set latitude and longitude to null which will cause the filter to
-                                // exclude this post
-                                postData.put("latitude", null);
-                                postData.put("longitude", null);
-                                postData.put("createdAt", post.getCreatedAt());
-                                postData.put("category", post.getCategory());
-                                postData.put("upvoteCount", post.getUpvoteCount());
-                                postData.put("downvoteCount", post.getDownvoteCount());
-                                postData.put("currentVote", post.currentVote(userId));
-                                postData.put("postedBy", post.getPostedBy());
-                                return postData;
-                        }
-                };
-
-                // When
-                Page<Map<String, Object>> result = customService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.getContent().isEmpty()); // Should be filtered out
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_DistanceGreaterThanRadius() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.0;
-                double centerLon = 0.0;
-                double radius = 0.1; // Very small radius in km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a post that will be outside the radius
-                Post distantPost = new Post();
-                distantPost.setLocation(geometryFactory.createPoint(new Coordinate(1.0, 1.0))); // Far away
-                distantPost.setLatitude(1.0);
-                distantPost.setLongitude(1.0);
-                distantPost.setCategory(safety.getName());
-
-                List<Post> posts = Collections.singletonList(distantPost);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.getContent().isEmpty()); // Should be filtered out as distance > radius
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_NullLatitudeInPostMap() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a custom implementation to return a post with null latitude in the map
-                PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                        jwtService) {
-                        @Override
-                        protected Map<String, Object> mapPostToData(Post post, UUID userId) {
-                                Map<String, Object> postData = new HashMap<>();
-                                postData.put("id", post.getId());
-                                postData.put("title", post.getTitle());
-                                postData.put("caption", post.getCaption());
-                                postData.put("latitude", null); // Explicitly set latitude to null
-                                postData.put("longitude", post.getLongitude());
-                                postData.put("createdAt", post.getCreatedAt());
-                                postData.put("category", post.getCategory());
-                                postData.put("upvoteCount", post.getUpvoteCount());
-                                postData.put("downvoteCount", post.getDownvoteCount());
-                                postData.put("currentVote", post.currentVote(userId));
-                                postData.put("postedBy", post.getPostedBy());
-                                return postData;
-                        }
-                };
-
-                // Create a post with valid location
-                Post post = new Post();
-                post.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                post.setLatitude(0.1);
-                post.setLongitude(0.1);
-                post.setCategory(safety.getName());
-
-                List<Post> posts = Collections.singletonList(post);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = customService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.getContent().isEmpty()); // Should be filtered out due to null latitude
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_NullLongitudeInPostMap() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a custom implementation to return a post with null longitude in the
-                // map
-                PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                        jwtService) {
-                        @Override
-                        protected Map<String, Object> mapPostToData(Post post, UUID userId) {
-                                Map<String, Object> postData = new HashMap<>();
-                                postData.put("id", post.getId());
-                                postData.put("title", post.getTitle());
-                                postData.put("caption", post.getCaption());
-                                postData.put("latitude", post.getLatitude());
-                                postData.put("longitude", null); // Explicitly set longitude to null
-                                postData.put("createdAt", post.getCreatedAt());
-                                postData.put("category", post.getCategory());
-                                postData.put("upvoteCount", post.getUpvoteCount());
-                                postData.put("downvoteCount", post.getDownvoteCount());
-                                postData.put("currentVote", post.currentVote(userId));
-                                postData.put("postedBy", post.getPostedBy());
-                                return postData;
-                        }
-                };
-
-                // Create a post with valid location
-                Post post = new Post();
-                post.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                post.setLatitude(0.1);
-                post.setLongitude(0.1);
-                post.setCategory(safety.getName());
-
-                List<Post> posts = Collections.singletonList(post);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = customService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.getContent().isEmpty()); // Should be filtered out due to null longitude
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_CategoryFilterWithNoCategorySpecified() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Mix of posts with different categories
-                List<Post> posts = Arrays.asList(post1, post2, post3);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                // All posts should be included since we're not filtering by category
-                assertEquals(2, result.getContent().size()); // This includes post1 and post2 as they're within range
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_NullDateButNonNullCategory() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                String category = "Safety"; // Non-null category
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(category, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                List<Post> posts = Arrays.asList(post1, post3); // Both have Safety category
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(1, result.getContent().size()); // Only post1 should be in range and match category
-
-                Map<String, Object> postMap = result.getContent().getFirst();
-                Map<String, Object> postData = (Map<String, Object>) postMap.get("post");
-                assertEquals("Safety", postData.get("category"));
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_WithNullPostsInList() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a list with one valid post and one null post
-                List<Post> posts = new ArrayList<>();
-                posts.add(post1);
-                posts.add(null); // Add a null post to test null handling
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(1, result.getContent().size()); // Only post1 should be processed
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-        }
-
-        @Test
-        void testFindPostsByLocation_NullDistance() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-                UUID userId = UUID.randomUUID();
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
-
-                // Create a post with valid location
-                Post post = new Post();
-                post.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                post.setLatitude(0.1);
-                post.setLongitude(0.1);
-                post.setCategory("Safety");
-
-                List<Post> posts = Collections.singletonList(post);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When & Then - can't directly test the lambda filter that uses
-                // entry.getValue().getKey()
-                // So we'll verify the method works with our custom service
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                assertNotNull(result);
-                assertEquals(1, result.getContent().size()); // Should find the valid post
-        }
-
-        @Test
-        void testFindPostsByLocation_DateFromOnlyNotNull() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                LocalDateTime dateFrom = yesterday;
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, dateFrom, null);
-
-                List<Post> posts = Arrays.asList(post1, post2);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                // Since only one date is provided, it should use findPostsWithinRadius
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(2, result.getContent().size());
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-                // Verify it did NOT call findPostsByDateRange
-                verify(postRepository, never()).findPostsByDateRange(any(Point.class), anyDouble(), any(), any(),
-                        any());
-        }
-
-        @Test
-        void testFindPostsByLocation_DateToOnlyNotNull() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0; // 20 km
-                LocalDateTime dateTo = tomorrow;
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                LocationFilter filter = new LocationFilter(null, null, dateTo);
-
-                List<Post> posts = Arrays.asList(post1, post2);
-                Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-                // Since only one date is provided, it should use findPostsWithinRadius
-                when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                        .thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByLocation(
-                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(2, result.getContent().size());
-                verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
-                // Verify it did NOT call findPostsByDateRange
-                verify(postRepository, never()).findPostsByDateRange(any(Point.class), anyDouble(), any(), any(),
-                        any());
         }
 
         @Test
@@ -1382,12 +722,12 @@ class PostServiceTest {
                 String authorizationHeader = "Bearer invalid-token";
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader))
-                        .thenThrow(new InvalidCredentialsException("Invalid credentials"));
+                                .thenThrow(new InvalidCredentialsException("Invalid credentials"));
 
                 // When & Then
                 PostException exception = assertThrows(PostException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertTrue(exception.getMessage().contains("Authentication error while searching posts"));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -1409,8 +749,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: null", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1437,18 +777,18 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                        eq(pageable))).thenReturn(postsPage);
+                                eq(pageable))).thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size());
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                        eq(pageable));
+                                eq(pageable));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
 
@@ -1467,7 +807,7 @@ class PostServiceTest {
 
                 // When & Then
                 UnauthorizedAccessException exception = assertThrows(UnauthorizedAccessException.class,
-                        () -> postService.deletePost(postId, differentUserId));
+                                () -> postService.deletePost(postId, differentUserId));
 
                 assertEquals("User not authorized to delete this post", exception.getMessage());
                 verify(postRepository).findById(postId);
@@ -1484,7 +824,7 @@ class PostServiceTest {
 
                 // When & Then
                 PostNotFoundException exception = assertThrows(PostNotFoundException.class,
-                        () -> postService.deletePost(postId, userId));
+                                () -> postService.deletePost(postId, userId));
 
                 assertTrue(exception.getMessage().contains(postId.toString()));
                 verify(postRepository).findById(postId);
@@ -1511,11 +851,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                        eq(categories), eq(pageable))).thenReturn(postsPage);
+                                eq(categories), eq(pageable))).thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1523,7 +863,7 @@ class PostServiceTest {
                 verify(categoryRepository).findByName("Safety");
                 verify(categoryRepository).findByName("Crime");
                 verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                        eq(categories), eq(pageable));
+                                eq(categories), eq(pageable));
         }
 
         @Test
@@ -1542,8 +882,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: ", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1570,8 +910,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1597,8 +937,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: null", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1628,11 +968,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                        eq(categories), eq(pageable))).thenReturn(postsPage);
+                                eq(categories), eq(pageable))).thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1641,7 +981,7 @@ class PostServiceTest {
                 verify(categoryRepository).findByName("Safety");
                 verify(categoryRepository).findByName("Crime");
                 verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                        eq(categories), eq(pageable));
+                                eq(categories), eq(pageable));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
 
@@ -1662,8 +1002,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                authorizationHeader, pageable));
+                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist:    ", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1703,7 +1043,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1738,7 +1078,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1778,7 +1118,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1818,7 +1158,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1858,7 +1198,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1908,7 +1248,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1935,9 +1275,9 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                        .findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo,
-                                authorizationHeader, pageable));
+                                .findPostsByDistanceFeed(
+                                                userLat, userLon, categories, keyword, dateFrom, dateTo,
+                                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
@@ -1969,7 +1309,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2002,7 +1342,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2029,7 +1369,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2067,7 +1407,7 @@ class PostServiceTest {
 
                 // When - First page
                 Page<Map<String, Object>> firstPageResult = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then - First page
                 assertNotNull(firstPageResult);
@@ -2080,7 +1420,7 @@ class PostServiceTest {
                 // When - Second page
                 Pageable secondPageable = PageRequest.of(1, pageSize);
                 Page<Map<String, Object>> secondPageResult = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, secondPageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, secondPageable);
 
                 // Then - Second page
                 assertEquals(2, secondPageResult.getContent().size());
@@ -2107,8 +1447,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                        .findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable));
+                                .findPostsByTimestampFeed(
+                                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
@@ -2147,7 +1487,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2207,7 +1547,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2215,42 +1555,6 @@ class PostServiceTest {
 
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository).findAll();
-        }
-
-        // Direct test for mapPostToData method
-        @Test
-        void testMapPostToData() {
-                // Given
-                UUID userId = UUID.randomUUID();
-                UUID postId = UUID.randomUUID();
-                UUID postedBy = UUID.randomUUID();
-
-                Post post = new Post();
-                post.setId(postId);
-                post.setTitle("Test Title");
-                post.setCaption("Test Caption");
-                post.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                post.setLatitude(0.1);
-                post.setLongitude(0.1);
-                post.setCategory("Safety");
-                post.setCreatedAt(now);
-                post.setPostedBy(postedBy);
-
-                // When
-                Map<String, Object> result = postService.mapPostToData(post, userId);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(postId, result.get("id"));
-                assertEquals("Test Title", result.get("title"));
-                assertEquals("Test Caption", result.get("caption"));
-                assertEquals(0.1, result.get("latitude"));
-                assertEquals(0.1, result.get("longitude"));
-                assertEquals("Safety", result.get("category"));
-                assertEquals(now, result.get("createdAt"));
-                assertEquals(postedBy, result.get("postedBy"));
-                assertEquals(0L, result.get("upvoteCount"));
-                assertEquals(0L, result.get("downvoteCount"));
         }
 
         // Test for null ID in mapPostToData
@@ -2274,30 +1578,6 @@ class PostServiceTest {
                 assertNull(result.get("id"));
         }
 
-        // Test for null title and caption in mapPostToData
-        @Test
-        void testMapPostToDataWithNullTitleAndCaption() {
-                // Given
-                UUID userId = UUID.randomUUID();
-                UUID postId = UUID.randomUUID();
-
-                Post post = new Post();
-                post.setId(postId);
-                post.setTitle(null); // Null title
-                post.setCaption(null); // Null caption
-                post.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                post.setCategory("Safety");
-
-                // When
-                Map<String, Object> result = postService.mapPostToData(post, userId);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(postId, result.get("id"));
-                assertNull(result.get("title"));
-                assertNull(result.get("caption"));
-        }
-
         // Test timestamps feed with null parameters
         @Test
         void testFindPostsByTimestampFeed_WithNullAuthHeader() {
@@ -2307,7 +1587,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                        () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
+                                () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
 
                 assertEquals("Authorization header is required", exception.getMessage());
                 verifyNoInteractions(postRepository);
@@ -2332,7 +1612,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2368,11 +1648,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                        .thenReturn(postsPage);
+                                .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2423,7 +1703,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2515,7 +1795,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2525,30 +1805,6 @@ class PostServiceTest {
                 // Verify no repository interaction
                 verifyNoInteractions(postRepository);
                 verifyNoInteractions(jwtService);
-        }
-
-        // Test authentication error in findPostsByLocation
-        @Test
-        void testFindPostsByLocation_AuthenticationError() throws InvalidCredentialsException {
-                // Given
-                double centerLat = 0.15;
-                double centerLon = 0.15;
-                double radius = 20.0;
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer invalid-token";
-                LocationFilter filter = new LocationFilter(null, null, null);
-
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader))
-                        .thenThrow(new InvalidCredentialsException("Invalid token"));
-
-                // When & Then
-                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                        () -> postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable));
-
-                assertEquals("Invalid token", exception.getMessage());
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
-                verifyNoInteractions(postRepository);
         }
 
         // Test exception in repository during createPost
@@ -2564,12 +1820,12 @@ class PostServiceTest {
 
                 when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
                 when(postRepository.save(any(Post.class)))
-                        .thenThrow(new RuntimeException("Database connection error"));
+                                .thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
                 PostException exception = assertThrows(PostException.class,
-                        () -> postService.createPost(title, content, latitude, longitude, categoryName,
-                                userId));
+                                () -> postService.createPost(title, content, latitude, longitude, categoryName,
+                                                userId));
 
                 assertTrue(exception.getMessage().contains("Failed to save the post"));
                 verify(categoryRepository).findByName(categoryName);
@@ -2584,7 +1840,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                        () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
+                                () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
 
                 assertEquals("Authorization header is required", exception.getMessage());
                 verifyNoInteractions(postRepository);
