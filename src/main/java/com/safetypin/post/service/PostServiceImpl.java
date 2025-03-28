@@ -46,11 +46,9 @@ public class PostServiceImpl implements PostService {
     // Change from private to protected for testing
     protected Map<String, Object> mapPostToData(Post post, UUID userId) {
         Map<String, Object> postData = new HashMap<>();
-        postData.put("id", post.getId());
         postData.put("title", post.getTitle());
         postData.put("caption", post.getCaption());
         postData.put("latitude", post.getLatitude());
-        postData.put("longitude", post.getLongitude());
         postData.put("createdAt", post.getCreatedAt());
         postData.put("category", post.getCategory());
         postData.put("upvoteCount", post.getUpvoteCount());
