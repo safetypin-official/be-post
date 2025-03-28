@@ -36,7 +36,7 @@ public interface PostService {
             String keyword, List<String> categories, String authorizationHeader, Pageable pageable) throws InvalidCredentialsException;
 
     Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable) throws InvalidCredentialsException;
-    
+
     // New method to delete a post by ID, with user validation
     void deletePost(UUID postId, UUID userId);
 }

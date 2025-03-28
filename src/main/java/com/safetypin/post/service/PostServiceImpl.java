@@ -35,7 +35,7 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-            GeometryFactory geometryFactory, JwtService jwtService) {
+                           GeometryFactory geometryFactory, JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
@@ -150,7 +150,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader,
-            Pageable pageable) throws InvalidCredentialsException {
+                                                             Pageable pageable) throws InvalidCredentialsException {
 
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
 
@@ -219,7 +219,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category,
-            UUID postedBy) {
+                           UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
