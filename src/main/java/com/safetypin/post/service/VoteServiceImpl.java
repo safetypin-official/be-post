@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public class VoteServiceImpl implements VoteService {
         Optional<Post> optionalPost = postRepository.findById(postId);
 
         if (optionalPost.isEmpty()) {
-            throw new RuntimeException("Post not found");
+            throw new EntityNotFoundException("Post not found");
         }
 
         Vote.VoteId voteId = new Vote.VoteId(userId, optionalPost.get());
@@ -33,14 +34,11 @@ public class VoteServiceImpl implements VoteService {
 
         Optional<Vote> existingVote = voteRepository.findById(voteId);
 
-        if (existingVote.isPresent()) {
-            if (existingVote.get().isUpvote() == isUpvote) {
-                if (existingVote.get().isUpvote()) {
-                    return "User already up voted that post. Vote remains unchanged";
-                } else {
-                    return "User already down voted that post. Vote remains unchanged";
-                }
-
+        if (existingVote.isPresent() && existingVote.get().isUpvote() == isUpvote) {
+            if (existingVote.get().isUpvote()) {
+                return "User already up voted that post. Vote remains unchanged";
+            } else {
+                return "User already down voted that post. Vote remains unchanged";
             }
         }
 
@@ -53,7 +51,7 @@ public class VoteServiceImpl implements VoteService {
         Optional<Post> optionalPost = postRepository.findById(postId);
 
         if (optionalPost.isEmpty()) {
-            throw new RuntimeException("Post not found");
+            throw new EntityNotFoundException("Post not found");
         }
 
         Vote.VoteId voteId = new Vote.VoteId(userId, optionalPost.get());

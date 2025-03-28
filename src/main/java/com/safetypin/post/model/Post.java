@@ -40,7 +40,7 @@ public class Post extends BasePost {
     private Category categoryEntity;
 
     @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Vote> votes;
+    private transient List<Vote> votes;
 
     // Additional fields as needed
 

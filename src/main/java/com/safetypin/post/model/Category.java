@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
@@ -12,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "categories")
-public class Category {
+public class Category implements Serializable {
 
     @Id
     @Column(nullable = false, unique = true)
@@ -22,7 +23,7 @@ public class Category {
     private String description;
 
     @OneToMany(mappedBy = "categoryEntity")
-    private List<Post> posts;
+    private transient List<Post> posts;
 
     public Category(String name) {
         this.name = name;
