@@ -1,6 +1,5 @@
 package com.safetypin.post.controller;
 
-
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.service.CategoryService;
@@ -38,8 +37,7 @@ public class CategoryController {
                     .body(new PostResponse(
                             true,
                             "Categories retrieved successfully",
-                            formattedCategories
-                    ));
+                            formattedCategories));
         } catch (Exception e) {
             log.error("Error retrieving categories: {}", e.getMessage());
             return ResponseEntity
@@ -47,15 +45,13 @@ public class CategoryController {
                     .body(new PostResponse(
                             false,
                             "Error retrieving categories: " + e.getMessage(),
-                            null
-                    ));
+                            null));
         }
     }
 
     @PostMapping("/create")
     public ResponseEntity<PostResponse> createCategory(
-            @RequestParam String categoryName
-    ) {
+            @RequestParam String categoryName) {
         Category createdCategory;
 
         try {
@@ -63,54 +59,30 @@ public class CategoryController {
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(new PostResponse(
-                    false, "Category creation failed", e.getMessage()
-            ));
+                    false, "Category creation failed", e.getMessage()));
         }
 
         return ResponseEntity.ok(new PostResponse(
-                true, "Category created", createdCategory
-        ));
+                true, "Category created", createdCategory));
     }
 
-    @PostMapping("/update")
+    @PutMapping("/rename")
     public ResponseEntity<PostResponse> updateCategory(
-            @RequestBody Category category
-    ) {
+            @RequestParam String oldCategoryName,
+            @RequestParam String newCategoryName) {
         Category updatedCategory;
 
         try {
-            updatedCategory = categoryService.updateCategory(category);
+            updatedCategory = categoryService.updateCategoryName(oldCategoryName, newCategoryName);
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(new PostResponse(
-                    false, "Category update failed", e.getMessage()
-            ));
+                    false, "Category rename failed", e.getMessage()));
         }
 
         return ResponseEntity.ok(new PostResponse(
-                true, "Category updated to " + category, updatedCategory
-        ));
+                true, "Category renamed successfully", updatedCategory));
     }
-
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<PostResponse> deleteCategory(
-            @RequestParam String categoryName
-    ) {
-        try {
-            categoryService.deleteCategoryByName(categoryName);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(new PostResponse(
-                    false, "Category deletion failed", e.getMessage()
-            ));
-        }
-
-        return ResponseEntity.ok(new PostResponse(
-                true, "Category " + categoryName + " deleted", null
-        ));
-    }
-
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<PostResponse> handleArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {

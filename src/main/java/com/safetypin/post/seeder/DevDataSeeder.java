@@ -157,7 +157,7 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     // Helper method to create a Post with postedBy field
-    private Post createPost(String caption, String title, String category, LocalDateTime createdAt, 
+    private Post createPost(String caption, String title, String category, LocalDateTime createdAt,
                             Double latitude, Double longitude, UUID postedBy) {
         Post post = new Post(caption, title, category, createdAt, latitude, longitude);
         post.setPostedBy(postedBy);

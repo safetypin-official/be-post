@@ -2,15 +2,13 @@ package com.safetypin.post.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class VoteTest {
-    private static final GeometryFactory geometryFactory = new GeometryFactory();
+class VoteTest {
     private Post post;
     private UUID user1;
     private UUID user2;
@@ -42,5 +40,28 @@ public class VoteTest {
     @Test
     void testCurrentVote_NoVote() {
         assertEquals(VoteType.NONE, post.currentVote(user3));
+    }
+
+    @Test
+    void testUpvoteCountZero() {
+
+        Post post2 = new Post();
+        assertEquals(0, post2.getUpvoteCount());
+    }
+
+    @Test
+    void testDownvoteCountZero() {
+        Post post3 = new Post();
+        assertEquals(0, post3.getDownvoteCount());
+    }
+
+    @Test
+    void UpvoteCountMoreThanZero() {
+        assertEquals(1, post.getUpvoteCount());
+    }
+
+    @Test
+    void DownvoteCountMoreThanZero() {
+        assertEquals(1, post.getDownvoteCount());
     }
 }
