@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +31,13 @@ public interface PostService {
                         Double userLat, Double userLon, String authorizationHeader, Pageable pageable)
                         throws InvalidCredentialsException;
 
+        Page<Map<String, Object>> findPostsByDistanceFeed(
+                        Double userLat, Double userLon,
+                        List<String> categories, String keyword,
+                        LocalDateTime dateFrom, LocalDateTime dateTo,
+                        String authorizationHeader, Pageable pageable)
+                        throws InvalidCredentialsException;
+
         Post findById(UUID id);
 
         Page<Map<String, Object>> searchPosts(
@@ -38,6 +46,12 @@ public interface PostService {
                         throws InvalidCredentialsException;
 
         Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable)
+                        throws InvalidCredentialsException;
+
+        Page<Map<String, Object>> findPostsByTimestampFeed(
+                        List<String> categories, String keyword,
+                        LocalDateTime dateFrom, LocalDateTime dateTo,
+                        String authorizationHeader, Pageable pageable)
                         throws InvalidCredentialsException;
 
         // New method to delete a post by ID, with user validation

@@ -198,6 +198,11 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable)
             throws InvalidCredentialsException {
+
+        if (authorizationHeader == null || authorizationHeader.isEmpty()) {
+            throw new InvalidCredentialsException("Authorization header is required");
+        }
+
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         // Get posts sorted by timestamp (newest first)
         Page<Post> postsPage = postRepository.findAll(pageable);
@@ -214,8 +219,7 @@ public class PostServiceImpl implements PostService {
                     return result;
                 })
                 .sorted(Comparator.comparing(
-                        post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
-                        Comparator.reverseOrder()))
+                        post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt"))))
                 .toList();
 
         // Return paginated result
@@ -363,5 +367,139 @@ public class PostServiceImpl implements PostService {
                 throw new InvalidPostDataException("Category does not exist: " + category);
             }
         }
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon,
+            List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
+            String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+
+        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+
+        // Validate categories if provided
+        if (categories != null && !categories.isEmpty()) {
+            validateCategories(categories);
+        }
+
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+
+        // Apply filters and calculate distance
+        List<Map<String, Object>> postsWithDistance = allPosts.stream()
+                // Filter by categories if provided - AND logic
+                .filter(post -> {
+                    if (categories == null || categories.isEmpty()) {
+                        return true; // Skip this filter if categories not provided
+                    }
+                    return post.getCategory() != null && categories.contains(post.getCategory());
+                })
+                // Filter by keyword if provided - AND logic
+                .filter(post -> {
+                    if (keyword == null || keyword.isEmpty()) {
+                        return true; // Skip this filter if keyword not provided
+                    }
+                    String lowercaseKeyword = keyword.toLowerCase();
+                    return (post.getTitle() != null && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
+                            (post.getCaption() != null && post.getCaption().toLowerCase().contains(lowercaseKeyword));
+                })
+                // Filter by date range if provided - AND logic
+                .filter(post -> {
+                    LocalDateTime createdAt = post.getCreatedAt();
+                    boolean matchesFromDate = dateFrom == null || !createdAt.isBefore(dateFrom);
+                    boolean matchesToDate = dateTo == null || !createdAt.isAfter(dateTo);
+                    return matchesFromDate && matchesToDate;
+                })
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+
+                    // Use helper method instead of duplicated code
+                    Map<String, Object> postData = mapPostToData(post, userId);
+                    result.put("post", postData);
+
+                    // Calculate distance from user
+                    double distance = DistanceCalculator.calculateDistance(
+                            userLat, userLon, post.getLatitude(), post.getLongitude());
+                    result.put(DISTANCE_KEY, distance);
+
+                    return result;
+                })
+                // Sort by distance (nearest first)
+                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
+                .toList();
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
+
+        // Create sub-list for current page - handle case when start might be out of
+        // bounds
+        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ? Collections.emptyList()
+                : postsWithDistance.subList(start, end);
+
+        // Return paginated result
+        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByTimestampFeed(
+            List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
+            String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+
+        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+
+        // Validate categories if provided
+        if (categories != null && !categories.isEmpty()) {
+            validateCategories(categories);
+        }
+
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+
+        // Apply filters with AND logic
+        List<Map<String, Object>> filteredPosts = allPosts.stream()
+                // Filter by categories if provided - AND logic
+                .filter(post -> {
+                    if (categories == null || categories.isEmpty()) {
+                        return true; // Skip this filter if categories not provided
+                    }
+                    return post.getCategory() != null && categories.contains(post.getCategory());
+                })
+                // Filter by keyword if provided - AND logic
+                .filter(post -> {
+                    if (keyword == null || keyword.isEmpty()) {
+                        return true; // Skip this filter if keyword not provided
+                    }
+                    String lowercaseKeyword = keyword.toLowerCase();
+                    return (post.getTitle() != null && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
+                            (post.getCaption() != null && post.getCaption().toLowerCase().contains(lowercaseKeyword));
+                })
+                // Filter by date range if provided - AND logic
+                .filter(post -> {
+                    LocalDateTime createdAt = post.getCreatedAt();
+                    boolean matchesFromDate = dateFrom == null || !createdAt.isBefore(dateFrom);
+                    boolean matchesToDate = dateTo == null || !createdAt.isAfter(dateTo);
+                    return matchesFromDate && matchesToDate;
+                })
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+                    Map<String, Object> postData = mapPostToData(post, userId);
+                    result.put("post", postData);
+                    return result;
+                })
+                // Sort by timestamp (earliest first)
+                .sorted(Comparator.comparing(
+                        post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt"))))
+                .toList();
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filteredPosts.size());
+
+        // Create sub-list for current page
+        List<Map<String, Object>> pageContent = start >= filteredPosts.size() ? Collections.emptyList()
+                : filteredPosts.subList(start, end);
+
+        // Return paginated result
+        return new PageImpl<>(pageContent, pageable, filteredPosts.size());
     }
 }
