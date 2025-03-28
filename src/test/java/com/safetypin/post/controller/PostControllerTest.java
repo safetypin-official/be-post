@@ -29,8 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -158,7 +156,6 @@ class PostControllerTest {
                 Double lon = 10.0;
                 Double radius = 10.0;
                 LocalDate dateFrom = LocalDate.now().minusDays(7);
-                LocalDateTime fromDateTime = LocalDateTime.of(dateFrom, LocalTime.MIN);
                 int page = 0;
                 int size = 10;
                 Pageable pageable = PageRequest.of(page, size);
@@ -185,7 +182,6 @@ class PostControllerTest {
                 Double lon = 10.0;
                 Double radius = 10.0;
                 LocalDate dateTo = LocalDate.now();
-                LocalDateTime toDateTime = LocalDateTime.of(dateTo, LocalTime.MAX);
                 int page = 0;
                 int size = 10;
                 Pageable pageable = PageRequest.of(page, size);
