@@ -27,14 +27,12 @@ public class PostServiceImpl implements PostService {
     private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
-    private final JwtService jwtService;
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
             JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
-        this.jwtService = jwtService;
     }
 
     // Change from private to protected for testing
@@ -60,19 +58,18 @@ public class PostServiceImpl implements PostService {
 
     // find all with pagination
     @Override
-    public Page<Post> findAllPaginated(String authorizationHeader, Pageable pageable) {
+    public Page<Post> findAllPaginated(UUID userId, Pageable pageable) {
         return postRepository.findAll(pageable);
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable)
+    public Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable)
             throws InvalidCredentialsException {
 
-        if (authorizationHeader == null || authorizationHeader.isEmpty()) {
-            throw new InvalidCredentialsException("Authorization header is required");
+        if (userId == null) {
+            throw new InvalidCredentialsException("User ID is required");
         }
 
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
         // Get posts sorted by timestamp (newest first)
         Page<Post> postsPage = postRepository.findAll(pageable);
 
@@ -165,9 +162,11 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon,
             List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
-            String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+            UUID userId, Pageable pageable) throws InvalidCredentialsException {
 
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+        if (userId == null) {
+            throw new InvalidCredentialsException("User ID is required");
+        }
 
         // Validate categories if provided
         if (categories != null && !categories.isEmpty()) {
@@ -207,9 +206,11 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> findPostsByTimestampFeed(
             List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
-            String authorizationHeader, Pageable pageable) throws InvalidCredentialsException {
+            UUID userId, Pageable pageable) throws InvalidCredentialsException {
 
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+        if (userId == null) {
+            throw new InvalidCredentialsException("User ID is required");
+        }
 
         // Validate categories if provided
         if (categories != null && !categories.isEmpty()) {

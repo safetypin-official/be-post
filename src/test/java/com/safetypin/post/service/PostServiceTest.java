@@ -197,14 +197,14 @@ class PostServiceTest {
         void testFindAllPaginated() {
                 // Given
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
                 List<Post> posts = Arrays.asList(post1, post2, post3);
                 Page<Post> expectedPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findAll(pageable)).thenReturn(expectedPage);
 
                 // When
-                Page<Post> result = postService.findAllPaginated(authorizationHeader, pageable);
+                Page<Post> result = postService.findAllPaginated(userId, pageable);
 
                 // Then
                 assertEquals(expectedPage, result);
@@ -290,13 +290,13 @@ class PostServiceTest {
         void testFindPostsByTimestampFeed_EmptyResult() throws InvalidCredentialsException {
                 // Given
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
                 Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
                 when(postRepository.findAll(pageable)).thenReturn(emptyPage);
 
                 // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -427,8 +427,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create sample posts
                 Post matchingPost = new Post();
@@ -442,13 +441,12 @@ class PostServiceTest {
 
                 List<Post> allPosts = Arrays.asList(matchingPost, post1, post2, post3);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(allPosts);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -459,7 +457,6 @@ class PostServiceTest {
                 assertEquals("Test Post", firstPostData.get("title"));
                 assertEquals("Safety", firstPostData.get("category"));
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -474,22 +471,19 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Arrays.asList(post1, post2, post3));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertTrue(result.getContent().isEmpty());
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -504,8 +498,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create sample post with null title but matching keyword in caption
                 Post postWithNullTitle = new Post();
@@ -517,19 +510,17 @@ class PostServiceTest {
                 postWithNullTitle.setCategory("Safety");
                 postWithNullTitle.setCreatedAt(now);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Collections.singletonList(postWithNullTitle));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size()); // Should match on caption
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -544,8 +535,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create sample post with null caption but matching keyword in title
                 Post postWithNullCaption = new Post();
@@ -557,19 +547,17 @@ class PostServiceTest {
                 postWithNullCaption.setCategory("Safety");
                 postWithNullCaption.setCreatedAt(now);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Collections.singletonList(postWithNullCaption));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size()); // Should match on title
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -584,8 +572,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create sample post with null category
                 Post postWithNullCategory = new Post();
@@ -597,19 +584,17 @@ class PostServiceTest {
                 postWithNullCategory.setCategory(null);
                 postWithNullCategory.setCreatedAt(now);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Collections.singletonList(postWithNullCategory));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertTrue(result.getContent().isEmpty()); // No match because of category filter
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -624,8 +609,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = now; // Date range that excludes post3 (tomorrow)
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create post inside the specified date range
                 Post postInDateRange = new Post();
@@ -647,19 +631,17 @@ class PostServiceTest {
                 postOutsideDateRange.setCategory("Safety");
                 postOutsideDateRange.setCreatedAt(tomorrow); // Outside date range
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Arrays.asList(postInDateRange, postOutsideDateRange));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size()); // Only one post in date range
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -674,7 +656,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 when(categoryRepository.findByName("NonexistentCategory")).thenReturn(null);
 
@@ -682,7 +664,7 @@ class PostServiceTest {
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
                                 .findPostsByDistanceFeed(
                                                 userLat, userLon, categories, keyword, dateFrom, dateTo,
-                                                authorizationHeader, pageable));
+                                                userId, pageable));
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
@@ -696,8 +678,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create sample post matching all filters
                 Post matchingPost = new Post();
@@ -708,13 +689,12 @@ class PostServiceTest {
 
                 List<Post> allPosts = Arrays.asList(matchingPost, post1, post2, post3);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(allPosts);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -725,7 +705,6 @@ class PostServiceTest {
                 assertEquals("Test Post", firstPostData.get("title"));
                 assertEquals("Safety", firstPostData.get("category"));
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -738,22 +717,19 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Arrays.asList(post1, post2, post3));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertTrue(result.getContent().isEmpty());
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
         }
@@ -766,21 +742,18 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = now; // Exclude post3 (tomorrow)
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll()).thenReturn(Arrays.asList(post1, post2, post3));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(2, result.getContent().size()); // post1 and post2 (excluding post3)
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository).findAll();
         }
 
@@ -793,8 +766,7 @@ class PostServiceTest {
                 LocalDateTime dateTo = null;
                 int pageSize = 2;
                 Pageable pageable = PageRequest.of(0, pageSize);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create 5 posts to test pagination
                 List<Post> allPosts = new ArrayList<>();
@@ -807,12 +779,11 @@ class PostServiceTest {
                         allPosts.add(post);
                 }
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll()).thenReturn(allPosts);
 
                 // When - First page
                 Page<Map<String, Object>> firstPageResult = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then - First page
                 assertNotNull(firstPageResult);
@@ -825,7 +796,7 @@ class PostServiceTest {
                 // When - Second page
                 Pageable secondPageable = PageRequest.of(1, pageSize);
                 Page<Map<String, Object>> secondPageResult = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, secondPageable);
+                                categories, keyword, dateFrom, dateTo, userId, secondPageable);
 
                 // Then - Second page
                 assertEquals(2, secondPageResult.getContent().size());
@@ -834,7 +805,6 @@ class PostServiceTest {
                 assertTrue(secondPageResult.hasNext());
                 assertTrue(secondPageResult.hasPrevious());
 
-                verify(jwtService, times(2)).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository, times(2)).findAll();
         }
 
@@ -846,14 +816,14 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday;
                 LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 when(categoryRepository.findByName("NonexistentCategory")).thenReturn(null);
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
                                 .findPostsByTimestampFeed(
-                                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable));
+                                                categories, keyword, dateFrom, dateTo, userId, pageable));
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
@@ -867,8 +837,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = null;
                 LocalDateTime dateTo = null;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Post with earliest date
                 Post earliestPost = new Post();
@@ -887,12 +856,11 @@ class PostServiceTest {
 
                 List<Post> allPosts = Arrays.asList(middlePost, latestPost, earliestPost); // Unsorted order
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll()).thenReturn(allPosts);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -912,7 +880,6 @@ class PostServiceTest {
                 assertEquals("Middle Post", secondPostData.get("title"));
                 assertEquals("Latest Post", thirdPostData.get("title"));
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository).findAll();
         }
 
@@ -924,8 +891,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = null;
                 LocalDateTime dateTo = null;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Post with null title but matching caption
                 Post postWithNullTitle = new Post();
@@ -947,18 +913,16 @@ class PostServiceTest {
 
                 List<Post> allPosts = Arrays.asList(postWithNullTitle, postWithNullCaption, postWithBothNull);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll()).thenReturn(allPosts);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(2, result.getContent().size()); // Two posts match the keyword
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository).findAll();
         }
 
@@ -983,21 +947,6 @@ class PostServiceTest {
                 assertNull(result.get("id"));
         }
 
-        // Test timestamps feed with null parameters
-        @Test
-        void testFindPostsByTimestampFeed_WithNullAuthHeader() {
-                // Given
-                Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = null; // Null auth header
-
-                // When & Then
-                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
-
-                assertEquals("Authorization header is required", exception.getMessage());
-                verifyNoInteractions(postRepository);
-        }
-
         // Test findPostsByDistanceFeed with filters with out-of-range dates
         @Test
         void testFindPostsByDistanceFeed_WithFilters_OutOfRangeDates() throws InvalidCredentialsException {
@@ -1009,15 +958,13 @@ class PostServiceTest {
                 LocalDateTime dateFrom = tomorrow.plusDays(1); // Future date
                 LocalDateTime dateTo = tomorrow.plusDays(2); // Future date
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll()).thenReturn(Arrays.asList(post1, post2, post3));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1034,8 +981,7 @@ class PostServiceTest {
                 LocalDateTime dateFrom = yesterday.minusDays(1);
                 LocalDateTime dateTo = tomorrow.plusDays(1);
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create posts with varied data to test filters
                 Post matchingPost1 = new Post();
@@ -1056,13 +1002,12 @@ class PostServiceTest {
                 nonMatchingPost.setCategory("Crime");
                 nonMatchingPost.setCreatedAt(now);
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.findAll()).thenReturn(Arrays.asList(matchingPost1, matchingPost2, nonMatchingPost));
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1084,15 +1029,13 @@ class PostServiceTest {
         void testFindPostsByTimestampFeed_WithValidButEmptyPage() throws InvalidCredentialsException {
                 // Given
                 Pageable pageable = PageRequest.of(10, 5); // Page 10, which doesn't exist
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 // Empty list but total elements is 2
                 when(postRepository.findAll(pageable)).thenReturn(new PageImpl<>(Collections.emptyList(), pageable, 2));
 
                 // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1165,17 +1108,23 @@ class PostServiceTest {
                 verify(postRepository).save(any(Post.class));
         }
 
+        // Add a test for findPostsByTimestampFeed with filters and null user ID
         @Test
-        void testFindPostsByTimestampFeed_EmptyAuthHeader() {
+        void testFindPostsByTimestampFeed_WithFilters_NullUserId() {
                 // Given
+                List<String> categories = Collections.singletonList("Safety");
+                String keyword = "test";
+                LocalDateTime dateFrom = yesterday;
+                LocalDateTime dateTo = tomorrow;
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = ""; // Empty auth header
+                UUID userId = null; // Null user ID
 
                 // When & Then
                 InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
+                                () -> postService.findPostsByTimestampFeed(
+                                                categories, keyword, dateFrom, dateTo, userId, pageable));
 
-                assertEquals("Authorization header is required", exception.getMessage());
+                assertEquals("User ID is required", exception.getMessage());
                 verifyNoInteractions(postRepository);
         }
 
@@ -1183,8 +1132,7 @@ class PostServiceTest {
         void testFindPostsByTimestampFeed_SortingByTimestamp() throws InvalidCredentialsException {
                 // Given
                 Pageable pageable = PageRequest.of(0, 10);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create posts with different timestamps in unsorted order
                 Post post1 = new Post();
@@ -1202,11 +1150,10 @@ class PostServiceTest {
                 List<Post> unsortedPosts = Arrays.asList(post1, post2, post3); // Unsorted by time
                 Page<Post> postsPage = new PageImpl<>(unsortedPosts, pageable, unsortedPosts.size());
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll(pageable)).thenReturn(postsPage);
 
                 // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1226,7 +1173,6 @@ class PostServiceTest {
                 assertEquals("Post 2", secondPostData.get("title")); // Middle post should be second
                 assertEquals("Post 1", thirdPostData.get("title")); // Latest post should be last
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository).findAll(pageable);
         }
 
@@ -1236,8 +1182,7 @@ class PostServiceTest {
                 int pageSize = 2;
                 int pageNumber = 1; // Second page
                 Pageable pageable = PageRequest.of(pageNumber, pageSize);
-                String authorizationHeader = "Bearer test-token";
-                UUID userId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create more posts than the page size
                 List<Post> allPosts = new ArrayList<>();
@@ -1252,11 +1197,10 @@ class PostServiceTest {
                 List<Post> secondPagePosts = allPosts.subList(2, 4); // Posts 2 and 3
                 Page<Post> postsPage = new PageImpl<>(secondPagePosts, pageable, allPosts.size());
 
-                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.findAll(pageable)).thenReturn(postsPage);
 
                 // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1267,7 +1211,44 @@ class PostServiceTest {
                 assertTrue(result.hasNext());
                 assertTrue(result.hasPrevious());
 
-                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
                 verify(postRepository).findAll(pageable);
+        }
+
+        // Update test for null user ID
+        @Test
+        void testFindPostsByTimestampFeed_WithNullUserId() {
+                // Given
+                Pageable pageable = PageRequest.of(0, 10);
+                UUID userId = null; // Null user ID
+
+                // When & Then
+                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
+                                () -> postService.findPostsByTimestampFeed(userId, pageable));
+
+                assertEquals("User ID is required", exception.getMessage());
+                verifyNoInteractions(postRepository);
+        }
+
+        // Add test for null user ID in distance feed
+        @Test
+        void testFindPostsByDistanceFeed_WithNullUserId() {
+                // Given
+                Double userLat = 0.0;
+                Double userLon = 0.0;
+                List<String> categories = null;
+                String keyword = null;
+                LocalDateTime dateFrom = null;
+                LocalDateTime dateTo = null;
+                Pageable pageable = PageRequest.of(0, 10);
+                UUID userId = null; // Null user ID
+
+                // When & Then
+                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
+                                () -> postService.findPostsByDistanceFeed(
+                                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId,
+                                                pageable));
+
+                assertEquals("User ID is required", exception.getMessage());
+                verifyNoInteractions(postRepository);
         }
 }

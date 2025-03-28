@@ -1,13 +1,12 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.LocationFilter;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Post;
-import com.safetypin.post.service.JwtService;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.auth.InvalidCredentialsException;
@@ -18,6 +17,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -37,11 +38,9 @@ public class PostController {
 
     private static final String AUTH_FAILED_MESSAGE = "Authentication failed: ";
     private final PostService postService;
-    private final JwtService jwtService;
 
-    public PostController(PostService postService, JwtService jwtService) {
+    public PostController(PostService postService) {
         this.postService = postService;
-        this.jwtService = jwtService;
     }
 
     // Helper method to format post data
@@ -119,12 +118,16 @@ public class PostController {
 
     @GetMapping("/all")
     public ResponseEntity<PostResponse> findAll(
-            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             Pageable pageable = createPageable(page, size);
-            Page<Post> postsPage = postService.findAllPaginated(authorizationHeader, pageable);
+            Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
 
             List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
                     .map(this::formatPostData)
@@ -140,7 +143,6 @@ public class PostController {
 
     @GetMapping("/feed/distance")
     public ResponseEntity<PostResponse> getPostsFeedByDistance(
-            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam Double lat,
             @RequestParam Double lon,
             @RequestParam(required = false) List<String> categories,
@@ -151,6 +153,11 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             // Validate location parameters
             validateLocationParams(lat, lon);
 
@@ -166,7 +173,7 @@ public class PostController {
             try {
                 posts = postService.findPostsByDistanceFeed(
                         lat, lon, categories, keyword, fromDateTime, toDateTime,
-                        authorizationHeader, pageable);
+                        userId, pageable);
             } catch (InvalidCredentialsException e) {
                 throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
@@ -180,7 +187,6 @@ public class PostController {
 
     @GetMapping("/feed/timestamp")
     public ResponseEntity<PostResponse> getPostsFeedByTimestamp(
-            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(required = false) List<String> categories,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
@@ -189,6 +195,11 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             // Convert LocalDate to LocalDateTime if provided
             LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
             LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
@@ -201,7 +212,7 @@ public class PostController {
             try {
                 posts = postService.findPostsByTimestampFeed(
                         categories, keyword, fromDateTime, toDateTime,
-                        authorizationHeader, pageable);
+                        userId, pageable);
             } catch (InvalidCredentialsException e) {
                 throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
@@ -215,17 +226,13 @@ public class PostController {
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(
-            @RequestHeader("Authorization") String authorizationHeader,
             @RequestBody PostCreateRequest request) {
 
         return executeWithExceptionHandling(() -> {
-            // Authorize user with specific exception handling
-            UUID userId;
-            try {
-                userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-            } catch (InvalidCredentialsException e) {
-                throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
 
             // Create the post
             Post post = postService.createPost(
@@ -259,28 +266,23 @@ public class PostController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<PostResponse> deletePost(
-            @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable UUID id) {
 
         log.info("Received request to delete post with ID: {}", id);
 
-        // Get user ID from token
-        UUID userId;
-        try {
-            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-        } catch (InvalidCredentialsException e) {
-            return createErrorResponse(HttpStatus.UNAUTHORIZED, AUTH_FAILED_MESSAGE + e.getMessage());
-        }
+        // Get user details from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UUID userId = userDetails.getUserId();
 
-        final UUID finalUserId = userId;
         return executeWithExceptionHandling(() -> {
             // Attempt to delete the post
-            postService.deletePost(id, finalUserId);
+            postService.deletePost(id, userId);
 
             // Return success response
             Map<String, Object> responseData = Map.of(
                     "postId", id,
-                    "deletedBy", finalUserId);
+                    "deletedBy", userId);
 
             PostResponse response = new PostResponse(
                     true,
