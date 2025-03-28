@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,6 +17,8 @@ class JWTUtilTest {
 
     private JWTUtil jwtUtil;
     private Key key;
+    private final UUID userId = UUID.randomUUID();
+    private final String userIdString = userId.toString();
 
     @BeforeEach
     void setUp() {
@@ -36,7 +39,7 @@ class JWTUtilTest {
                 .claim("role", "USER")
                 .claim("name", "John Doe")
                 .claim("isVerified", true)
-                .claim("userId", "user123")
+                .claim("userId", userIdString)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expirationTime))
                 .signWith(key)
@@ -51,7 +54,7 @@ class JWTUtilTest {
         assertEquals("USER", claims.get("role"));
         assertEquals("John Doe", claims.get("name"));
         assertTrue((Boolean) claims.get("isVerified"));
-        assertEquals("user123", claims.get("userId"));
+        assertEquals(userIdString, claims.get("userId"));
     }
 
     @Test
@@ -140,6 +143,7 @@ class JWTUtilTest {
     @Test
     void testVerifyAndGetClaims_TokenWithAllUserDetails() {
         // Arrange
+        UUID userId2 = UUID.randomUUID();
         long now = System.currentTimeMillis();
         long expirationTime = now + 3600000; // 1 hour from now
 
@@ -148,7 +152,7 @@ class JWTUtilTest {
                 .claim("role", "ADMIN")
                 .claim("name", "Jane Smith")
                 .claim("isVerified", false)
-                .claim("userId", "user456")
+                .claim("userId", userId2.toString())
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expirationTime))
                 .signWith(key)
@@ -163,6 +167,6 @@ class JWTUtilTest {
         assertEquals("ADMIN", claims.get("role"));
         assertEquals("Jane Smith", claims.get("name"));
         assertFalse((Boolean) claims.get("isVerified"));
-        assertEquals("user456", claims.get("userId"));
+        assertEquals(userId2.toString(), claims.get("userId"));
     }
 }
