@@ -298,43 +298,4 @@ public class PostController {
         return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<PostResponse> searchPosts(
-            @RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam Double lat,
-            @RequestParam Double lon,
-            @RequestParam(required = false, defaultValue = "10.0") Double radius,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) List<String> categories,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        return executeWithExceptionHandling(() -> {
-            // Validate parameters
-            validateLocationParams(lat, lon);
-
-            // Validate that at least one search parameter is provided
-            if ((keyword == null || keyword.trim().isEmpty()) &&
-                    (categories == null || categories.isEmpty())) {
-                throw new InvalidPostDataException("Please provide either a search keyword or at least one category");
-            }
-
-            // Create pageable for pagination
-            Pageable pageable = createPageable(page, size);
-
-            // Search posts
-            Page<Map<String, Object>> posts = null;
-            try {
-                posts = postService.searchPosts(
-                        lat, lon, radius, keyword, categories, authorizationHeader, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
-
-            // Create response with pagination data
-            Map<String, Object> paginationData = createPaginationData(posts);
-
-            return createSuccessResponse(paginationData);
-        }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 }

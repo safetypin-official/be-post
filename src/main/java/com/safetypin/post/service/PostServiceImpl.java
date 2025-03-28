@@ -1,6 +1,5 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.LocationFilter;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -12,9 +11,6 @@ import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.utils.DistanceCalculator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.auth.InvalidCredentialsException;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,15 +27,13 @@ public class PostServiceImpl implements PostService {
     private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
-    private final GeometryFactory geometryFactory;
     private final JwtService jwtService;
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-            GeometryFactory geometryFactory, JwtService jwtService) {
+            JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
-        this.geometryFactory = geometryFactory;
         this.jwtService = jwtService;
     }
 
@@ -147,80 +141,6 @@ public class PostServiceImpl implements PostService {
     public Post findById(UUID id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post not found with id: " + id));
-    }
-
-    @Override
-    public Page<Map<String, Object>> searchPosts(
-            Double centerLat, Double centerLon, Double radius,
-            String keyword, List<String> categories, String authorizationHeader,
-            Pageable pageable) {
-
-        // Check if we have any search criteria
-        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
-        boolean hasCategories = categories != null && !categories.isEmpty();
-
-        // No search criteria provided, return empty result
-        if (!hasKeyword && !hasCategories) {
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
-        }
-
-        // Validate categories first if provided
-        if (hasCategories) {
-            validateCategories(categories);
-        }
-
-        // If we got here, categories are valid or none were provided
-        // Now get userId since we have valid search criteria
-        UUID userId;
-        try {
-            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-        } catch (InvalidCredentialsException | RuntimeException e) {
-            throw new PostException("Authentication error while searching posts: " + e.getMessage(), e);
-        }
-
-        Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-        Double radiusInMeters = radius * 1000;
-        Page<Post> postsPage;
-
-        // Case 1: Both keyword and categories provided
-        if (hasKeyword && hasCategories) {
-            postsPage = postRepository.searchPostsByKeywordAndCategories(
-                    center, radiusInMeters, keyword, categories, pageable);
-        }
-        // Case 2: Only categories provided
-        else if (hasCategories) {
-            postsPage = postRepository.searchPostsByCategories(
-                    center, radiusInMeters, categories, pageable);
-        }
-        // Case 3: Only keyword provided
-        else {
-            postsPage = postRepository.searchPostsByKeyword(
-                    center, radiusInMeters, keyword, pageable);
-        }
-
-        if (postsPage == null) {
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
-        }
-        List<Map<String, Object>> results = postsPage.getContent().stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-                    Map<String, Object> postData = mapPostToData(post, userId);
-                    result.put("post", postData);
-
-                    double distance = 0.0;
-                    // Check if post has a valid location with lat/long
-
-                    distance = DistanceCalculator.calculateDistance(
-                            centerLat, centerLon, post.getLatitude(), post.getLongitude());
-
-                    result.put(DISTANCE_KEY, distance);
-
-                    return result;
-                })
-                .filter(result -> (Double) result.get(DISTANCE_KEY) <= radius) // Filter by actual radius in km
-                .toList();
-
-        return new PageImpl<>(results, pageable, results.size());
     }
 
     @Override
