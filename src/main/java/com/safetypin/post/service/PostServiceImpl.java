@@ -342,29 +342,9 @@ public class PostServiceImpl implements PostService {
 
         // Apply filters and calculate distance
         List<Map<String, Object>> postsWithDistance = allPosts.stream()
-                // Filter by categories if provided - AND logic
-                .filter(post -> {
-                    if (categories == null || categories.isEmpty()) {
-                        return true; // Skip this filter if categories not provided
-                    }
-                    return post.getCategory() != null && categories.contains(post.getCategory());
-                })
-                // Filter by keyword if provided - AND logic
-                .filter(post -> {
-                    if (keyword == null || keyword.isEmpty()) {
-                        return true; // Skip this filter if keyword not provided
-                    }
-                    String lowercaseKeyword = keyword.toLowerCase();
-                    return (post.getTitle() != null && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
-                            (post.getCaption() != null && post.getCaption().toLowerCase().contains(lowercaseKeyword));
-                })
-                // Filter by date range if provided - AND logic
-                .filter(post -> {
-                    LocalDateTime createdAt = post.getCreatedAt();
-                    boolean matchesFromDate = dateFrom == null || !createdAt.isBefore(dateFrom);
-                    boolean matchesToDate = dateTo == null || !createdAt.isAfter(dateTo);
-                    return matchesFromDate && matchesToDate;
-                })
+                .filter(post -> matchesCategories(post, categories))
+                .filter(post -> matchesKeyword(post, keyword))
+                .filter(post -> matchesDateRange(post, dateFrom, dateTo))
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
 
@@ -383,17 +363,8 @@ public class PostServiceImpl implements PostService {
                 .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
                 .toList();
 
-        // Manual pagination
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
-
-        // Create sub-list for current page - handle case when start might be out of
-        // bounds
-        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ? Collections.emptyList()
-                : postsWithDistance.subList(start, end);
-
-        // Return paginated result
-        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
+        // Use helper method for pagination
+        return paginateResults(postsWithDistance, pageable);
     }
 
     @Override
@@ -413,29 +384,9 @@ public class PostServiceImpl implements PostService {
 
         // Apply filters with AND logic
         List<Map<String, Object>> filteredPosts = allPosts.stream()
-                // Filter by categories if provided - AND logic
-                .filter(post -> {
-                    if (categories == null || categories.isEmpty()) {
-                        return true; // Skip this filter if categories not provided
-                    }
-                    return post.getCategory() != null && categories.contains(post.getCategory());
-                })
-                // Filter by keyword if provided - AND logic
-                .filter(post -> {
-                    if (keyword == null || keyword.isEmpty()) {
-                        return true; // Skip this filter if keyword not provided
-                    }
-                    String lowercaseKeyword = keyword.toLowerCase();
-                    return (post.getTitle() != null && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
-                            (post.getCaption() != null && post.getCaption().toLowerCase().contains(lowercaseKeyword));
-                })
-                // Filter by date range if provided - AND logic
-                .filter(post -> {
-                    LocalDateTime createdAt = post.getCreatedAt();
-                    boolean matchesFromDate = dateFrom == null || !createdAt.isBefore(dateFrom);
-                    boolean matchesToDate = dateTo == null || !createdAt.isAfter(dateTo);
-                    return matchesFromDate && matchesToDate;
-                })
+                .filter(post -> matchesCategories(post, categories))
+                .filter(post -> matchesKeyword(post, keyword))
+                .filter(post -> matchesDateRange(post, dateFrom, dateTo))
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
                     Map<String, Object> postData = mapPostToData(post, userId);
@@ -447,15 +398,40 @@ public class PostServiceImpl implements PostService {
                         post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt"))))
                 .toList();
 
-        // Manual pagination
+        return paginateResults(filteredPosts, pageable);
+    }
+
+    // Helper methods to reduce cognitive complexity
+    private boolean matchesCategories(Post post, List<String> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return true;
+        }
+        return post.getCategory() != null && categories.contains(post.getCategory());
+    }
+
+    private boolean matchesKeyword(Post post, String keyword) {
+        if (keyword == null || keyword.isEmpty()) {
+            return true;
+        }
+        String lowercaseKeyword = keyword.toLowerCase();
+        return (post.getTitle() != null && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
+                (post.getCaption() != null && post.getCaption().toLowerCase().contains(lowercaseKeyword));
+    }
+
+    private boolean matchesDateRange(Post post, LocalDateTime dateFrom, LocalDateTime dateTo) {
+        LocalDateTime createdAt = post.getCreatedAt();
+        boolean matchesFromDate = dateFrom == null || !createdAt.isBefore(dateFrom);
+        boolean matchesToDate = dateTo == null || !createdAt.isAfter(dateTo);
+        return matchesFromDate && matchesToDate;
+    }
+
+    private Page<Map<String, Object>> paginateResults(List<Map<String, Object>> results, Pageable pageable) {
         int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filteredPosts.size());
+        int end = Math.min((start + pageable.getPageSize()), results.size());
 
-        // Create sub-list for current page
-        List<Map<String, Object>> pageContent = start >= filteredPosts.size() ? Collections.emptyList()
-                : filteredPosts.subList(start, end);
+        List<Map<String, Object>> pageContent = start >= results.size() ? Collections.emptyList()
+                : results.subList(start, end);
 
-        // Return paginated result
-        return new PageImpl<>(pageContent, pageable, filteredPosts.size());
+        return new PageImpl<>(pageContent, pageable, results.size());
     }
 }

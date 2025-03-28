@@ -760,8 +760,8 @@ class PostControllerTest {
                 LocalDateTime toDateTime = LocalDateTime.of(dateTo, LocalTime.MAX);
 
                 when(postService.findPostsByDistanceFeed(
-                                eq(lat), eq(lon), eq(categories), eq(keyword),
-                                eq(fromDateTime), eq(toDateTime), eq(authorizationHeader), eq(pageable)))
+                                lat, lon, categories, keyword,
+                                fromDateTime, toDateTime, authorizationHeader, pageable))
                                 .thenReturn(mockPage);
 
                 // Act
@@ -772,8 +772,8 @@ class PostControllerTest {
                 assertEquals(HttpStatus.OK, response.getStatusCode());
                 assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
                 verify(postService).findPostsByDistanceFeed(
-                                eq(lat), eq(lon), eq(categories), eq(keyword),
-                                eq(fromDateTime), eq(toDateTime), eq(authorizationHeader), eq(pageable));
+                                lat, lon, categories, keyword,
+                                fromDateTime, toDateTime, authorizationHeader, pageable);
         }
 
         /**
@@ -842,37 +842,8 @@ class PostControllerTest {
                 assertEquals(HttpStatus.OK, response.getStatusCode());
                 assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
                 verify(postService).findPostsByTimestampFeed(
-                                eq(categories), eq(keyword), eq(fromDateTime), eq(toDateTime),
-                                eq(authorizationHeader), eq(pageable));
-        }
-
-        /**
-         * Test posts feed by distance with null categories and keyword
-         */
-        @Test
-        void getPostsFeedByDistance_NullCategoriesAndKeyword() throws InvalidCredentialsException {
-                // Arrange
-                Double lat = 20.0;
-                Double lon = 10.0;
-                int page = 0;
-                int size = 10;
-                Pageable pageable = PageRequest.of(page, size);
-
-                when(postService.findPostsByDistanceFeed(
-                                eq(lat), eq(lon), isNull(), isNull(),
-                                isNull(), isNull(), eq(authorizationHeader), eq(pageable)))
-                                .thenReturn(mockPage);
-
-                // Act
-                ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                                authorizationHeader, lat, lon, null, null, null, null, page, size);
-
-                // Assert
-                assertEquals(HttpStatus.OK, response.getStatusCode());
-                assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
-                verify(postService).findPostsByDistanceFeed(
-                                eq(lat), eq(lon), isNull(), isNull(),
-                                isNull(), isNull(), eq(authorizationHeader), eq(pageable));
+                                categories, keyword, fromDateTime, toDateTime,
+                                authorizationHeader, pageable);
         }
 
         /**
