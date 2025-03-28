@@ -87,9 +87,7 @@ public class PostServiceImpl implements PostService {
         LocalDateTime dateTo = filter != null ? filter.getDateTo() : null;
 
         // Use a larger radius for database query to account for calculation differences
-        // The exact filtering will be done after calculating the actual distances
         Double radiusInMeters = radius * 1000;
-        Double radiusInKilometers = radiusInMeters / 1000; // Convert radius to kilometers for clarity
 
         // Select appropriate query based on date parameters only, we'll filter by
         // category later
@@ -132,7 +130,7 @@ public class PostServiceImpl implements PostService {
                 // Filter by the actual calculated distance (using the specified radius)
                 // Add a check to exclude posts with null locations
                 .filter(entry -> {
-                    if (entry.getValue().getKey() == null || entry.getValue().getKey() > radiusInKilometers)
+                    if (entry.getValue().getKey() > radius)
                         return false;
                     Object postObj = entry.getKey().get("post");
                     Map<?, ?> postMap = (Map<?, ?>) postObj;

@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
 class PostServiceTest {
 
         private final Category safety = new Category("Safety"),
-                        crime = new Category("Crime");
+                crime = new Category("Crime");
         @Mock
         private PostRepository postRepository;
         @Mock
@@ -59,13 +59,13 @@ class PostServiceTest {
          */
         private static Stream<Arguments> titleAndContentValidationProvider() {
                 return Stream.of(
-                                // title, content, fieldName, expectedMessage
-                                Arguments.of(null, "Valid content", "title", "Title is required"),
-                                Arguments.of("", "Valid content", "title", "Title is required"),
-                                Arguments.of("   ", "Valid content", "title", "Title is required"),
-                                Arguments.of("Valid title", null, "content", "Content is required"),
-                                Arguments.of("Valid title", "", "content", "Content is required"),
-                                Arguments.of("Valid title", "   ", "content", "Content is required"));
+                        // title, content, fieldName, expectedMessage
+                        Arguments.of(null, "Valid content", "title", "Title is required"),
+                        Arguments.of("", "Valid content", "title", "Title is required"),
+                        Arguments.of("   ", "Valid content", "title", "Title is required"),
+                        Arguments.of("Valid title", null, "content", "Content is required"),
+                        Arguments.of("Valid title", "", "content", "Content is required"),
+                        Arguments.of("Valid title", "   ", "content", "Content is required"));
         }
 
         /**
@@ -73,10 +73,10 @@ class PostServiceTest {
          */
         private static Stream<Arguments> categoryValidationProvider() {
                 return Stream.of(
-                                // categoryName, expectedMessage
-                                Arguments.of(null, "Category is required"),
-                                Arguments.of("", "Category is required"),
-                                Arguments.of("   ", "Category is required"));
+                        // categoryName, expectedMessage
+                        Arguments.of(null, "Category is required"),
+                        Arguments.of("", "Category is required"),
+                        Arguments.of("   ", "Category is required"));
         }
 
         @BeforeEach
@@ -110,7 +110,7 @@ class PostServiceTest {
         @ParameterizedTest
         @MethodSource("titleAndContentValidationProvider")
         void testCreatePostTitleAndContentValidation(String title, String content, String fieldName,
-                        String expectedMessage) {
+                                                     String expectedMessage) {
                 // Given
                 Double latitude = 1.0;
                 Double longitude = 2.0;
@@ -119,7 +119,7 @@ class PostServiceTest {
 
                 // When & Then
                 Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                                category.getName(), userId);
+                        category.getName(), userId);
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
                 assertEquals(expectedMessage, exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
@@ -137,7 +137,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                                .createPost(title, content, latitude, longitude, categoryName, userId));
+                        .createPost(title, content, latitude, longitude, categoryName, userId));
                 assertEquals(expectedMessage, exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
         }
@@ -154,7 +154,7 @@ class PostServiceTest {
 
                 // When & Then
                 Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                                category.getName(), userId);
+                        category.getName(), userId);
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
                 assertEquals("Location coordinates are required", exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
@@ -185,7 +185,7 @@ class PostServiceTest {
 
                 // When & Then
                 Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                                category.getName(), userId);
+                        category.getName(), userId);
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
                 assertEquals("Location coordinates are required", exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
@@ -203,11 +203,11 @@ class PostServiceTest {
                 LocationFilter filter = new LocationFilter(null, null, null);
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(null);
+                        .thenReturn(null);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -230,11 +230,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -257,11 +257,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -275,8 +275,8 @@ class PostServiceTest {
         }
 
         private final LocalDateTime now = LocalDateTime.now(),
-                        yesterday = now.minusDays(1),
-                        tomorrow = now.plusDays(1);
+                yesterday = now.minusDays(1),
+                tomorrow = now.plusDays(1);
 
         @Test
         void testFindAllPaginated() {
@@ -342,7 +342,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                                .createPost(title, content, latitude, longitude, categoryName, userId));
+                        .createPost(title, content, latitude, longitude, categoryName, userId));
 
                 assertEquals("Category does not exist: " + categoryName, exception.getMessage());
                 verify(categoryRepository).findByName(categoryName);
@@ -364,7 +364,7 @@ class PostServiceTest {
 
                 // When & Then
                 PostException exception = assertThrows(PostException.class, () -> postService.createPost(title, content,
-                                latitude, longitude, categoryName, userId));
+                        latitude, longitude, categoryName, userId));
 
                 assertTrue(exception.getMessage().contains("Failed to save the post"));
                 verify(categoryRepository).findByName(categoryName);
@@ -387,18 +387,18 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo),
-                                eq(pageable)))
-                                .thenReturn(postsPage);
+                        eq(pageable)))
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(2, result.getContent().size());
                 verify(postRepository).findPostsByDateRange(any(Point.class), anyDouble(), eq(dateFrom), eq(dateTo),
-                                eq(pageable));
+                        eq(pageable));
         }
 
         @Test
@@ -415,11 +415,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -442,11 +442,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -491,11 +491,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -524,18 +524,18 @@ class PostServiceTest {
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(categoryRepository.findByName("Crime")).thenReturn(crime);
                 when(postRepository.searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                                eq(pageable)))
-                                .thenReturn(postsPage);
+                        eq(pageable)))
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size());
                 verify(postRepository).searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                                eq(pageable));
+                        eq(pageable));
                 verify(categoryRepository, times(2)).findByName(anyString());
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
@@ -561,18 +561,18 @@ class PostServiceTest {
 
                 when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
                 when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                                eq(categories), eq(pageable)))
-                                .thenReturn(postsPage);
+                        eq(categories), eq(pageable)))
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size());
                 verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                                eq(categories), eq(pageable));
+                        eq(categories), eq(pageable));
                 verify(categoryRepository).findByName("Safety");
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
@@ -590,7 +590,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -616,11 +616,11 @@ class PostServiceTest {
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenReturn(null);
+                        .thenReturn(null);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -648,11 +648,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -685,11 +685,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, 5); // 5 total elements but only 2 in this page
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -715,8 +715,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
                 verify(categoryRepository, times(2)).findByName(anyString());
@@ -738,12 +738,12 @@ class PostServiceTest {
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenThrow(new RuntimeException("Database error"));
+                        .thenThrow(new RuntimeException("Database error"));
 
                 // When & Then
                 RuntimeException exception = assertThrows(RuntimeException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Database error", exception.getMessage());
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -767,11 +767,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -795,7 +795,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -831,11 +831,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // Create a subclass of PostServiceImpl that overrides mapPostToData
                 PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                                jwtService) {
+                        jwtService) {
                         @Override
                         protected Map<String, Object> mapPostToData(Post post, UUID userId) {
                                 Map<String, Object> result = new HashMap<>();
@@ -847,7 +847,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = customService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -885,7 +885,7 @@ class PostServiceTest {
 
                 // When & Then
                 PostNotFoundException exception = assertThrows(PostNotFoundException.class,
-                                () -> postService.findById(id));
+                        () -> postService.findById(id));
 
                 // Verify exception message contains the ID
                 assertTrue(exception.getMessage().contains(id.toString()));
@@ -912,11 +912,11 @@ class PostServiceTest {
                 String authorizationHeader = "Bearer test-token";
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -939,7 +939,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                                .createPost(title, content, latitude, longitude, categoryName, postedBy));
+                        .createPost(title, content, latitude, longitude, categoryName, postedBy));
 
                 assertEquals("User ID (postedBy) is required", exception.getMessage());
                 verify(postRepository, never()).save(any(Post.class));
@@ -970,11 +970,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // Create a custom implementation that will return null for distance calculation
                 PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                                jwtService) {
+                        jwtService) {
                         @Override
                         protected Map<String, Object> mapPostToData(Post post, UUID userId) {
                                 Map<String, Object> postData = new HashMap<>();
@@ -997,7 +997,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = customService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1029,11 +1029,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1056,7 +1056,7 @@ class PostServiceTest {
 
                 // Create a custom implementation to return a post with null latitude in the map
                 PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                                jwtService) {
+                        jwtService) {
                         @Override
                         protected Map<String, Object> mapPostToData(Post post, UUID userId) {
                                 Map<String, Object> postData = new HashMap<>();
@@ -1086,11 +1086,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = customService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1114,7 +1114,7 @@ class PostServiceTest {
                 // Create a custom implementation to return a post with null longitude in the
                 // map
                 PostServiceImpl customService = new PostServiceImpl(postRepository, categoryRepository, geometryFactory,
-                                jwtService) {
+                        jwtService) {
                         @Override
                         protected Map<String, Object> mapPostToData(Post post, UUID userId) {
                                 Map<String, Object> postData = new HashMap<>();
@@ -1144,11 +1144,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = customService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1174,11 +1174,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1205,11 +1205,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1241,11 +1241,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1277,13 +1277,13 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When & Then - can't directly test the lambda filter that uses
                 // entry.getValue().getKey()
                 // So we'll verify the method works with our custom service
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size()); // Should find the valid post
@@ -1305,11 +1305,11 @@ class PostServiceTest {
 
                 // Since only one date is provided, it should use findPostsWithinRadius
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1317,7 +1317,7 @@ class PostServiceTest {
                 verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
                 // Verify it did NOT call findPostsByDateRange
                 verify(postRepository, never()).findPostsByDateRange(any(Point.class), anyDouble(), any(), any(),
-                                any());
+                        any());
         }
 
         @Test
@@ -1336,11 +1336,11 @@ class PostServiceTest {
 
                 // Since only one date is provided, it should use findPostsWithinRadius
                 when(postRepository.findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByLocation(
-                                centerLat, centerLon, radius, filter, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, filter, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1348,7 +1348,7 @@ class PostServiceTest {
                 verify(postRepository).findPostsWithinRadius(any(Point.class), anyDouble(), eq(pageable));
                 // Verify it did NOT call findPostsByDateRange
                 verify(postRepository, never()).findPostsByDateRange(any(Point.class), anyDouble(), any(), any(),
-                                any());
+                        any());
         }
 
         @Test
@@ -1382,12 +1382,12 @@ class PostServiceTest {
                 String authorizationHeader = "Bearer invalid-token";
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader))
-                                .thenThrow(new InvalidCredentialsException("Invalid credentials"));
+                        .thenThrow(new InvalidCredentialsException("Invalid credentials"));
 
                 // When & Then
                 PostException exception = assertThrows(PostException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertTrue(exception.getMessage().contains("Authentication error while searching posts"));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -1409,8 +1409,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: null", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1437,18 +1437,18 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                                eq(pageable))).thenReturn(postsPage);
+                        eq(pageable))).thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size());
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).searchPostsByCategories(any(Point.class), anyDouble(), eq(categories),
-                                eq(pageable));
+                        eq(pageable));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
 
@@ -1467,7 +1467,7 @@ class PostServiceTest {
 
                 // When & Then
                 UnauthorizedAccessException exception = assertThrows(UnauthorizedAccessException.class,
-                                () -> postService.deletePost(postId, differentUserId));
+                        () -> postService.deletePost(postId, differentUserId));
 
                 assertEquals("User not authorized to delete this post", exception.getMessage());
                 verify(postRepository).findById(postId);
@@ -1484,7 +1484,7 @@ class PostServiceTest {
 
                 // When & Then
                 PostNotFoundException exception = assertThrows(PostNotFoundException.class,
-                                () -> postService.deletePost(postId, userId));
+                        () -> postService.deletePost(postId, userId));
 
                 assertTrue(exception.getMessage().contains(postId.toString()));
                 verify(postRepository).findById(postId);
@@ -1511,11 +1511,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                                eq(categories), eq(pageable))).thenReturn(postsPage);
+                        eq(categories), eq(pageable))).thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1523,7 +1523,7 @@ class PostServiceTest {
                 verify(categoryRepository).findByName("Safety");
                 verify(categoryRepository).findByName("Crime");
                 verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                                eq(categories), eq(pageable));
+                        eq(categories), eq(pageable));
         }
 
         @Test
@@ -1542,8 +1542,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: ", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1570,8 +1570,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonExistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1597,8 +1597,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: null", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1628,11 +1628,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                                eq(categories), eq(pageable))).thenReturn(postsPage);
+                        eq(categories), eq(pageable))).thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1641,7 +1641,7 @@ class PostServiceTest {
                 verify(categoryRepository).findByName("Safety");
                 verify(categoryRepository).findByName("Crime");
                 verify(postRepository).searchPostsByKeywordAndCategories(any(Point.class), anyDouble(), eq(keyword),
-                                eq(categories), eq(pageable));
+                        eq(categories), eq(pageable));
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
         }
 
@@ -1662,8 +1662,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
-                                () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
-                                                authorizationHeader, pageable));
+                        () -> postService.searchPosts(centerLat, centerLon, radius, keyword, categories,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist:    ", exception.getMessage());
                 verify(categoryRepository).findByName("Safety");
@@ -1703,7 +1703,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1738,7 +1738,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1778,7 +1778,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1818,7 +1818,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1858,7 +1858,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1908,7 +1908,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -1935,9 +1935,9 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                                .findPostsByDistanceFeed(
-                                                userLat, userLon, categories, keyword, dateFrom, dateTo,
-                                                authorizationHeader, pageable));
+                        .findPostsByDistanceFeed(
+                                userLat, userLon, categories, keyword, dateFrom, dateTo,
+                                authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
@@ -1969,7 +1969,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2002,7 +2002,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2029,7 +2029,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2067,7 +2067,7 @@ class PostServiceTest {
 
                 // When - First page
                 Page<Map<String, Object>> firstPageResult = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then - First page
                 assertNotNull(firstPageResult);
@@ -2080,7 +2080,7 @@ class PostServiceTest {
                 // When - Second page
                 Pageable secondPageable = PageRequest.of(1, pageSize);
                 Page<Map<String, Object>> secondPageResult = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, secondPageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, secondPageable);
 
                 // Then - Second page
                 assertEquals(2, secondPageResult.getContent().size());
@@ -2107,8 +2107,8 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                                .findPostsByTimestampFeed(
-                                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable));
+                        .findPostsByTimestampFeed(
+                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable));
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
@@ -2147,7 +2147,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2207,7 +2207,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2307,7 +2307,7 @@ class PostServiceTest {
 
                 // When & Then
                 InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
+                        () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
 
                 assertEquals("Authorization header is required", exception.getMessage());
                 verifyNoInteractions(postRepository);
@@ -2332,7 +2332,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                                userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2368,11 +2368,11 @@ class PostServiceTest {
                 Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
                 when(postRepository.searchPostsByKeyword(any(Point.class), anyDouble(), eq(keyword), eq(pageable)))
-                                .thenReturn(postsPage);
+                        .thenReturn(postsPage);
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2423,7 +2423,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                                categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
+                        categories, keyword, dateFrom, dateTo, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2515,7 +2515,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.searchPosts(
-                                centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
+                        centerLat, centerLon, radius, keyword, categories, authorizationHeader, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -2539,12 +2539,12 @@ class PostServiceTest {
                 LocationFilter filter = new LocationFilter(null, null, null);
 
                 when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader))
-                                .thenThrow(new InvalidCredentialsException("Invalid token"));
+                        .thenThrow(new InvalidCredentialsException("Invalid token"));
 
                 // When & Then
                 InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByLocation(
-                                                centerLat, centerLon, radius, filter, authorizationHeader, pageable));
+                        () -> postService.findPostsByLocation(
+                                centerLat, centerLon, radius, filter, authorizationHeader, pageable));
 
                 assertEquals("Invalid token", exception.getMessage());
                 verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
@@ -2564,15 +2564,121 @@ class PostServiceTest {
 
                 when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
                 when(postRepository.save(any(Post.class)))
-                                .thenThrow(new RuntimeException("Database connection error"));
+                        .thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
                 PostException exception = assertThrows(PostException.class,
-                                () -> postService.createPost(title, content, latitude, longitude, categoryName,
-                                                userId));
+                        () -> postService.createPost(title, content, latitude, longitude, categoryName,
+                                userId));
 
                 assertTrue(exception.getMessage().contains("Failed to save the post"));
                 verify(categoryRepository).findByName(categoryName);
                 verify(postRepository).save(any(Post.class));
+        }
+
+        @Test
+        void testFindPostsByTimestampFeed_EmptyAuthHeader() {
+                // Given
+                Pageable pageable = PageRequest.of(0, 10);
+                String authorizationHeader = ""; // Empty auth header
+
+                // When & Then
+                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
+                        () -> postService.findPostsByTimestampFeed(authorizationHeader, pageable));
+
+                assertEquals("Authorization header is required", exception.getMessage());
+                verifyNoInteractions(postRepository);
+        }
+
+        @Test
+        void testFindPostsByTimestampFeed_SortingByTimestamp() throws InvalidCredentialsException {
+                // Given
+                Pageable pageable = PageRequest.of(0, 10);
+                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID();
+
+                // Create posts with different timestamps in unsorted order
+                Post post1 = new Post();
+                post1.setTitle("Post 1");
+                post1.setCreatedAt(now.plusHours(2)); // Latest
+
+                Post post2 = new Post();
+                post2.setTitle("Post 2");
+                post2.setCreatedAt(now); // Middle
+
+                Post post3 = new Post();
+                post3.setTitle("Post 3");
+                post3.setCreatedAt(now.minusHours(2)); // Earliest
+
+                List<Post> unsortedPosts = Arrays.asList(post1, post2, post3); // Unsorted by time
+                Page<Post> postsPage = new PageImpl<>(unsortedPosts, pageable, unsortedPosts.size());
+
+                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
+                when(postRepository.findAll(pageable)).thenReturn(postsPage);
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(3, result.getContent().size());
+
+                // Verify posts are sorted by timestamp (earliest first)
+                List<Map<String, Object>> content = result.getContent();
+                Map<String, Object> firstPost = content.get(0);
+                Map<String, Object> secondPost = content.get(1);
+                Map<String, Object> thirdPost = content.get(2);
+
+                Map<String, Object> firstPostData = (Map<String, Object>) firstPost.get("post");
+                Map<String, Object> secondPostData = (Map<String, Object>) secondPost.get("post");
+                Map<String, Object> thirdPostData = (Map<String, Object>) thirdPost.get("post");
+
+                assertEquals("Post 3", firstPostData.get("title")); // Earliest post should be first
+                assertEquals("Post 2", secondPostData.get("title")); // Middle post should be second
+                assertEquals("Post 1", thirdPostData.get("title")); // Latest post should be last
+
+                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+                verify(postRepository).findAll(pageable);
+        }
+
+        @Test
+        void testFindPostsByTimestampFeed_PaginationParameters() throws InvalidCredentialsException {
+                // Given
+                int pageSize = 2;
+                int pageNumber = 1; // Second page
+                Pageable pageable = PageRequest.of(pageNumber, pageSize);
+                String authorizationHeader = "Bearer test-token";
+                UUID userId = UUID.randomUUID();
+
+                // Create more posts than the page size
+                List<Post> allPosts = new ArrayList<>();
+                for (int i = 0; i < 5; i++) {
+                        Post post = new Post();
+                        post.setTitle("Post " + i);
+                        post.setCreatedAt(now.plusHours(i));
+                        allPosts.add(post);
+                }
+
+                // Create a page with only posts for the second page
+                List<Post> secondPagePosts = allPosts.subList(2, 4); // Posts 2 and 3
+                Page<Post> postsPage = new PageImpl<>(secondPagePosts, pageable, allPosts.size());
+
+                when(jwtService.getUserIdFromAuthorizationHeader(authorizationHeader)).thenReturn(userId);
+                when(postRepository.findAll(pageable)).thenReturn(postsPage);
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(2, result.getContent().size());
+                assertEquals(5, result.getTotalElements());
+                assertEquals(3, result.getTotalPages());
+                assertEquals(1, result.getNumber()); // Page number (0-based)
+                assertTrue(result.hasNext());
+                assertTrue(result.hasPrevious());
+
+                verify(jwtService).getUserIdFromAuthorizationHeader(authorizationHeader);
+                verify(postRepository).findAll(pageable);
         }
 }
