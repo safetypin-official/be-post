@@ -68,7 +68,7 @@ public class CategoryServiceImpl implements CategoryService {
         if (oldCategoryName.equals(newCategoryName)) {
             return oldCategory;
         }
-        
+
         // Check if new name already exists and is different from old name
         if (categoryRepository.existsById(newCategoryName)) {
             throw new CategoryException("Category with name " + newCategoryName + " already exists");

@@ -91,7 +91,7 @@ public class Post extends BasePost {
         if (latitude == null) {
             throw new IllegalArgumentException("Latitude cannot be null");
         }
-    
+
         if (location != null) {
             // Create a new Point with the updated latitude
             location = geometryFactory.createPoint(new Coordinate(location.getX(), latitude));
@@ -108,7 +108,7 @@ public class Post extends BasePost {
         if (longitude == null) {
             throw new IllegalArgumentException("Longitude cannot be null");
         }
-    
+
         if (location != null) {
             // Create a new Point with the updated longitude
             location = geometryFactory.createPoint(new Coordinate(longitude, location.getY()));
