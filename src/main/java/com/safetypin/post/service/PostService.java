@@ -28,10 +28,6 @@ public interface PostService {
         Page<Post> findAllPaginated(String authorizationHeader, Pageable pageable);
 
         Page<Map<String, Object>> findPostsByDistanceFeed(
-                        Double userLat, Double userLon, String authorizationHeader, Pageable pageable)
-                        throws InvalidCredentialsException;
-
-        Page<Map<String, Object>> findPostsByDistanceFeed(
                         Double userLat, Double userLon,
                         List<String> categories, String keyword,
                         LocalDateTime dateFrom, LocalDateTime dateTo,

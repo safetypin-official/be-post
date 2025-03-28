@@ -154,48 +154,6 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader,
-            Pageable pageable) throws InvalidCredentialsException {
-
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-
-        // Get all posts
-        List<Post> allPosts = postRepository.findAll();
-
-        // Calculate distance and create result objects
-        List<Map<String, Object>> postsWithDistance = allPosts.stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post, userId);
-                    result.put("post", postData);
-
-                    // Calculate distance from user
-                    double distance = DistanceCalculator.calculateDistance(
-                            userLat, userLon, post.getLatitude(), post.getLongitude());
-                    result.put(DISTANCE_KEY, distance);
-
-                    return result;
-                })
-                // Sort by distance (nearest first)
-                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
-                .toList();
-
-        // Manual pagination
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
-
-        // Create sub-list for current page - handle case when start might be out of
-        // bounds
-        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ? Collections.emptyList()
-                : postsWithDistance.subList(start, end);
-
-        // Return paginated result
-        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
-    }
-
-    @Override
     public Page<Map<String, Object>> findPostsByTimestampFeed(String authorizationHeader, Pageable pageable)
             throws InvalidCredentialsException {
 
