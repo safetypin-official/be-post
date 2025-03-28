@@ -4,6 +4,7 @@ import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.JwtService;
 import com.safetypin.post.service.PostService;
@@ -85,6 +86,8 @@ public class PostController {
             return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (NumberFormatException e) {
             return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
+        } catch (UnauthorizedAccessException e) {
+            return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
         } catch (Exception e) {
             return createErrorResponse(errorStatus, "Error processing request: " + e.getMessage());
         }
@@ -217,11 +220,11 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
 
             // Get posts sorted by timestamp
-            Page<Map<String, Object>> posts = null;
+            Page<Map<String, Object>> posts;
             try {
                 posts = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
             } catch (InvalidCredentialsException e) {
-                throw new RuntimeException(e);
+                throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
             }
 
             // Create response with pagination data
@@ -235,26 +238,26 @@ public class PostController {
     public ResponseEntity<PostResponse> createPost(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestBody PostCreateRequest request) {
-        // authorize user
-        UUID userId = null;
-        try {
-            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
 
-        } catch (Exception e) {
-            return createErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage());
-        }
-
-        UUID finalUserId = userId;
         return executeWithExceptionHandling(() -> {
+            // Authorize user with specific exception handling
+            UUID userId;
+            try {
+                userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+            } catch (InvalidCredentialsException e) {
+                throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
+            }
+
+            // Create the post
             Post post = postService.createPost(
                     request.getTitle(),
                     request.getCaption(),
                     request.getLatitude(),
                     request.getLongitude(),
                     request.getCategory(),
-                    finalUserId // Add postedBy parameter
-            );
+                    userId);
 
+            // Return success response
             PostResponse response = new PostResponse(
                     true,
                     "Post created successfully",
@@ -272,6 +275,42 @@ public class PostController {
             Post post = postService.findById(id);
             Map<String, Object> postData = formatPostData(post);
             return createSuccessResponse(postData);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<PostResponse> deletePost(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable UUID id) {
+
+        log.info("Received request to delete post with ID: {}", id);
+
+        // Get user ID from token
+        UUID userId;
+        try {
+            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+        } catch (InvalidCredentialsException e) {
+            return createErrorResponse(HttpStatus.UNAUTHORIZED, AUTH_FAILED_MESSAGE + e.getMessage());
+        }
+
+        final UUID finalUserId = userId;
+        return executeWithExceptionHandling(() -> {
+            // Attempt to delete the post
+            postService.deletePost(id, finalUserId);
+
+            // Return success response
+            Map<String, Object> responseData = Map.of(
+                    "postId", id,
+                    "deletedBy", finalUserId);
+
+            PostResponse response = new PostResponse(
+                    true,
+                    "Post deleted successfully",
+                    responseData);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

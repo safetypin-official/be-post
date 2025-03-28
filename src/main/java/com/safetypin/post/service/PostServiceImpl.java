@@ -3,6 +3,7 @@ package com.safetypin.post.service;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
@@ -34,7 +35,7 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-                           GeometryFactory geometryFactory, JwtService jwtService) {
+            GeometryFactory geometryFactory, JwtService jwtService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.geometryFactory = geometryFactory;
@@ -83,6 +84,7 @@ public class PostServiceImpl implements PostService {
         // Use a larger radius for database query to account for calculation differences
         // The exact filtering will be done after calculating the actual distances
         Double radiusInMeters = radius * 1000;
+        Double radiusInKilometers = radiusInMeters / 1000; // Convert radius to kilometers for clarity
 
         // Select appropriate query based on date parameters only, we'll filter by
         // category later
@@ -125,7 +127,7 @@ public class PostServiceImpl implements PostService {
                 // Filter by the actual calculated distance (using the specified radius)
                 // Add a check to exclude posts with null locations
                 .filter(entry -> {
-                    if (entry.getValue().getKey() == null || entry.getValue().getKey() > radiusInMeters / 1000)
+                    if (entry.getValue().getKey() == null || entry.getValue().getKey() > radiusInKilometers)
                         return false;
                     Object postObj = entry.getKey().get("post");
                     Map<?, ?> postMap = (Map<?, ?>) postObj;
@@ -148,7 +150,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, String authorizationHeader,
-                                                             Pageable pageable) throws InvalidCredentialsException {
+            Pageable pageable) throws InvalidCredentialsException {
 
         UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
 
@@ -217,7 +219,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category,
-                           UUID postedBy) {
+            UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -337,6 +339,15 @@ public class PostServiceImpl implements PostService {
                 .toList();
 
         return new PageImpl<>(results, pageable, results.size());
+    }
+
+    @Override
+    public void deletePost(UUID postId, UUID userId) {
+        Post post = findById(postId);
+        if (!post.getPostedBy().equals(userId)) {
+            throw new UnauthorizedAccessException("User not authorized to delete this post");
+        }
+        postRepository.delete(post);
     }
 
     // Helper method to validate that all categories exist
