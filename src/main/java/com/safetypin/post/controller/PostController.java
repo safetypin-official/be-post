@@ -35,8 +35,6 @@ import java.util.function.Supplier;
 @RestController
 @RequestMapping("/posts")
 public class PostController {
-
-    private static final String AUTH_FAILED_MESSAGE = "Authentication failed: ";
     private final PostService postService;
 
     public PostController(PostService postService) {
