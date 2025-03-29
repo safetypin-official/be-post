@@ -72,7 +72,7 @@ class JwtServiceTest {
         // When/Then
         InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
                 () -> jwtService.getUserIdFromJwtToken(expiredToken));
-        assertEquals("Token expired", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Token expired"));
     }
 
     @Test

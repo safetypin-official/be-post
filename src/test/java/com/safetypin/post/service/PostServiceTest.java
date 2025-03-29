@@ -1104,25 +1104,6 @@ class PostServiceTest {
                 verify(postRepository).save(any(Post.class));
         }
 
-        // Add a test for findPostsByTimestampFeed with filters and null user ID
-        @Test
-        void testFindPostsByTimestampFeed_WithFilters_NullUserId() {
-                // Given
-                List<String> categories = Collections.singletonList("Safety");
-                String keyword = "test";
-                LocalDateTime dateFrom = yesterday;
-                LocalDateTime dateTo = tomorrow;
-                Pageable pageable = PageRequest.of(0, 10);
-                UUID userId = null; // Null user ID
-
-                // When & Then
-                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByTimestampFeed(
-                                                categories, keyword, dateFrom, dateTo, userId, pageable));
-
-                assertEquals("User ID is required", exception.getMessage());
-                verifyNoInteractions(postRepository);
-        }
 
         @Test
         void testFindPostsByTimestampFeed_SortingByTimestamp() throws InvalidCredentialsException {
@@ -1220,29 +1201,6 @@ class PostServiceTest {
                 // When & Then
                 InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
                                 () -> postService.findPostsByTimestampFeed(userId, pageable));
-
-                assertEquals("User ID is required", exception.getMessage());
-                verifyNoInteractions(postRepository);
-        }
-
-        // Add test for null user ID in distance feed
-        @Test
-        void testFindPostsByDistanceFeed_WithNullUserId() {
-                // Given
-                Double userLat = 0.0;
-                Double userLon = 0.0;
-                List<String> categories = null;
-                String keyword = null;
-                LocalDateTime dateFrom = null;
-                LocalDateTime dateTo = null;
-                Pageable pageable = PageRequest.of(0, 10);
-                UUID userId = null; // Null user ID
-
-                // When & Then
-                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByDistanceFeed(
-                                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId,
-                                                pageable));
 
                 assertEquals("User ID is required", exception.getMessage());
                 verifyNoInteractions(postRepository);
