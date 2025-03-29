@@ -147,8 +147,6 @@ class PostControllerTest {
 
     // ------------------- Get Posts Feed By Distance Tests -------------------
 
-
-
     @Test
     void getPostsFeedByDistance_withFilters() throws InvalidCredentialsException {
         // Arrange
@@ -269,8 +267,8 @@ class PostControllerTest {
         assertNotNull(response.getBody().getData());
 
         verify(postService).createPost(
-                eq("New Post"), eq("New Content"), eq(40.7128), eq(-74.0060),
-                eq("DANGER"), eq(testUserId));
+                "New Post", "New Content", 40.7128, -74.0060,
+                "DANGER", testUserId);
     }
 
     @Test
@@ -339,7 +337,7 @@ class PostControllerTest {
         assertEquals(testPostId, postData.get("id"));
         assertEquals("Test Post", postData.get("title"));
 
-        verify(postService).findById(eq(testPostId));
+        verify(postService).findById(testPostId);
     }
 
     @Test
@@ -377,7 +375,7 @@ class PostControllerTest {
         assertEquals(testPostId, responseData.get("postId"));
         assertEquals(testUserId, responseData.get("deletedBy"));
 
-        verify(postService).deletePost(eq(testPostId), eq(testUserId));
+        verify(postService).deletePost(testPostId, testUserId);
     }
 
     @Test
@@ -424,8 +422,6 @@ class PostControllerTest {
     }
 
     // ------------------- Edge Cases and Additional Tests -------------------
-
-
 
     @Test
     void getPostsFeedByDistance_edgeCase_numberFormatException() throws InvalidCredentialsException {
