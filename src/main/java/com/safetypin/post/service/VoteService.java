@@ -1,6 +1,6 @@
 package com.safetypin.post.service;
 
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
+import com.safetypin.post.exception.InvalidCredentialsException;
 
 import java.util.UUID;
 

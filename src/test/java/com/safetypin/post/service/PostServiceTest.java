@@ -1,15 +1,11 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.exception.PostException;
-import com.safetypin.post.exception.PostNotFoundException;
-import com.safetypin.post.exception.UnauthorizedAccessException;
+import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

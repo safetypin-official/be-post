@@ -6,7 +6,7 @@ import com.safetypin.post.model.Vote;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
+import com.safetypin.post.exception.InvalidCredentialsException;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;

@@ -4,7 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
+import com.safetypin.post.exception.InvalidCredentialsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class JwtService {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException ex) {
-            throw new InvalidCredentialsException("Token expired", ex);
+            throw new InvalidCredentialsException("Token expired " + ex.getMessage());
         } catch (Exception e) {
             throw new InvalidCredentialsException("JWT Access Token parsing failed");
         }

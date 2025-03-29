@@ -1,8 +1,6 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.LocationFilter;
 import com.safetypin.post.model.Post;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

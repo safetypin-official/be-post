@@ -2,7 +2,7 @@ package com.safetypin.post.controller;
 
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.service.VoteService;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
+import com.safetypin.post.exception.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

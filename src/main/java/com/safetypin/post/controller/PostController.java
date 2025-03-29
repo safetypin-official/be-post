@@ -9,7 +9,6 @@ import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
