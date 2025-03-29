@@ -26,19 +26,16 @@ public interface PostService {
                         Double userLat, Double userLon,
                         List<String> categories, String keyword,
                         LocalDateTime dateFrom, LocalDateTime dateTo,
-                        UUID userId, Pageable pageable)
-                        throws InvalidCredentialsException;
+                        UUID userId, Pageable pageable);
 
         Post findById(UUID id);
 
-        Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable)
-                        throws InvalidCredentialsException;
+        Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable);
 
         Page<Map<String, Object>> findPostsByTimestampFeed(
                         List<String> categories, String keyword,
                         LocalDateTime dateFrom, LocalDateTime dateTo,
-                        UUID userId, Pageable pageable)
-                        throws InvalidCredentialsException;
+                        UUID userId, Pageable pageable);
 
         // New method to delete a post by ID, with user validation
         void deletePost(UUID postId, UUID userId);

@@ -63,12 +63,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable)
-            throws InvalidCredentialsException {
-
-        if (userId == null) {
-            throw new InvalidCredentialsException("User ID is required");
-        }
+    public Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable) {
 
         // Get posts sorted by timestamp (newest first)
         Page<Post> postsPage = postRepository.findAll(pageable);
@@ -162,11 +157,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon,
             List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
-            UUID userId, Pageable pageable) throws InvalidCredentialsException {
-
-        if (userId == null) {
-            throw new InvalidCredentialsException("User ID is required");
-        }
+            UUID userId, Pageable pageable) {
 
         // Validate categories if provided
         if (categories != null && !categories.isEmpty()) {
@@ -206,12 +197,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Map<String, Object>> findPostsByTimestampFeed(
             List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
-            UUID userId, Pageable pageable) throws InvalidCredentialsException {
-
-        if (userId == null) {
-            throw new InvalidCredentialsException("User ID is required");
-        }
-
+            UUID userId, Pageable pageable) {
         // Validate categories if provided
         if (categories != null && !categories.isEmpty()) {
             validateCategories(categories);

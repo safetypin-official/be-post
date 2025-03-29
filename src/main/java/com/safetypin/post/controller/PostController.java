@@ -170,13 +170,9 @@ public class PostController {
 
             // Get posts sorted by distance with filters
             Page<Map<String, Object>> posts;
-            try {
-                posts = postService.findPostsByDistanceFeed(
-                        lat, lon, categories, keyword, fromDateTime, toDateTime,
-                        userId, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
+            posts = postService.findPostsByDistanceFeed(
+                    lat, lon, categories, keyword, fromDateTime, toDateTime,
+                    userId, pageable);
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -209,13 +205,9 @@ public class PostController {
 
             // Get posts sorted by timestamp with filters
             Page<Map<String, Object>> posts;
-            try {
-                posts = postService.findPostsByTimestampFeed(
-                        categories, keyword, fromDateTime, toDateTime,
-                        userId, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
+            posts = postService.findPostsByTimestampFeed(
+                    categories, keyword, fromDateTime, toDateTime,
+                    userId, pageable);
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
