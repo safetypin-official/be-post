@@ -1131,15 +1131,15 @@ class PostServiceTest {
                 UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
 
                 // Create posts with different timestamps in unsorted order
-                Post post1 = new Post();
+                post1 = new Post();
                 post1.setTitle("Post 1");
                 post1.setCreatedAt(now.plusHours(2)); // Latest
 
-                Post post2 = new Post();
+                post2 = new Post();
                 post2.setTitle("Post 2");
                 post2.setCreatedAt(now); // Middle
 
-                Post post3 = new Post();
+                post3 = new Post();
                 post3.setTitle("Post 3");
                 post3.setCreatedAt(now.minusHours(2)); // Earliest
 
