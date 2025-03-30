@@ -4,7 +4,6 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.model.Vote;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.repository.VoteRepository;
-import com.safetypin.post.exception.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
