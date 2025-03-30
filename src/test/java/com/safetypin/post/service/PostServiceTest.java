@@ -1,5 +1,6 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.dto.PostData;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
@@ -449,9 +450,9 @@ class PostServiceTest {
                 assertEquals(1, result.getContent().size()); // Only one post matches all criteria
 
                 Map<String, Object> firstPostResult = result.getContent().getFirst();
-                Map<String, Object> firstPostData = (Map<String, Object>) firstPostResult.get("post");
-                assertEquals("Test Post", firstPostData.get("title"));
-                assertEquals("Safety", firstPostData.get("category"));
+                PostData firstPostData = (PostData) firstPostResult.get("post");
+                assertEquals("Test Post", firstPostData.getTitle());
+                assertEquals("Safety", firstPostData.getCategory());
 
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
@@ -697,9 +698,9 @@ class PostServiceTest {
                 assertEquals(1, result.getContent().size()); // Only matching post
 
                 Map<String, Object> firstPostResult = result.getContent().getFirst();
-                Map<String, Object> firstPostData = (Map<String, Object>) firstPostResult.get("post");
-                assertEquals("Test Post", firstPostData.get("title"));
-                assertEquals("Safety", firstPostData.get("category"));
+                PostData firstPostData = (PostData) firstPostResult.get("post");
+                assertEquals("Test Post", firstPostData.getTitle());
+                assertEquals("Safety", firstPostData.getCategory());
 
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
@@ -868,13 +869,13 @@ class PostServiceTest {
                 Map<String, Object> secondPostMap = content.get(1);
                 Map<String, Object> thirdPostMap = content.get(2);
 
-                Map<String, Object> firstPostData = (Map<String, Object>) firstPostMap.get("post");
-                Map<String, Object> secondPostData = (Map<String, Object>) secondPostMap.get("post");
-                Map<String, Object> thirdPostData = (Map<String, Object>) thirdPostMap.get("post");
+                PostData firstPostData = (PostData) firstPostMap.get("post");
+                PostData secondPostData = (PostData) secondPostMap.get("post");
+                PostData thirdPostData = (PostData) thirdPostMap.get("post");
 
-                assertEquals("Earliest Post", firstPostData.get("title"));
-                assertEquals("Middle Post", secondPostData.get("title"));
-                assertEquals("Latest Post", thirdPostData.get("title"));
+                assertEquals("Earliest Post", firstPostData.getTitle());
+                assertEquals("Middle Post", secondPostData.getTitle());
+                assertEquals("Latest Post", thirdPostData.getTitle());
 
                 verify(postRepository).findAll();
         }
@@ -920,27 +921,6 @@ class PostServiceTest {
                 assertEquals(2, result.getContent().size()); // Two posts match the keyword
 
                 verify(postRepository).findAll();
-        }
-
-        // Test for null ID in mapPostToData
-        @Test
-        void testMapPostToDataWithNullId() {
-                // Given
-                UUID userId = UUID.randomUUID();
-
-                Post post = new Post();
-                post.setId(null); // Null ID
-                post.setTitle("Test Title");
-                post.setCaption("Test Caption");
-                post.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1)));
-                post.setCategory("Safety");
-
-                // When
-                Map<String, Object> result = postService.mapPostToData(post, userId);
-
-                // Then
-                assertNotNull(result);
-                assertNull(result.get("id"));
         }
 
         // Test findPostsByDistanceFeed with filters with out-of-range dates
@@ -1010,11 +990,11 @@ class PostServiceTest {
                 assertEquals(2, result.getContent().size()); // Should match the 2 matching posts
 
                 // Verify the posts are sorted by createdAt (earliest first)
-                Map<String, Object> firstPostData = (Map<String, Object>) result.getContent().get(0).get("post");
-                Map<String, Object> secondPostData = (Map<String, Object>) result.getContent().get(1).get("post");
+                PostData firstPostData = (PostData) result.getContent().getFirst().get("post");
+                PostData secondPostData = (PostData) result.getContent().get(1).get("post");
 
-                assertEquals("Test 1", firstPostData.get("title"));
-                assertEquals("Another test", secondPostData.get("title"));
+                assertEquals("Test 1", firstPostData.getTitle());
+                assertEquals("Another test", secondPostData.getTitle());
 
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
@@ -1142,13 +1122,13 @@ class PostServiceTest {
                 Map<String, Object> secondPost = content.get(1);
                 Map<String, Object> thirdPost = content.get(2);
 
-                Map<String, Object> firstPostData = (Map<String, Object>) firstPost.get("post");
-                Map<String, Object> secondPostData = (Map<String, Object>) secondPost.get("post");
-                Map<String, Object> thirdPostData = (Map<String, Object>) thirdPost.get("post");
+                PostData firstPostData = (PostData) firstPost.get("post");
+                PostData secondPostData = (PostData) secondPost.get("post");
+                PostData thirdPostData = (PostData) thirdPost.get("post");
 
-                assertEquals("Post 3", firstPostData.get("title")); // Earliest post should be first
-                assertEquals("Post 2", secondPostData.get("title")); // Middle post should be second
-                assertEquals("Post 1", thirdPostData.get("title")); // Latest post should be last
+                assertEquals("Post 3", firstPostData.getTitle()); // Earliest post should be first
+                assertEquals("Post 2", secondPostData.getTitle()); // Middle post should be second
+                assertEquals("Post 1", thirdPostData.getTitle()); // Latest post should be last
 
                 verify(postRepository).findAll(pageable);
         }

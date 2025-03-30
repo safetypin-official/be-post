@@ -1,5 +1,6 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.dto.PostData;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
@@ -31,21 +32,6 @@ public class PostServiceImpl implements PostService {
         this.categoryRepository = categoryRepository;
     }
 
-    // Change from private to protected for testing
-    protected Map<String, Object> mapPostToData(Post post, UUID userId) {
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("title", post.getTitle());
-        postData.put("caption", post.getCaption());
-        postData.put("latitude", post.getLatitude());
-        postData.put("createdAt", post.getCreatedAt());
-        postData.put("category", post.getCategory());
-        postData.put("upvoteCount", post.getUpvoteCount());
-        postData.put("downvoteCount", post.getDownvoteCount());
-        postData.put("currentVote", post.currentVote(userId));
-        postData.put("postedBy", post.getPostedBy()); // Add postedBy to response
-        return postData;
-    }
-
     // find all (debugging purposes)
     @Override
     public List<Post> findAll() {
@@ -74,13 +60,13 @@ public class PostServiceImpl implements PostService {
                     Map<String, Object> result = new HashMap<>();
 
                     // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post, userId);
+                    PostData postData = PostData.fromPostAndUserId(post, userId);
                     result.put("post", postData);
 
                     return result;
                 })
                 .sorted(Comparator.comparing(
-                        post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt"))))
+                        post -> (((PostData) post.get("post")).getCreatedAt())))
                 .toList();
 
         // Return paginated result
@@ -176,7 +162,7 @@ public class PostServiceImpl implements PostService {
                     Map<String, Object> result = new HashMap<>();
 
                     // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post, userId);
+                    PostData postData = PostData.fromPostAndUserId(post, userId);
                     result.put("post", postData);
 
                     // Calculate distance from user
@@ -213,13 +199,13 @@ public class PostServiceImpl implements PostService {
                 .filter(post -> matchesDateRange(post, dateFrom, dateTo))
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
-                    Map<String, Object> postData = mapPostToData(post, userId);
+                    PostData postData = PostData.fromPostAndUserId(post, userId);
                     result.put("post", postData);
                     return result;
                 })
                 // Sort by timestamp (earliest first)
                 .sorted(Comparator.comparing(
-                        post -> ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt"))))
+                        post -> (((PostData) post.get("post")).getCreatedAt())))
                 .toList();
 
         return paginateResults(filteredPosts, pageable);
