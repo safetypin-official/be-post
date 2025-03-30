@@ -26,8 +26,7 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-            JwtService jwtService) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
     }
@@ -224,8 +223,10 @@ public class PostServiceImpl implements PostService {
             return true;
         }
         String lowercaseKeyword = keyword.toLowerCase();
-        return (post.getTitle() != null && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
-                (post.getCaption() != null && post.getCaption().toLowerCase().contains(lowercaseKeyword));
+        return (post.getTitle() != null
+                && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
+                (post.getCaption() != null
+                && post.getCaption().toLowerCase().contains(lowercaseKeyword));
     }
 
     private boolean matchesDateRange(Post post, LocalDateTime dateFrom, LocalDateTime dateTo) {

@@ -77,7 +77,7 @@ class PostServiceTest {
         @BeforeEach
         void setup() {
                 geometryFactory = new GeometryFactory();
-                postService = new PostServiceImpl(postRepository, categoryRepository, jwtService);
+                postService = new PostServiceImpl(postRepository, categoryRepository);
 
                 // Create test posts with locations
                 post1 = new Post();
@@ -213,8 +213,8 @@ class PostServiceTest {
                 // Given
                 String title = "Test Post";
                 String content = "This is a test post";
-                Double latitude = 1.0;
-                Double longitude = 2.0;
+                double latitude = 1.0;
+                double longitude = 2.0;
                 String categoryName = "Safety";
                 UUID userId = UUID.randomUUID();
 
@@ -517,6 +517,43 @@ class PostServiceTest {
                 // Then
                 assertNotNull(result);
                 assertEquals(1, result.getContent().size()); // Should match on caption
+
+                verify(categoryRepository).findByName("Safety");
+                verify(postRepository).findAll();
+        }
+
+        @Test
+        void testFindPostsByDistanceFeed_WithFilters_NullTitle_NoKeywordInCaption() throws InvalidCredentialsException {
+                // Given
+                Double userLat = 0.0;
+                Double userLon = 0.0;
+                List<String> categories = Collections.singletonList("Safety");
+                String keyword = "test";
+                LocalDateTime dateFrom = yesterday;
+                LocalDateTime dateTo = tomorrow;
+                Pageable pageable = PageRequest.of(0, 10);
+                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
+
+                // Create sample post with null title but matching keyword in caption
+                Post postWithNullTitle = new Post();
+                postWithNullTitle.setTitle(null);
+                postWithNullTitle.setCaption("This is a caption");
+                postWithNullTitle.setLocation(geometryFactory.createPoint(new Coordinate(0.01, 0.01)));
+                postWithNullTitle.setLatitude(0.01);
+                postWithNullTitle.setLongitude(0.01);
+                postWithNullTitle.setCategory("Safety");
+                postWithNullTitle.setCreatedAt(now);
+
+                when(categoryRepository.findByName("Safety")).thenReturn(safetyCategory);
+                when(postRepository.findAll()).thenReturn(Collections.singletonList(postWithNullTitle));
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(0, result.getContent().size()); // Should not match on caption
 
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
@@ -1042,7 +1079,7 @@ class PostServiceTest {
         @Test
         void testFindPostsByTimestampFeed_WithComplexFilters() throws InvalidCredentialsException {
                 // Given
-                List<String> categories = Arrays.asList("Safety");
+                List<String> categories = List.of("Safety");
                 String keyword = "test";
                 LocalDateTime dateFrom = yesterday.minusDays(1);
                 LocalDateTime dateTo = tomorrow.plusDays(1);
