@@ -41,8 +41,6 @@ class PostServiceTest {
         private PostRepository postRepository;
         @Mock
         private CategoryRepository categoryRepository;
-        @Mock
-        private JwtService jwtService;
         private GeometryFactory geometryFactory;
         private PostServiceImpl postService;
         private Post post1, post2, post3;

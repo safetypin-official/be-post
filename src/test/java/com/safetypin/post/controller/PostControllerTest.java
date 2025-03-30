@@ -51,7 +51,6 @@ class PostControllerTest {
     private UUID testUserId;
     private UUID testPostId;
     private Post testPost;
-    private UserDetails userDetails;
     private Pageable pageable;
     private MethodArgumentTypeMismatchException typeMismatchException;
 
@@ -65,7 +64,7 @@ class PostControllerTest {
 
         // Setup User
         testUserId = UUID.randomUUID();
-        userDetails = mock(UserDetails.class);
+        UserDetails userDetails = mock(UserDetails.class);
         when(userDetails.getUserId()).thenReturn(testUserId);
         when(authentication.getPrincipal()).thenReturn(userDetails);
 
