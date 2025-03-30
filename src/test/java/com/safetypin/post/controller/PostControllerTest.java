@@ -198,6 +198,34 @@ class PostControllerTest {
         assertEquals("Latitude and longitude are required", response.getBody().getMessage());
     }
 
+    @Test
+    void getPostsFeedByDistance_withNullDates() {
+        // Arrange
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("post", Map.of("title", "Test Post"));
+        postData.put("distance", 2.5);
+        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        // Test case where both dates are null
+        when(postService.findPostsByDistanceFeed(
+                eq(40.7128), eq(-74.0060), isNull(), eq("test"),
+                isNull(), isNull(), eq(testUserId), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                40.7128, -74.0060, null, "test", null, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        verify(postService).findPostsByDistanceFeed(
+                eq(40.7128), eq(-74.0060), isNull(), eq("test"),
+                isNull(), isNull(), eq(testUserId), eq(pageable));
+    }
+
+
     // ------------------- Get Posts Feed By Timestamp Tests -------------------
 
     @Test
@@ -251,6 +279,33 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
+    }
+
+    @Test
+    void getPostsFeedByTimestamp_withNullDates() {
+        // Arrange
+        Map<String, Object> postData = new HashMap<>();
+        postData.put("post", Map.of("title", "Test Post"));
+        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        List<String> categories = List.of("DANGER");
+
+        when(postService.findPostsByTimestampFeed(
+                eq(categories), eq("test"), isNull(), isNull(),
+                eq(testUserId), eq(pageable)))
+                .thenReturn(postsPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(
+                categories, "test", null, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        verify(postService).findPostsByTimestampFeed(
+                eq(categories), eq("test"), isNull(), isNull(),
+                eq(testUserId), eq(pageable));
     }
 
     // ------------------- Create Post Tests -------------------
