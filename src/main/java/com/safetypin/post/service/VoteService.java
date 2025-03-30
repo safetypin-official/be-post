@@ -1,14 +1,12 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.exception.InvalidCredentialsException;
-
 import java.util.UUID;
 
 public interface VoteService {
 
     // Cast a vote (upvote or downvote) for a post
-    String createVote(String authorizationHeader, UUID postId, boolean isUpvote) throws InvalidCredentialsException;
+    String createVote(UUID userId, UUID postId, boolean isUpvote);
 
     // Cancel an existing vote
-    String cancelVote(String authorizationHeader, UUID postId) throws InvalidCredentialsException;
+    String cancelVote(UUID userId, UUID postId);
 }
