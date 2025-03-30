@@ -175,15 +175,27 @@ class PostControllerTest {
     }
 
     @Test
-    void getPostsFeedByDistance_nullCoordinates() {
+    void getPostsFeedByDistance_nullLatitude() {
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                null, null, null, null, null, null, 0, 10);
+                null, 10.0, null, null, null, null, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
-        assertTrue(response.getBody().getMessage().contains("Latitude and longitude are required"));
+        assertEquals("Latitude and longitude are required", response.getBody().getMessage());
+    }
+
+    @Test
+    void getPostsFeedByDistance_nullLongitude() {
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                10.0, null, null, null, null, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Latitude and longitude are required", response.getBody().getMessage());
     }
 
     // ------------------- Get Posts Feed By Timestamp Tests -------------------
@@ -422,26 +434,6 @@ class PostControllerTest {
     }
 
     // ------------------- Edge Cases and Additional Tests -------------------
-
-    @Test
-    void getPostsFeedByDistance_edgeCase_numberFormatException() throws InvalidCredentialsException {
-        // Arrange
-        // Simulate invalid latitude/longitude parameters (e.g., passing strings instead
-        // of numbers)
-        // The controller's validateLocationParams will throw InvalidPostDataException
-        when(postService.findPostsByDistanceFeed(anyDouble(), anyDouble(), anyList(), anyString(), any(), any(),
-                any(UUID.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(Collections.emptyList())); // Avoid service exception
-
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                null, null, null, null, null, null, 0, 10);
-
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
-        assertTrue(response.getBody().getMessage().contains("Latitude and longitude are required"));
-    }
 
     @Test
     void createPost_edgeCase_nullRequest() {

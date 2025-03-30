@@ -81,8 +81,6 @@ public class PostController {
             return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (PostNotFoundException e) {
             return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
-        } catch (NumberFormatException e) {
-            return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
         } catch (UnauthorizedAccessException e) {
             return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
         } catch (Exception e) {
