@@ -84,6 +84,7 @@ public class PostController {
         } catch (UnauthorizedAccessException e) {
             return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
         } catch (Exception e) {
+            log.error("Unexpected error occurred: {}", e.getMessage(), e);
             return createErrorResponse(errorStatus, "Error processing request: " + e.getMessage());
         }
     }
