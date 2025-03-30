@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -17,7 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -132,5 +133,51 @@ class VoteControllerTest {
         verify(voteService, times(1)).cancelVote(userId, postId);
     }
 
+    @Test
+    void testUpvote_ServiceThrowsException_ReturnsErrorResponse() {
+        // Given
+        String errorMessage = "Post not found";
+        when(voteService.createVote(userId, postId, true)).thenThrow(new RuntimeException(errorMessage));
 
+        // When
+        ResponseEntity<PostResponse> response = voteController.upvote(postId);
+
+        // Then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(errorMessage, Objects.requireNonNull(response.getBody()).getMessage());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
+        verify(voteService, times(1)).createVote(userId, postId, true);
+    }
+
+    @Test
+    void testDownvote_ServiceThrowsException_ReturnsErrorResponse() {
+        // Given
+        String errorMessage = "Database error";
+        when(voteService.createVote(userId, postId, false)).thenThrow(new RuntimeException(errorMessage));
+
+        // When
+        ResponseEntity<PostResponse> response = voteController.downvote(postId);
+
+        // Then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(errorMessage, Objects.requireNonNull(response.getBody()).getMessage());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
+        verify(voteService, times(1)).createVote(userId, postId, false);
+    }
+
+    @Test
+    void testCancelVote_ServiceThrowsException_ReturnsErrorResponse() {
+        // Given
+        String errorMessage = "Failed to cancel vote";
+        when(voteService.cancelVote(userId, postId)).thenThrow(new RuntimeException(errorMessage));
+
+        // When
+        ResponseEntity<PostResponse> response = voteController.cancelVote(postId);
+
+        // Then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(errorMessage, Objects.requireNonNull(response.getBody()).getMessage());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
+        verify(voteService, times(1)).cancelVote(userId, postId);
+    }
 }
