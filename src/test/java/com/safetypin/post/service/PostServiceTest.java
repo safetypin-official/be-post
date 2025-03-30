@@ -668,6 +668,52 @@ class PostServiceTest {
         }
 
         @Test
+        void testFindPostsByDistanceFeed_WithEmptyCategoryList() throws InvalidCredentialsException {
+                // Given
+                Double userLat = 0.0;
+                Double userLon = 0.0;
+                List<String> categories = Collections.emptyList(); // Empty list, not null
+                String keyword = null;
+                LocalDateTime dateFrom = null;
+                LocalDateTime dateTo = null;
+                Pageable pageable = PageRequest.of(0, 10);
+                UUID userId = UUID.randomUUID();
+
+                List<Post> allPosts = Arrays.asList(post1, post2);
+
+                when(postRepository.findAll()).thenReturn(allPosts);
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
+                        userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(2, result.getContent().size()); // Should include all posts since categories is empty
+
+                // Verify results contain both posts
+                boolean foundPost1 = false;
+                boolean foundPost2 = false;
+
+                for (Map<String, Object> postMap : result.getContent()) {
+                        PostData postData = (PostData) postMap.get("post");
+                        if (postData.getTitle().equals(post1.getTitle())) {
+                                foundPost1 = true;
+                        }
+                        if (postData.getTitle().equals(post2.getTitle())) {
+                                foundPost2 = true;
+                        }
+                }
+
+                assertTrue(foundPost1, "Post 1 should be included");
+                assertTrue(foundPost2, "Post 2 should be included");
+
+                verify(postRepository).findAll();
+                // Verify category repository is not called since we're not validating categories
+                verifyNoInteractions(categoryRepository);
+        }
+
+        @Test
         void testFindPostsByTimestampFeed_WithFilters_Success() throws InvalidCredentialsException {
                 // Given
                 List<String> categories = Collections.singletonList("Safety");
@@ -824,6 +870,50 @@ class PostServiceTest {
 
                 assertEquals("Category does not exist: NonexistentCategory", exception.getMessage());
                 verify(categoryRepository).findByName("NonexistentCategory");
+        }
+
+        @Test
+        void testFindPostsByTimestampFeed_WithEmptyCategoryList() throws InvalidCredentialsException {
+                // Given
+                List<String> categories = Collections.emptyList(); // Empty list, not null
+                String keyword = null;
+                LocalDateTime dateFrom = null;
+                LocalDateTime dateTo = null;
+                Pageable pageable = PageRequest.of(0, 10);
+                UUID userId = UUID.randomUUID();
+
+                List<Post> allPosts = Arrays.asList(post1, post2);
+
+                when(postRepository.findAll()).thenReturn(allPosts);
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
+                        categories, keyword, dateFrom, dateTo, userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(2, result.getContent().size()); // Should include all posts since categories is empty
+
+                // Verify results contain both posts
+                boolean foundPost1 = false;
+                boolean foundPost2 = false;
+
+                for (Map<String, Object> postMap : result.getContent()) {
+                        PostData postData = (PostData) postMap.get("post");
+                        if (postData.getTitle().equals(post1.getTitle())) {
+                                foundPost1 = true;
+                        }
+                        if (postData.getTitle().equals(post2.getTitle())) {
+                                foundPost2 = true;
+                        }
+                }
+
+                assertTrue(foundPost1, "Post 1 should be included");
+                assertTrue(foundPost2, "Post 2 should be included");
+
+                verify(postRepository).findAll();
+                // Verify category repository is not called since we're not validating categories
+                verifyNoInteractions(categoryRepository);
         }
 
         @Test
@@ -1184,5 +1274,48 @@ class PostServiceTest {
 
                 assertEquals("User ID is required", exception.getMessage());
                 verifyNoInteractions(postRepository);
+        }
+
+        // matchesKeyword, keyword="" should return all
+        @Test
+        void testFindPostsByTimestampFeed_WithEmptyKeyword() throws InvalidCredentialsException {
+                // Given
+                List<String> categories = null;
+                String keyword = ""; // Empty string, not null
+                LocalDateTime dateFrom = null;
+                LocalDateTime dateTo = null;
+                Pageable pageable = PageRequest.of(0, 10);
+                UUID userId = UUID.randomUUID();
+
+                List<Post> allPosts = Arrays.asList(post1, post2);
+
+                when(postRepository.findAll()).thenReturn(allPosts);
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
+                        categories, keyword, dateFrom, dateTo, userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(2, result.getContent().size()); // Both posts should match with empty keyword
+
+                // Verify posts are included in result
+                boolean foundFirst = false;
+                boolean foundSecond = false;
+
+                for (Map<String, Object> postMap : result.getContent()) {
+                        PostData postData = (PostData) postMap.get("post");
+                        if (postData.getTitle().equals(post1.getTitle())) {
+                                foundFirst = true;
+                        }
+                        if (postData.getTitle().equals(post2.getTitle())) {
+                                foundSecond = true;
+                        }
+                }
+
+                assertTrue(foundFirst, "First post should be included");
+                assertTrue(foundSecond, "Second post should be included");
+
+                verify(postRepository).findAll();
         }
 }
