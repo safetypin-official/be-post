@@ -1,11 +1,14 @@
 package com.safetypin.post.controller;
 
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.service.VoteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -23,27 +26,39 @@ public class VoteController {
     }
 
     @PostMapping("/upvote")
-    public ResponseEntity<PostResponse> upvote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId) {
+    public ResponseEntity<PostResponse> upvote(@RequestParam UUID postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UUID userId = userDetails.getUserId();
+
         try {
-            return createSuccessResponse(voteService.createVote(authorizationHeader, postId, true));
+            return createSuccessResponse(voteService.createVote(userId, postId, true));
         } catch (Exception e) {
             return createErrorResponse(e.getMessage());
         }
     }
 
     @PostMapping("/downvote")
-    public ResponseEntity<PostResponse> downvote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId) {
+    public ResponseEntity<PostResponse> downvote(@RequestParam UUID postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UUID userId = userDetails.getUserId();
+
         try {
-            return createSuccessResponse(voteService.createVote(authorizationHeader, postId, false));
+            return createSuccessResponse(voteService.createVote(userId, postId, false));
         } catch (Exception e) {
             return createErrorResponse(e.getMessage());
         }
     }
 
     @DeleteMapping("/cancel-vote")
-    public ResponseEntity<PostResponse> cancelVote(@RequestHeader("Authorization") String authorizationHeader, @RequestParam UUID postId) {
+    public ResponseEntity<PostResponse> cancelVote(@RequestParam UUID postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UUID userId = userDetails.getUserId();
+
         try {
-            return createSuccessResponse(voteService.cancelVote(authorizationHeader, postId));
+            return createSuccessResponse(voteService.cancelVote(userId, postId));
         } catch (Exception e) {
             return createErrorResponse(e.getMessage());
         }
