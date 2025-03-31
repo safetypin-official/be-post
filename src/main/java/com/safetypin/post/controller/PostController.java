@@ -199,6 +199,26 @@ public class PostController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<PostResponse> getPostBySpecificUser(
+            @RequestParam() UUID postUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return executeWithExceptionHandling(() -> {
+            // Set up pagination
+            Pageable pageable = createPageable(page, size);
+
+            // Get posts sorted by timestamp with filters
+            Page<Map<String, Object>> posts;
+            posts = postService.findPostsByUser(postUserId, pageable);
+
+            // Create response with pagination data
+            Map<String, Object> paginationData = createPaginationData(posts);
+
+            return createSuccessResponse(paginationData);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(
             @RequestBody PostCreateRequest request) {

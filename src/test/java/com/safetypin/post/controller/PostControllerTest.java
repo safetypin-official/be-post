@@ -307,6 +307,88 @@ class PostControllerTest {
                 eq(testUserId), eq(pageable));
     }
 
+    // ------------------- Get Posts By Specific User Tests -------------------
+
+    @Test
+    void getPostBySpecificUser_success() {
+        // Arrange
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        Map<String, Object> postMap = Map.of("post", postData);
+        List<Map<String, Object>> posts = List.of(postMap);
+        Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postService.findPostsByUser(eq(testUserId), any(Pageable.class)))
+                .thenReturn(postsPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostBySpecificUser(
+                testUserId, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertNotNull(response.getBody().getData());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseData = (Map<String, Object>) response.getBody().getData();
+        assertEquals(1, ((List<?>) responseData.get("content")).size());
+
+        verify(postService).findPostsByUser(eq(testUserId), any(Pageable.class));
+    }
+
+    @Test
+    void getPostBySpecificUser_emptyResult() {
+        // Arrange
+        UUID postUserId = UUID.randomUUID();
+        Page<Map<String, Object>> emptyPage = new PageImpl<>(
+                List.of(), pageable, 0);
+
+        when(postService.findPostsByUser(eq(postUserId), any(Pageable.class)))
+                .thenReturn(emptyPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostBySpecificUser(
+                postUserId, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseData = (Map<String, Object>) response.getBody().getData();
+        assertEquals(0, ((List<?>) responseData.get("content")).size());
+        assertEquals(0L, responseData.get("totalElements"));
+    }
+
+    @Test
+    void getPostBySpecificUser_nullUserId() {
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostBySpecificUser(
+                null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Error processing request"));
+    }
+
+    @Test
+    void getPostBySpecificUser_serviceError() {
+        // Arrange
+        UUID postUserId = UUID.randomUUID();
+        when(postService.findPostsByUser(any(UUID.class), any(Pageable.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostBySpecificUser(
+                postUserId, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Database error"));
+    }
+
     // ------------------- Create Post Tests -------------------
 
     @Test
