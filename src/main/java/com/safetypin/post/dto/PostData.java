@@ -11,6 +11,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class PostData {
+    private UUID id; // Add id field
     private String title;
     private String caption;
     private Double latitude;
@@ -22,16 +23,16 @@ public class PostData {
     private VoteType currentVote;
     private UUID postedBy;
 
-
     /**
      * Creates a PostData object from a Post entity
      *
-     * @param post The post entity
+     * @param post   The post entity
      * @param userId The ID of the user viewing the post
      * @return A PostData instance
      */
     public static PostData fromPostAndUserId(Post post, UUID userId) {
         return PostData.builder()
+                .id(post.getId())
                 .title(post.getTitle())
                 .caption(post.getCaption())
                 .latitude(post.getLatitude())
