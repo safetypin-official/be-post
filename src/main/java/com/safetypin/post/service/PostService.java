@@ -35,6 +35,8 @@ public interface PostService {
                         LocalDateTime dateFrom, LocalDateTime dateTo,
                         UUID userId, Pageable pageable);
 
+        Page<Map<String, Object>> findPostsByUser(UUID userId, Pageable pageable);
+
         // New method to delete a post by ID, with user validation
         void deletePost(UUID postId, UUID userId);
 }
