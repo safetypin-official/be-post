@@ -44,6 +44,7 @@ class PostServiceTest {
         private GeometryFactory geometryFactory;
         private PostServiceImpl postService;
         private Post post1, post2, post3;
+        private UUID userId1, userId2;
         private Post postWithoutLocation;
         private Category safetyCategory;
 
@@ -77,25 +78,33 @@ class PostServiceTest {
                 geometryFactory = new GeometryFactory();
                 postService = new PostServiceImpl(postRepository, categoryRepository);
 
+                // Create userId
+                userId1 = UUID.randomUUID();
+                userId2 = UUID.randomUUID();
+
                 // Create test posts with locations
                 post1 = new Post();
                 post1.setLocation(geometryFactory.createPoint(new Coordinate(0.1, 0.1))); // lon, lat
                 post1.setCategory(safety.getName());
                 post1.setCreatedAt(now);
+                post1.setPostedBy(userId1);
 
                 post2 = new Post();
                 post2.setLocation(geometryFactory.createPoint(new Coordinate(0.2, 0.2))); // lon, lat
                 post2.setCategory(crime.getName());
                 post2.setCreatedAt(yesterday);
+                post2.setPostedBy(userId2);
 
                 post3 = new Post();
                 post3.setLocation(geometryFactory.createPoint(new Coordinate(0.3, 0.3))); // lon, lat
                 post3.setCategory(safety.getName());
                 post3.setCreatedAt(tomorrow);
+                post3.setPostedBy(userId1);
 
                 postWithoutLocation = new Post();
                 postWithoutLocation.setCategory(safety.getName());
                 postWithoutLocation.setCreatedAt(now);
+                postWithoutLocation.setPostedBy(userId2);
 
                 safetyCategory = new Category("Safety");
         }
@@ -1352,5 +1361,122 @@ class PostServiceTest {
                 assertTrue(foundSecond, "Second post should be included");
 
                 verify(postRepository).findAll();
+        }
+
+
+        @Test
+        void testFindPostsByUser_Success() {
+                // Given
+                UUID userId = userId1;
+                Pageable pageable = PageRequest.of(0, 10);
+
+                when(postRepository.findByPostedByOrderByCreatedAtDesc(userId))
+                        .thenReturn(Arrays.asList(post3, post1));
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertEquals(2, result.getContent().size());
+
+                // Verify first post
+                PostData firstPost = (PostData) result.getContent().getFirst().get("post");
+                assertEquals(post3.getTitle(), firstPost.getTitle());
+                assertEquals(userId, firstPost.getPostedBy());
+
+                // Verify second post
+                PostData secondPost = (PostData) result.getContent().get(1).get("post");
+                assertEquals(post1.getTitle(), secondPost.getTitle());
+                assertEquals(userId, secondPost.getPostedBy());
+
+                verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId);
+        }
+
+        @Test
+        void testFindPostsByUser_NullUserId() {
+                // Given
+                Pageable pageable = PageRequest.of(0, 10);
+
+                // When & Then
+                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                        () -> postService.findPostsByUser(null, pageable));
+
+                assertEquals("Post user ID is required", exception.getMessage());
+                verifyNoInteractions(postRepository);
+        }
+
+        @Test
+        void testFindPostsByUser_NoPostsFound() {
+                // Given
+                UUID userId = UUID.randomUUID();
+                Pageable pageable = PageRequest.of(0, 10);
+
+                when(postRepository.findByPostedByOrderByCreatedAtDesc(userId))
+                        .thenReturn(Collections.emptyList());
+
+                // When
+                Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                assertTrue(result.getContent().isEmpty());
+                assertEquals(0, result.getTotalElements());
+
+                verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId);
+        }
+
+        @Test
+        void testFindPostsByUser_Pagination() {
+                // Given
+                UUID userId = UUID.randomUUID();
+                int pageSize = 2;
+                Pageable firstPage = PageRequest.of(0, pageSize);
+                Pageable secondPage = PageRequest.of(1, pageSize);
+                Pageable lastPage = PageRequest.of(2, pageSize); // Third page (index 2)
+
+                // Create 5 posts
+                List<Post> userPosts = new ArrayList<>();
+                for (int i = 0; i < 5; i++) {
+                        Post post = new Post();
+                        post.setTitle("Post " + i);
+                        post.setPostedBy(userId);
+                        post.setCreatedAt(now.minusDays(i));
+                        userPosts.add(post);
+                }
+
+                when(postRepository.findByPostedByOrderByCreatedAtDesc(userId))
+                        .thenReturn(userPosts);
+
+                // When - First page
+                Page<Map<String, Object>> firstPageResult = postService.findPostsByUser(userId, firstPage);
+
+                // Then - First page
+                assertNotNull(firstPageResult);
+                assertEquals(2, firstPageResult.getContent().size());
+                assertEquals(5, firstPageResult.getTotalElements());
+                assertEquals(3, firstPageResult.getTotalPages());       // ceil(5/2) = 3
+                assertTrue(firstPageResult.hasNext());
+                assertFalse(firstPageResult.hasPrevious());
+
+                // When - Second page
+                Page<Map<String, Object>> secondPageResult = postService.findPostsByUser(userId, secondPage);
+
+                // Then - Second page
+                assertNotNull(secondPageResult);
+                assertEquals(2, secondPageResult.getContent().size());
+                assertTrue(secondPageResult.hasNext());
+                assertTrue(secondPageResult.hasPrevious());
+
+                // When - Last page
+                Page<Map<String, Object>> result = postService.findPostsByUser(userId, lastPage);
+
+                // Then - Last page
+                assertNotNull(result);
+                assertEquals(1, result.getContent().size()); // Last page has only 1 post
+                assertFalse(result.hasNext());
+                assertTrue(result.hasPrevious());
+
+                verify(postRepository, times(3)).findByPostedByOrderByCreatedAtDesc(userId);
         }
 }
