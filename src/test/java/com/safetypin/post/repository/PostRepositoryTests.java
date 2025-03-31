@@ -31,6 +31,7 @@ class PostRepositoryTests {
     private PostRepository postRepository;
     private GeometryFactory geometryFactory;
     private Post post1, post2, post3;
+    private UUID userPost1, userPost2;
     private Category safety, traffic;
     @Autowired
     private CategoryRepository categoryRepository;
@@ -48,6 +49,9 @@ class PostRepositoryTests {
         traffic = new Category();
         traffic.setName("Traffic");
 
+        // Initialize user ids
+        userPost1 = UUID.randomUUID();
+        userPost2 = UUID.randomUUID();
 
         // Create test posts
         post1 = new Post();
@@ -56,6 +60,7 @@ class PostRepositoryTests {
         post1.setCategory(safety.getName());
         post1.setLocation(geometryFactory.createPoint(new Coordinate(-6.2088, 106.8456))); // Jakarta
         post1.setCreatedAt(now.minusDays(1));
+        post1.setPostedBy(userPost1);
 
         post2 = new Post();
         post2.setTitle("Post 2");
@@ -63,6 +68,7 @@ class PostRepositoryTests {
         post2.setCategory(traffic.getName());
         post2.setLocation(geometryFactory.createPoint(new Coordinate(-6.1751, 106.8650))); // Also Jakarta
         post2.setCreatedAt(now.minusHours(12));
+        post2.setPostedBy(userPost2);
 
         post3 = new Post();
         post3.setTitle("Post 3");
@@ -70,6 +76,7 @@ class PostRepositoryTests {
         post3.setCategory(safety.getName());
         post3.setLocation(geometryFactory.createPoint(new Coordinate(-7.7956, 110.3695))); // Yogyakarta
         post3.setCreatedAt(now);
+        post3.setPostedBy(userPost1);
 
         categoryRepository.saveAll(Arrays.asList(safety, traffic));
         postRepository.saveAll(Arrays.asList(post1, post2, post3));
@@ -150,6 +157,21 @@ class PostRepositoryTests {
         // Test with a range that includes no posts
         List<Post> noPosts = postRepository.findByCreatedAtBetween(now.plusDays(1), now.plusDays(2));
         assertThat(noPosts).isEmpty();
+    }
+
+    @Test
+    void testFindByPostedByOrderByCreatedAtDesc() {
+        // Retrieve posts by userId
+        List<Post> userPosts = postRepository.findByPostedByOrderByCreatedAtDesc(userPost1);
+
+        // Verify results
+        assertThat(userPosts).hasSize(2)
+                .containsExactly(post3, post1) // Verify order (newest first)
+                .doesNotContain(post2);
+
+        // Test with non-existent user ID
+        List<Post> nonExistentUserPosts = postRepository.findByPostedByOrderByCreatedAtDesc(UUID.randomUUID());
+        assertThat(nonExistentUserPosts).isEmpty();
     }
 
     @Test
