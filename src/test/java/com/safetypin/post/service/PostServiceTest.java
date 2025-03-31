@@ -981,9 +981,9 @@ class PostServiceTest {
                 PostData secondPostData = (PostData) secondPostMap.get("post");
                 PostData thirdPostData = (PostData) thirdPostMap.get("post");
 
-                assertEquals("Earliest Post", firstPostData.getTitle());
+                assertEquals("Latest Post", firstPostData.getTitle());
                 assertEquals("Middle Post", secondPostData.getTitle());
-                assertEquals("Latest Post", thirdPostData.getTitle());
+                assertEquals("Earliest Post", thirdPostData.getTitle());
 
                 verify(postRepository).findAll();
         }
@@ -1101,8 +1101,8 @@ class PostServiceTest {
                 PostData firstPostData = (PostData) result.getContent().getFirst().get("post");
                 PostData secondPostData = (PostData) result.getContent().get(1).get("post");
 
-                assertEquals("Test 1", firstPostData.getTitle());
-                assertEquals("Another test", secondPostData.getTitle());
+                assertEquals("Another test", firstPostData.getTitle());
+                assertEquals("Test 1", secondPostData.getTitle());
 
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();

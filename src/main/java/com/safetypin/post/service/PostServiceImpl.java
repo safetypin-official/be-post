@@ -173,9 +173,9 @@ public class PostServiceImpl implements PostService {
                     result.put("post", postData);
                     return result;
                 })
-                // Sort by timestamp (earliest first)
+                // Sort by timestamp (newest first)
                 .sorted(Comparator.comparing(
-                        post -> (((PostData) post.get("post")).getCreatedAt())))
+                        (Map<String, Object> post) -> ((PostData) post.get("post")).getCreatedAt()).reversed())
                 .toList();
 
         return paginateResults(filteredPosts, pageable);
