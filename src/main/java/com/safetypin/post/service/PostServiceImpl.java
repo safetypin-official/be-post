@@ -210,6 +210,28 @@ public class PostServiceImpl implements PostService {
         return paginateResults(filteredPosts, pageable);
     }
 
+    @Override
+    public Page<Map<String, Object>> findPostsByUser(UUID postUserId, Pageable pageable) {
+        if (postUserId == null) {
+            throw new IllegalArgumentException("Post user ID is required");
+        }
+
+        // Get all posts with filters and ordered
+        List<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId);
+
+        // Map to response format
+        List<Map<String, Object>> filteredPosts = allPosts.stream()
+                .map(post -> {
+                    Map<String, Object> result = new HashMap<>();
+                    PostData postData = PostData.fromPostAndUserId(post, postUserId);
+                    result.put("post", postData);
+                    return result;
+                })
+                .toList();
+
+        return paginateResults(filteredPosts, pageable);
+    }
+
     // Helper methods to reduce cognitive complexity
     private boolean matchesCategories(Post post, List<String> categories) {
         if (categories == null || categories.isEmpty()) {
