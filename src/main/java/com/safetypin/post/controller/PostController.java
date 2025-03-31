@@ -1,6 +1,7 @@
 package com.safetypin.post.controller;
 
 import com.safetypin.post.dto.PostCreateRequest;
+import com.safetypin.post.dto.PostData;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.InvalidPostDataException;
@@ -10,6 +11,7 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,7 +26,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,20 +39,6 @@ public class PostController {
 
     public PostController(PostService postService) {
         this.postService = postService;
-    }
-
-    // Helper method to format post data
-    private Map<String, Object> formatPostData(Post post) {
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("id", post.getId());
-        postData.put("title", post.getTitle());
-        postData.put("caption", post.getCaption());
-        postData.put("latitude", post.getLatitude());
-        postData.put("longitude", post.getLongitude());
-        postData.put("createdAt", post.getCreatedAt());
-        postData.put("category", post.getCategory());
-        postData.put("postedBy", post.getPostedBy()); // Add postedBy to response
-        return postData;
     }
 
     // Helper method to create pagination data from a Page object
@@ -125,12 +112,12 @@ public class PostController {
             Pageable pageable = createPageable(page, size);
             Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
 
-            List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-                    .map(this::formatPostData)
+            List<PostData> formattedPosts = postsPage.getContent().stream()
+                    .map(post -> PostData.fromPostAndUserId(post, userId))
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
-                    new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable,
+                    new PageImpl<>(formattedPosts, pageable,
                             postsPage.getTotalElements()));
 
             return createSuccessResponse(paginationData);
@@ -246,8 +233,14 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
         return executeWithExceptionHandling(() -> {
+            // Get userId from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             Post post = postService.findById(id);
-            Map<String, Object> postData = formatPostData(post);
+
+            PostData postData = PostData.fromPostAndUserId(post, userId);
             return createSuccessResponse(postData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }

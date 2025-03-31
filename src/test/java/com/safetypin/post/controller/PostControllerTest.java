@@ -2,6 +2,7 @@ package com.safetypin.post.controller;
 
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.dto.PostData;
 import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.InvalidCredentialsException;
@@ -149,10 +150,9 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_withFilters() throws InvalidCredentialsException {
         // Arrange
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("post", Map.of("title", "Test Post"));
-        postData.put("distance", 2.5);
-        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         List<String> categories = List.of("DANGER");
@@ -200,10 +200,9 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_withNullDates() {
         // Arrange
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("post", Map.of("title", "Test Post"));
-        postData.put("distance", 2.5);
-        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Test case where both dates are null
@@ -230,10 +229,11 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_success() throws InvalidCredentialsException {
         // Arrange
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("post", Map.of("title", "Test Post"));
-        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        Map<String, Object> postMap = Map.of("post", postData);
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
         List<String> categories = List.of("DANGER");
         LocalDate from = LocalDate.now().minusDays(7);
         LocalDate to = LocalDate.now();
@@ -258,9 +258,9 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_withFilters() throws InvalidCredentialsException {
         // Arrange
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("post", Map.of("title", "Test Post"));
-        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        Map<String, Object> postMap = Map.of("post", postData);
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         List<String> categories = List.of("DANGER");
@@ -283,9 +283,9 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_withNullDates() {
         // Arrange
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("post", Map.of("title", "Test Post"));
-        List<Map<String, Object>> posts = Collections.singletonList(postData);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        Map<String, Object> postMap = Map.of("post", postData);
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         List<String> categories = List.of("DANGER");
@@ -388,6 +388,7 @@ class PostControllerTest {
     @Test
     void getPostById_success() {
         // Arrange
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
         when(postService.findById(any(UUID.class))).thenReturn(testPost);
 
         // Act
@@ -398,10 +399,8 @@ class PostControllerTest {
         assertTrue(response.getBody().isSuccess());
         assertNotNull(response.getBody().getData());
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> postData = (Map<String, Object>) response.getBody().getData();
-        assertEquals(testPostId, postData.get("id"));
-        assertEquals("Test Post", postData.get("title"));
+        PostData responseData = (PostData) response.getBody().getData();
+        assertEquals(postData, responseData);
 
         verify(postService).findById(testPostId);
     }
