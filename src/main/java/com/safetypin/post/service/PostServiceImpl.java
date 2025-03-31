@@ -44,35 +44,6 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable) {
-
-        if (userId == null) {
-            throw new InvalidCredentialsException("User ID is required");
-        }
-
-        // Get posts sorted by timestamp (newest first)
-        Page<Post> postsPage = postRepository.findAll(pageable);
-
-        // Transform Post entities to response format
-        List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    PostData postData = PostData.fromPostAndUserId(post, userId);
-                    result.put("post", postData);
-
-                    return result;
-                })
-                .sorted(Comparator.comparing(
-                        post -> (((PostData) post.get("post")).getCreatedAt())))
-                .toList();
-
-        // Return paginated result
-        return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());
-    }
-
-    @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category,
             UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
@@ -226,7 +197,7 @@ public class PostServiceImpl implements PostService {
         return (post.getTitle() != null
                 && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
                 (post.getCaption() != null
-                && post.getCaption().toLowerCase().contains(lowercaseKeyword));
+                        && post.getCaption().toLowerCase().contains(lowercaseKeyword));
     }
 
     private boolean matchesDateRange(Post post, LocalDateTime dateFrom, LocalDateTime dateTo) {
