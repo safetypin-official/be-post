@@ -19,6 +19,8 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
+    List<Post> findByPostedByOrderByCreatedAtDesc(UUID postedBy);
+
     // DEPRECIATED, use findPostsWithFilter instead
     // Get all posts within radius
     @Query(value = "SELECT p.*, ST_Distance(p.location, :point) AS distance " +
