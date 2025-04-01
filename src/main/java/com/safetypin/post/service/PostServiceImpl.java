@@ -117,23 +117,22 @@ public class PostServiceImpl implements PostService {
             validateCategories(queryDTO.getCategories());
         }
 
+        // Validate feed type
+        if (feedType == null) {
+            throw new IllegalArgumentException("Feed type is required");
+        }
+
+        // Choose strategy based on feed type
+        FeedStrategy strategy = switch (feedType.toLowerCase()) {
+            case "distance" -> distanceFeedStrategy;
+            case "timestamp" -> timestampFeedStrategy;
+            default -> throw new IllegalArgumentException("Invalid feed type: " + feedType);
+        };
+
         // Get all posts
         List<Post> allPosts = postRepository.findAll();
 
-        // Choose strategy based on feed type
-        FeedStrategy strategy;
-        switch (feedType.toLowerCase()) {
-            case "distance":
-                strategy = distanceFeedStrategy;
-                break;
-            case "timestamp":
-                strategy = timestampFeedStrategy;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid feed type: " + feedType);
-        }
-
-        // Apply strategy
+        // Apply strategy to posts
         return strategy.processFeed(allPosts, queryDTO);
     }
 

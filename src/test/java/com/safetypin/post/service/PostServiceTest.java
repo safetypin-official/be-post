@@ -1653,6 +1653,21 @@ class PostServiceTest {
     }
 
     @Test
+    void testGetFeed_WithNullStrategyType() {
+        // Given
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(UUID.randomUUID())
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> postService.getFeed(queryDTO, null));
+
+        assertEquals("Feed type is required", exception.getMessage());
+    }
+
+    @Test
     void testGetFeed_ValidatesCategories() {
         // Given
         List<String> categories = Collections.singletonList("NonexistentCategory");
