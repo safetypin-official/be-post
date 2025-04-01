@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class DistanceFeedStrategyTest {
 
     // User location (for distance calculations)
-    private final Double USER_LAT = 0.0;
-    private final Double USER_LON = 0.0;
+    private final Double userLat = 0.0;
+    private final Double userLon = 0.0;
     private DistanceFeedStrategy strategy;
     private List<Post> posts;
     private UUID testUserId;
@@ -87,7 +87,7 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLon(USER_LON)
+                .userLon(userLon)
                 .pageable(PageRequest.of(0, 10))
                 .build();
 
@@ -100,7 +100,7 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
+                .userLat(userLat)
                 .pageable(PageRequest.of(0, 10))
                 .build();
 
@@ -113,8 +113,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .pageable(PageRequest.of(0, 10))
                 .build();
 
@@ -131,8 +131,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .pageable(PageRequest.of(0, 10))
                 .build();
 
@@ -162,8 +162,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .categories(List.of("CRIME"))
                 .pageable(PageRequest.of(0, 10))
                 .build();
@@ -181,8 +181,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .keyword("far")
                 .pageable(PageRequest.of(0, 10))
                 .build();
@@ -200,8 +200,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .dateFrom(yesterday.minusHours(1))
                 .pageable(PageRequest.of(0, 10))
                 .build();
@@ -218,8 +218,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .dateTo(yesterday.plusHours(1))
                 .pageable(PageRequest.of(0, 10))
                 .build();
@@ -236,8 +236,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .categories(List.of("SAFETY"))
                 .dateFrom(lastWeek)
                 .dateTo(yesterday.plusHours(1))
@@ -257,8 +257,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .pageable(PageRequest.of(0, 2))
                 .build();
 
@@ -278,8 +278,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .pageable(PageRequest.of(1, 2))
                 .build();
 
@@ -314,8 +314,8 @@ class DistanceFeedStrategyTest {
         // Arrange
         FeedQueryDTO queryDTO = FeedQueryDTO.builder()
                 .userId(testUserId)
-                .userLat(USER_LAT)
-                .userLon(USER_LON)
+                .userLat(userLat)
+                .userLon(userLon)
                 .dateFrom(yesterday.minusHours(1)) // Should filter out the null createdAt post
                 .pageable(PageRequest.of(0, 10))
                 .build();
