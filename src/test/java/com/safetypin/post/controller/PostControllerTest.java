@@ -91,7 +91,7 @@ class PostControllerTest {
         // Arrange
         List<Post> posts = Collections.singletonList(testPost);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-        when(postService.findAllPaginated(any(UUID.class), any(Pageable.class))).thenReturn(postsPage);
+        when(postService.findAllPaginated(any(Pageable.class))).thenReturn(postsPage);
 
         // Act
         ResponseEntity<PostResponse> response = postController.findAll(0, 10);
@@ -109,14 +109,14 @@ class PostControllerTest {
         PostData postData = postDataList.getFirst();
         assertEquals(testPost.getId(), postData.getId());
 
-        verify(postService).findAllPaginated(eq(testUserId), any(Pageable.class));
+        verify(postService).findAllPaginated(any(Pageable.class));
     }
 
     @Test
     void findAll_emptyList() {
         // Arrange
         Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
-        when(postService.findAllPaginated(any(UUID.class), any(Pageable.class))).thenReturn(emptyPage);
+        when(postService.findAllPaginated(any(Pageable.class))).thenReturn(emptyPage);
 
         // Act
         ResponseEntity<PostResponse> response = postController.findAll(0, 10);
@@ -133,7 +133,7 @@ class PostControllerTest {
     @Test
     void findAll_serviceThrowsException() {
         // Arrange
-        when(postService.findAllPaginated(any(UUID.class), any(Pageable.class)))
+        when(postService.findAllPaginated(any(Pageable.class)))
                 .thenThrow(new RuntimeException("Test error"));
 
         // Act

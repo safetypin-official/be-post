@@ -196,14 +196,13 @@ class PostServiceTest {
     void testFindAllPaginated() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
-        UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
         List<Post> posts = Arrays.asList(post1, post2, post3);
         Page<Post> expectedPage = new PageImpl<>(posts, pageable, posts.size());
 
         when(postRepository.findAll(pageable)).thenReturn(expectedPage);
 
         // When
-        Page<Post> result = postService.findAllPaginated(userId, pageable);
+        Page<Post> result = postService.findAllPaginated(pageable);
 
         // Then
         assertEquals(expectedPage, result);

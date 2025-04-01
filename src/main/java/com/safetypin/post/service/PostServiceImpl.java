@@ -49,7 +49,7 @@ public class PostServiceImpl implements PostService {
 
     // find all with pagination
     @Override
-    public Page<Post> findAllPaginated(UUID userId, Pageable pageable) {
+    public Page<Post> findAllPaginated(Pageable pageable) {
         return postRepository.findAll(pageable);
     }
 

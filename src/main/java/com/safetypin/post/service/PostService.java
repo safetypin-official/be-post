@@ -18,7 +18,7 @@ public interface PostService {
 
     List<Post> findAll(); // debugging purposes
 
-    Page<Post> findAllPaginated(UUID userId, Pageable pageable);
+    Page<Post> findAllPaginated(Pageable pageable);
 
     Post findById(UUID id);
 

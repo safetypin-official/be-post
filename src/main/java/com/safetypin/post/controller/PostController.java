@@ -102,7 +102,7 @@ public class PostController {
             UUID userId = userDetails.getUserId();
 
             Pageable pageable = PageRequest.of(page, size);
-            Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
+            Page<Post> postsPage = postService.findAllPaginated(pageable);
 
             List<PostData> formattedPosts = postsPage.getContent().stream()
                     .map(post -> PostData.fromPostAndUserId(post, userId))
