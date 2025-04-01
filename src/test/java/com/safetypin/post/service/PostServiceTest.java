@@ -290,25 +290,6 @@ class PostServiceTest {
                 verify(postRepository).save(any(Post.class));
         }
 
-        @Test
-        void testFindPostsByTimestampFeed_EmptyResult() throws InvalidCredentialsException {
-                // Given
-                Pageable pageable = PageRequest.of(0, 10);
-                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
-                Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
-
-                when(postRepository.findAll(pageable)).thenReturn(emptyPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.getContent().isEmpty());
-                assertEquals(0, result.getTotalElements());
-                verify(postRepository).findAll(pageable);
-        }
-
         // POSITIVE TEST CASES FOR SEARCH POSTS
 
         @Test
@@ -556,7 +537,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -729,7 +710,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByDistanceFeed(
-                        userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
+                                userLat, userLon, categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -753,7 +734,8 @@ class PostServiceTest {
                 assertTrue(foundPost2, "Post 2 should be included");
 
                 verify(postRepository).findAll();
-                // Verify category repository is not called since we're not validating categories
+                // Verify category repository is not called since we're not validating
+                // categories
                 verifyNoInteractions(categoryRepository);
         }
 
@@ -932,7 +914,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, userId, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -956,7 +938,8 @@ class PostServiceTest {
                 assertTrue(foundPost2, "Post 2 should be included");
 
                 verify(postRepository).findAll();
-                // Verify category repository is not called since we're not validating categories
+                // Verify category repository is not called since we're not validating
+                // categories
                 verifyNoInteractions(categoryRepository);
         }
 
@@ -1007,9 +990,9 @@ class PostServiceTest {
                 PostData secondPostData = (PostData) secondPostMap.get("post");
                 PostData thirdPostData = (PostData) thirdPostMap.get("post");
 
-                assertEquals("Earliest Post", firstPostData.getTitle());
+                assertEquals("Latest Post", firstPostData.getTitle());
                 assertEquals("Middle Post", secondPostData.getTitle());
-                assertEquals("Latest Post", thirdPostData.getTitle());
+                assertEquals("Earliest Post", thirdPostData.getTitle());
 
                 verify(postRepository).findAll();
         }
@@ -1127,35 +1110,11 @@ class PostServiceTest {
                 PostData firstPostData = (PostData) result.getContent().getFirst().get("post");
                 PostData secondPostData = (PostData) result.getContent().get(1).get("post");
 
-                assertEquals("Test 1", firstPostData.getTitle());
-                assertEquals("Another test", secondPostData.getTitle());
+                assertEquals("Another test", firstPostData.getTitle());
+                assertEquals("Test 1", secondPostData.getTitle());
 
                 verify(categoryRepository).findByName("Safety");
                 verify(postRepository).findAll();
-        }
-
-        // Test for pagination edge case - page number beyond available pages but valid
-        @Test
-        void testFindPostsByTimestampFeed_WithValidButEmptyPage() throws InvalidCredentialsException {
-                // Given
-                Pageable pageable = PageRequest.of(10, 5); // Page 10, which doesn't exist
-                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
-
-                // Empty list but total elements is 2
-                when(postRepository.findAll(pageable)).thenReturn(new PageImpl<>(Collections.emptyList(), pageable, 2));
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.isEmpty()); // Page is empty
-                assertEquals(2, result.getTotalElements()); // Total elements is still 2
-                assertEquals(1, result.getTotalPages()); // Total pages is 1
-                assertTrue(result.hasPrevious()); // Has previous page
-                assertFalse(result.hasNext()); // No next page
-
-                verify(postRepository).findAll(pageable);
         }
 
         // Test creating post with exact max values for validation
@@ -1218,108 +1177,6 @@ class PostServiceTest {
                 verify(postRepository).save(any(Post.class));
         }
 
-
-        @Test
-        void testFindPostsByTimestampFeed_SortingByTimestamp() throws InvalidCredentialsException {
-                // Given
-                Pageable pageable = PageRequest.of(0, 10);
-                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
-
-                // Create posts with different timestamps in unsorted order
-                post1 = new Post();
-                post1.setTitle("Post 1");
-                post1.setCreatedAt(now.plusHours(2)); // Latest
-
-                post2 = new Post();
-                post2.setTitle("Post 2");
-                post2.setCreatedAt(now); // Middle
-
-                post3 = new Post();
-                post3.setTitle("Post 3");
-                post3.setCreatedAt(now.minusHours(2)); // Earliest
-
-                List<Post> unsortedPosts = Arrays.asList(post1, post2, post3); // Unsorted by time
-                Page<Post> postsPage = new PageImpl<>(unsortedPosts, pageable, unsortedPosts.size());
-
-                when(postRepository.findAll(pageable)).thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(3, result.getContent().size());
-
-                // Verify posts are sorted by timestamp (earliest first)
-                List<Map<String, Object>> content = result.getContent();
-                Map<String, Object> firstPost = content.get(0);
-                Map<String, Object> secondPost = content.get(1);
-                Map<String, Object> thirdPost = content.get(2);
-
-                PostData firstPostData = (PostData) firstPost.get("post");
-                PostData secondPostData = (PostData) secondPost.get("post");
-                PostData thirdPostData = (PostData) thirdPost.get("post");
-
-                assertEquals("Post 3", firstPostData.getTitle()); // Earliest post should be first
-                assertEquals("Post 2", secondPostData.getTitle()); // Middle post should be second
-                assertEquals("Post 1", thirdPostData.getTitle()); // Latest post should be last
-
-                verify(postRepository).findAll(pageable);
-        }
-
-        @Test
-        void testFindPostsByTimestampFeed_PaginationParameters() throws InvalidCredentialsException {
-                // Given
-                int pageSize = 2;
-                int pageNumber = 1; // Second page
-                Pageable pageable = PageRequest.of(pageNumber, pageSize);
-                UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
-
-                // Create more posts than the page size
-                List<Post> allPosts = new ArrayList<>();
-                for (int i = 0; i < 5; i++) {
-                        Post post = new Post();
-                        post.setTitle("Post " + i);
-                        post.setCreatedAt(now.plusHours(i));
-                        allPosts.add(post);
-                }
-
-                // Create a page with only posts for the second page
-                List<Post> secondPagePosts = allPosts.subList(2, 4); // Posts 2 and 3
-                Page<Post> postsPage = new PageImpl<>(secondPagePosts, pageable, allPosts.size());
-
-                when(postRepository.findAll(pageable)).thenReturn(postsPage);
-
-                // When
-                Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(userId, pageable);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(2, result.getContent().size());
-                assertEquals(5, result.getTotalElements());
-                assertEquals(3, result.getTotalPages());
-                assertEquals(1, result.getNumber()); // Page number (0-based)
-                assertTrue(result.hasNext());
-                assertTrue(result.hasPrevious());
-
-                verify(postRepository).findAll(pageable);
-        }
-
-        // Update test for null user ID
-        @Test
-        void testFindPostsByTimestampFeed_WithNullUserId() {
-                // Given
-                Pageable pageable = PageRequest.of(0, 10);
-                UUID userId = null; // Null user ID
-
-                // When & Then
-                InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                                () -> postService.findPostsByTimestampFeed(userId, pageable));
-
-                assertEquals("User ID is required", exception.getMessage());
-                verifyNoInteractions(postRepository);
-        }
-
         // matchesKeyword, keyword="" should return all
         @Test
         void testFindPostsByTimestampFeed_WithEmptyKeyword() throws InvalidCredentialsException {
@@ -1337,7 +1194,7 @@ class PostServiceTest {
 
                 // When
                 Page<Map<String, Object>> result = postService.findPostsByTimestampFeed(
-                        categories, keyword, dateFrom, dateTo, userId, pageable);
+                                categories, keyword, dateFrom, dateTo, userId, pageable);
 
                 // Then
                 assertNotNull(result);

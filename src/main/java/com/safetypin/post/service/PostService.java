@@ -28,8 +28,6 @@ public interface PostService {
 
         Post findById(UUID id);
 
-        Page<Map<String, Object>> findPostsByTimestampFeed(UUID userId, Pageable pageable);
-
         Page<Map<String, Object>> findPostsByTimestampFeed(
                         List<String> categories, String keyword,
                         LocalDateTime dateFrom, LocalDateTime dateTo,

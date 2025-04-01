@@ -19,9 +19,6 @@ public class Category implements Serializable {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column
-    private String description;
-
     @OneToMany(mappedBy = "categoryEntity")
     private transient List<Post> posts;
 
