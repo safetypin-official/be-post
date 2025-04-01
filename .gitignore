@@ -38,3 +38,5 @@ htmlReport/
 
 loadtest.js
 repomix-output.txt
+*.csv
+*.ipynb
