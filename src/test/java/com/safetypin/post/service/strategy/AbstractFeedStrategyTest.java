@@ -91,7 +91,7 @@ class AbstractFeedStrategyTest {
 
     @Test
     void matchesCategories_matchingCategory_returnsTrue() {
-        assertTrue(strategy.matchesCategories(safetyPost, Arrays.asList("SAFETY", "CRIME")));
+        assertTrue(strategy.matchesCategories(crimePost, Arrays.asList("SAFETY", "CRIME")));
     }
 
     @Test
