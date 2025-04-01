@@ -24,7 +24,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository, PostRepository postRepository,
-                               EntityManager entityManager) {
+            EntityManager entityManager) {
         this.categoryRepository = categoryRepository;
         this.entityManager = entityManager;
     }
@@ -63,7 +63,6 @@ public class CategoryServiceImpl implements CategoryService {
             throw new CategoryException("Category not found");
         }
 
-
         // If it's the same name, no update needed
         if (oldCategoryName.equals(newCategoryName)) {
             return oldCategory;
@@ -76,7 +75,6 @@ public class CategoryServiceImpl implements CategoryService {
 
         // First create and save the new category
         Category newCategory = new Category(newCategoryName);
-        newCategory.setDescription(oldCategory.getDescription());
 
         // Save new category first
         categoryRepository.saveAndFlush(newCategory);
@@ -84,7 +82,7 @@ public class CategoryServiceImpl implements CategoryService {
         // Use a native query to update all posts - this avoids the entity relationship
         // issues
         int updatedCount = entityManager.createNativeQuery(
-                        "UPDATE posts SET name = :newCategory WHERE name = :oldCategory")
+                "UPDATE posts SET name = :newCategory WHERE name = :oldCategory")
                 .setParameter("newCategory", newCategoryName)
                 .setParameter("oldCategory", oldCategoryName)
                 .executeUpdate();

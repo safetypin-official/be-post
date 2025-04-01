@@ -150,7 +150,6 @@ class CategoryServiceTest {
         verify(categoryRepository, never()).delete(any());
     }
 
-
     @Test
     void testUpdateCategoryName_SameNames() {
         // Arrange
@@ -172,10 +171,8 @@ class CategoryServiceTest {
         // Arrange
         String newCategoryName = "New Category";
         Category oldCategory = new Category(testCategoryName);
-        oldCategory.setDescription("Test description");
 
         Category newCategory = new Category(newCategoryName);
-        newCategory.setDescription(oldCategory.getDescription());
 
         when(categoryRepository.findByName(testCategoryName)).thenReturn(oldCategory);
         when(categoryRepository.existsById(newCategoryName)).thenReturn(false);
@@ -191,7 +188,6 @@ class CategoryServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(newCategoryName, result.getName());
-        assertEquals("Test description", result.getDescription());
         verify(categoryRepository, times(1)).findByName(testCategoryName);
         verify(categoryRepository, times(1)).existsById(newCategoryName);
         verify(categoryRepository, times(1)).saveAndFlush(any(Category.class));

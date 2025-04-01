@@ -74,9 +74,10 @@ class PostTest {
     @Test
     void testGetLatitudeLongitudeWithNullLocation() {
         Post post = new Post();
+        post.setLocation(null);
 
-        assertNotNull(post.getLatitude());
-        assertNotNull(post.getLongitude());
+        assertNull(post.getLatitude());
+        assertNull(post.getLongitude());
     }
 
     @Test

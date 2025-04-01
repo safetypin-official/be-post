@@ -6,7 +6,6 @@ import com.safetypin.post.model.Vote;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
@@ -19,10 +18,8 @@ public class VoteServiceImpl implements VoteService {
 
     private final VoteRepository voteRepository;
     private final PostRepository postRepository;
-    private final JwtService jwtService;
 
-    public String createVote(String authorizationHeader, UUID postId, boolean isUpvote) throws InvalidCredentialsException {
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+    public String createVote(UUID userId, UUID postId, boolean isUpvote) {
         Optional<Post> optionalPost = postRepository.findById(postId);
 
         if (optionalPost.isEmpty()) {
@@ -46,8 +43,7 @@ public class VoteServiceImpl implements VoteService {
         return "Vote recorded successfully";
     }
 
-    public String cancelVote(String authorizationHeader, UUID postId) throws InvalidCredentialsException {
-        UUID userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
+    public String cancelVote(UUID userId, UUID postId) {
         Optional<Post> optionalPost = postRepository.findById(postId);
 
         if (optionalPost.isEmpty()) {

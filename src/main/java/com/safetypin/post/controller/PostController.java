@@ -1,16 +1,14 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.LocationFilter;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Post;
-import com.safetypin.post.service.JwtService;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.auth.InvalidCredentialsException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +16,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -34,14 +34,10 @@ import java.util.function.Supplier;
 @RestController
 @RequestMapping("/posts")
 public class PostController {
-
-    private static final String AUTH_FAILED_MESSAGE = "Authentication failed: ";
     private final PostService postService;
-    private final JwtService jwtService;
 
-    public PostController(PostService postService, JwtService jwtService) {
+    public PostController(PostService postService) {
         this.postService = postService;
-        this.jwtService = jwtService;
     }
 
     // Helper method to format post data
@@ -85,11 +81,10 @@ public class PostController {
             return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (PostNotFoundException e) {
             return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
-        } catch (NumberFormatException e) {
-            return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
         } catch (UnauthorizedAccessException e) {
             return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
         } catch (Exception e) {
+            log.error("Unexpected error occurred: {}", e.getMessage(), e);
             return createErrorResponse(errorStatus, "Error processing request: " + e.getMessage());
         }
     }
@@ -119,12 +114,16 @@ public class PostController {
 
     @GetMapping("/all")
     public ResponseEntity<PostResponse> findAll(
-            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             Pageable pageable = createPageable(page, size);
-            Page<Post> postsPage = postService.findAllPaginated(authorizationHeader, pageable);
+            Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
 
             List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
                     .map(this::formatPostData)
@@ -138,73 +137,38 @@ public class PostController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PostResponse> getPosts(
-            @RequestHeader("Authorization") String authorizationHeader,
+    @GetMapping("/feed/distance")
+    public ResponseEntity<PostResponse> getPostsFeedByDistance(
             @RequestParam Double lat,
             @RequestParam Double lon,
-            @RequestParam(required = false, defaultValue = "10.0") Double radius,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return executeWithExceptionHandling(() -> {
-            // Explicitly handle null radius
-            Double radiusToUse = radius != null ? radius : 10.0;
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
 
-            // Validate lat and lon
-            validateLocationParams(lat, lon);
-
-            // convert LocalDate to localDateTime & handle null
-            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
-            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
-
-            // Create location filter
-            LocationFilter filter = new LocationFilter(category, fromDateTime, toDateTime);
-
-            // Create pageable
-            Pageable pageable = createPageable(page, size);
-
-            // find posts
-            Page<Map<String, Object>> posts = null;
-            try {
-                posts = postService.findPostsByLocation(
-                        lat, lon, radiusToUse, filter, authorizationHeader, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
-
-            // Create response with pagination data
-            Map<String, Object> paginationData = createPaginationData(posts);
-
-            return createSuccessResponse(paginationData);
-        }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @GetMapping("/feed/distance")
-    public ResponseEntity<PostResponse> getPostsFeedByDistance(
-            @RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam Double lat,
-            @RequestParam Double lon,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        return executeWithExceptionHandling(() -> {
             // Validate location parameters
             validateLocationParams(lat, lon);
+
+            // Convert LocalDate to LocalDateTime if provided
+            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
+            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
 
             // Set up pagination
             Pageable pageable = createPageable(page, size);
 
-            // Get posts sorted by distance
-            Page<Map<String, Object>> posts = null;
-            try {
-                posts = postService.findPostsByDistanceFeed(lat, lon, authorizationHeader, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
+            // Get posts sorted by distance with filters
+            Page<Map<String, Object>> posts;
+            posts = postService.findPostsByDistanceFeed(
+                    lat, lon, categories, keyword, fromDateTime, toDateTime,
+                    userId, pageable);
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -215,21 +179,31 @@ public class PostController {
 
     @GetMapping("/feed/timestamp")
     public ResponseEntity<PostResponse> getPostsFeedByTimestamp(
-            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
+            // Convert LocalDate to LocalDateTime if provided
+            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
+            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
+
             // Set up pagination
             Pageable pageable = createPageable(page, size);
 
-            // Get posts sorted by timestamp
+            // Get posts sorted by timestamp with filters
             Page<Map<String, Object>> posts;
-            try {
-                posts = postService.findPostsByTimestampFeed(authorizationHeader, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
+            posts = postService.findPostsByTimestampFeed(
+                    categories, keyword, fromDateTime, toDateTime,
+                    userId, pageable);
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -240,17 +214,13 @@ public class PostController {
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(
-            @RequestHeader("Authorization") String authorizationHeader,
             @RequestBody PostCreateRequest request) {
 
         return executeWithExceptionHandling(() -> {
-            // Authorize user with specific exception handling
-            UUID userId;
-            try {
-                userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-            } catch (InvalidCredentialsException e) {
-                throw new UnauthorizedAccessException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
 
             // Create the post
             Post post = postService.createPost(
@@ -284,28 +254,23 @@ public class PostController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<PostResponse> deletePost(
-            @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable UUID id) {
 
         log.info("Received request to delete post with ID: {}", id);
 
-        // Get user ID from token
-        UUID userId;
-        try {
-            userId = jwtService.getUserIdFromAuthorizationHeader(authorizationHeader);
-        } catch (InvalidCredentialsException e) {
-            return createErrorResponse(HttpStatus.UNAUTHORIZED, AUTH_FAILED_MESSAGE + e.getMessage());
-        }
+        // Get user details from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UUID userId = userDetails.getUserId();
 
-        final UUID finalUserId = userId;
         return executeWithExceptionHandling(() -> {
             // Attempt to delete the post
-            postService.deletePost(id, finalUserId);
+            postService.deletePost(id, userId);
 
             // Return success response
             Map<String, Object> responseData = Map.of(
                     "postId", id,
-                    "deletedBy", finalUserId);
+                    "deletedBy", userId);
 
             PostResponse response = new PostResponse(
                     true,
@@ -323,46 +288,4 @@ public class PostController {
         return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid location parameters");
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<PostResponse> searchPosts(
-            @RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam Double lat,
-            @RequestParam Double lon,
-            @RequestParam(required = false, defaultValue = "10.0") Double radius,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) List<String> categories,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        return executeWithExceptionHandling(() -> {
-            // Validate parameters
-            validateLocationParams(lat, lon);
-
-            // Validate that at least one search parameter is provided
-            if ((keyword == null || keyword.trim().isEmpty()) &&
-                    (categories == null || categories.isEmpty())) {
-                throw new InvalidPostDataException("Please provide either a search keyword or at least one category");
-            }
-
-            // Explicitly handle null radius
-            Double radiusToUse = radius != null ? radius : 10.0;
-
-            // Create pageable for pagination
-            Pageable pageable = createPageable(page, size);
-
-            // Search posts
-            Page<Map<String, Object>> posts = null;
-            try {
-                posts = postService.searchPosts(
-                        lat, lon, radiusToUse, keyword, categories, authorizationHeader, pageable);
-            } catch (InvalidCredentialsException e) {
-                throw new InvalidPostDataException(AUTH_FAILED_MESSAGE + e.getMessage());
-            }
-
-            // Create response with pagination data
-            Map<String, Object> paginationData = createPaginationData(posts);
-
-            return createSuccessResponse(paginationData);
-        }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 }
