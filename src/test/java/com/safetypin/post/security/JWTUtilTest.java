@@ -15,10 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JWTUtilTest {
 
-    private JWTUtil jwtUtil;
-    private Key key;
     private final UUID userId = UUID.randomUUID();
     private final String userIdString = userId.toString();
+    private JWTUtil jwtUtil;
+    private Key key;
 
     @BeforeEach
     void setUp() {
