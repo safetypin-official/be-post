@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, UUID> {
-        List<Post> findByCategory(String category);
+    List<Post> findByCategory(String category);
 
-        List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+    List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

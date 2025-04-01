@@ -1,34 +1,44 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.PostData;
-import com.safetypin.post.exception.*;
+import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostException;
+import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
-import com.safetypin.post.utils.DistanceCalculator;
+import com.safetypin.post.service.strategy.DistanceFeedStrategy;
+import com.safetypin.post.service.strategy.FeedStrategy;
+import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
-    private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
+    private final DistanceFeedStrategy distanceFeedStrategy;
+    private final TimestampFeedStrategy timestampFeedStrategy;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
+                           DistanceFeedStrategy distanceFeedStrategy,
+                           TimestampFeedStrategy timestampFeedStrategy) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
+        this.distanceFeedStrategy = distanceFeedStrategy;
+        this.timestampFeedStrategy = timestampFeedStrategy;
     }
 
     // find all (debugging purposes)
@@ -45,7 +55,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(String title, String content, Double latitude, Double longitude, String category,
-            UUID postedBy) {
+                           UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -100,6 +110,33 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(post);
     }
 
+    @Override
+    public Page<Map<String, Object>> getFeed(FeedQueryDTO queryDTO, String feedType) {
+        // Validate categories if provided
+        if (queryDTO.getCategories() != null && !queryDTO.getCategories().isEmpty()) {
+            validateCategories(queryDTO.getCategories());
+        }
+
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+
+        // Choose strategy based on feed type
+        FeedStrategy strategy;
+        switch (feedType.toLowerCase()) {
+            case "distance":
+                strategy = distanceFeedStrategy;
+                break;
+            case "timestamp":
+                strategy = timestampFeedStrategy;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid feed type: " + feedType);
+        }
+
+        // Apply strategy
+        return strategy.processFeed(allPosts, queryDTO);
+    }
+
     // Helper method to validate that all categories exist
     private void validateCategories(List<String> categories) {
         for (String category : categories) {
@@ -108,112 +145,5 @@ public class PostServiceImpl implements PostService {
                 throw new InvalidPostDataException("Category does not exist: " + category);
             }
         }
-    }
-
-    @Override
-    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon,
-            List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
-            UUID userId, Pageable pageable) {
-
-        // Validate categories if provided
-        if (categories != null && !categories.isEmpty()) {
-            validateCategories(categories);
-        }
-
-        // Get all posts
-        List<Post> allPosts = postRepository.findAll();
-
-        // Apply filters and calculate distance
-        List<Map<String, Object>> postsWithDistance = allPosts.stream()
-                .filter(post -> matchesCategories(post, categories))
-                .filter(post -> matchesKeyword(post, keyword))
-                .filter(post -> matchesDateRange(post, dateFrom, dateTo))
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    PostData postData = PostData.fromPostAndUserId(post, userId);
-                    result.put("post", postData);
-
-                    // Calculate distance from user
-                    double distance = DistanceCalculator.calculateDistance(
-                            userLat, userLon, post.getLatitude(), post.getLongitude());
-                    result.put(DISTANCE_KEY, distance);
-
-                    return result;
-                })
-                // Sort by distance (nearest first)
-                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
-                .toList();
-
-        // Use helper method for pagination
-        return paginateResults(postsWithDistance, pageable);
-    }
-
-    @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(
-            List<String> categories, String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
-            UUID userId, Pageable pageable) {
-        // Validate categories if provided
-        if (categories != null && !categories.isEmpty()) {
-            validateCategories(categories);
-        }
-
-        // Get all posts
-        List<Post> allPosts = postRepository.findAll();
-
-        // Apply filters with AND logic
-        List<Map<String, Object>> filteredPosts = allPosts.stream()
-                .filter(post -> matchesCategories(post, categories))
-                .filter(post -> matchesKeyword(post, keyword))
-                .filter(post -> matchesDateRange(post, dateFrom, dateTo))
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-                    PostData postData = PostData.fromPostAndUserId(post, userId);
-                    result.put("post", postData);
-                    return result;
-                })
-                // Sort by timestamp (newest first)
-                .sorted(Comparator.comparing(
-                        (Map<String, Object> post) -> ((PostData) post.get("post")).getCreatedAt()).reversed())
-                .toList();
-
-        return paginateResults(filteredPosts, pageable);
-    }
-
-    // Helper methods to reduce cognitive complexity
-    private boolean matchesCategories(Post post, List<String> categories) {
-        if (categories == null || categories.isEmpty()) {
-            return true;
-        }
-        return post.getCategory() != null && categories.contains(post.getCategory());
-    }
-
-    private boolean matchesKeyword(Post post, String keyword) {
-        if (keyword == null || keyword.isEmpty()) {
-            return true;
-        }
-        String lowercaseKeyword = keyword.toLowerCase();
-        return (post.getTitle() != null
-                && post.getTitle().toLowerCase().contains(lowercaseKeyword)) ||
-                (post.getCaption() != null
-                        && post.getCaption().toLowerCase().contains(lowercaseKeyword));
-    }
-
-    private boolean matchesDateRange(Post post, LocalDateTime dateFrom, LocalDateTime dateTo) {
-        LocalDateTime createdAt = post.getCreatedAt();
-        boolean matchesFromDate = dateFrom == null || !createdAt.isBefore(dateFrom);
-        boolean matchesToDate = dateTo == null || !createdAt.isAfter(dateTo);
-        return matchesFromDate && matchesToDate;
-    }
-
-    private Page<Map<String, Object>> paginateResults(List<Map<String, Object>> results, Pageable pageable) {
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), results.size());
-
-        List<Map<String, Object>> pageContent = start >= results.size() ? Collections.emptyList()
-                : results.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, results.size());
     }
 }
