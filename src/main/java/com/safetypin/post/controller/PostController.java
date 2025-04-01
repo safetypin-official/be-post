@@ -38,20 +38,6 @@ public class PostController {
         this.postService = postService;
     }
 
-    // Helper method to format post data
-    private Map<String, Object> formatPostData(Post post) {
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("id", post.getId());
-        postData.put("title", post.getTitle());
-        postData.put("caption", post.getCaption());
-        postData.put("latitude", post.getLatitude());
-        postData.put("longitude", post.getLongitude());
-        postData.put("createdAt", post.getCreatedAt());
-        postData.put("category", post.getCategory());
-        postData.put("postedBy", post.getPostedBy()); // Add postedBy to response
-        return postData;
-    }
-
     // Helper method to create pagination data from a Page object
     private <T> Map<String, Object> createPaginationData(Page<T> page) {
         return Map.of(
@@ -118,8 +104,8 @@ public class PostController {
             Pageable pageable = PageRequest.of(page, size);
             Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
 
-            List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-                    .map(this::formatPostData)
+            List<PostData> formattedPosts = postsPage.getContent().stream()
+                    .map(post -> PostData.fromPostAndUserId(post, userId))
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
@@ -247,8 +233,13 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             Post post = postService.findById(id);
-            Map<String, Object> postData = formatPostData(post);
+            PostData postData = PostData.fromPostAndUserId(post, userId);
             return createSuccessResponse(postData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }

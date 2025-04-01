@@ -1,9 +1,6 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -106,7 +103,11 @@ class PostControllerTest {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> responseData = (Map<String, Object>) response.getBody().getData();
-        assertEquals(1, ((List<?>) responseData.get("content")).size());
+        @SuppressWarnings("unchecked")
+        List<PostData> postDataList = (List<PostData>) responseData.get("content");
+        assertEquals(1, postDataList.size());
+        PostData postData = postDataList.getFirst();
+        assertEquals(testPost.getId(), postData.getId());
 
         verify(postService).findAllPaginated(eq(testUserId), any(Pageable.class));
     }
@@ -409,10 +410,9 @@ class PostControllerTest {
         assertTrue(response.getBody().isSuccess());
         assertNotNull(response.getBody().getData());
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> postData = (Map<String, Object>) response.getBody().getData();
-        assertEquals(testPostId, postData.get("id"));
-        assertEquals("Test Post", postData.get("title"));
+        PostData postData = (PostData) response.getBody().getData();
+        assertEquals(testPostId, postData.getId());
+        assertEquals("Test Post", postData.getTitle());
 
         verify(postService).findById(testPostId);
     }
