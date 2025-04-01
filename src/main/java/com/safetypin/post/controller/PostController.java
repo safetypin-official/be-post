@@ -201,10 +201,14 @@ public class PostController {
 
     @GetMapping("/user")
     public ResponseEntity<PostResponse> getPostBySpecificUser(
-            @RequestParam() UUID postUserId,
+            @RequestParam UUID postUserId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return executeWithExceptionHandling(() -> {
+            if (postUserId == null) {
+                return createErrorResponse(HttpStatus.BAD_REQUEST, "User ID is required");
+            }
+
             // Set up pagination
             Pageable pageable = createPageable(page, size);
 

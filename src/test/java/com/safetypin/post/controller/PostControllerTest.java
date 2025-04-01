@@ -367,9 +367,9 @@ class PostControllerTest {
                 null, 0, 10);
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
-        assertTrue(response.getBody().getMessage().contains("Error processing request"));
+        assertTrue(response.getBody().getMessage().contains("User ID is required"));
     }
 
     @Test
