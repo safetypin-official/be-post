@@ -3,8 +3,8 @@ package com.safetypin.post.security;
 
 import com.safetypin.post.exception.InvalidCredentialsException;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -32,15 +32,15 @@ public class JWTUtil {
      */
     public Claims verifyAndGetClaims(String token) throws InvalidCredentialsException {
         JwtParser parser = Jwts.parserBuilder()
-                                .setSigningKey(key)
-                                .build();
+                .setSigningKey(key)
+                .build();
 
         // Check if token is valid and not expired
         Claims claims;
         try {
             claims = parser.parseClaimsJws(token)
-                            .getBody();
-        } catch (JwtException|IllegalArgumentException e) {
+                    .getBody();
+        } catch (JwtException | IllegalArgumentException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
             throw new InvalidCredentialsException("Invalid JWT token: " + e.getMessage());
         }

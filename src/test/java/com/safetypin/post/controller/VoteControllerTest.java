@@ -18,7 +18,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,7 +96,7 @@ class VoteControllerTest {
         when(voteService.createVote(userId, postId, true)).thenReturn(expectedMessage);
 
         // When
-        ResponseEntity<PostResponse> response = voteController.upvote( postId);
+        ResponseEntity<PostResponse> response = voteController.upvote(postId);
 
         // Then
         assertEquals(200, response.getStatusCode().value());

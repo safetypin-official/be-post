@@ -1,16 +1,14 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.exception.InvalidCredentialsException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -93,7 +91,7 @@ class PostControllerTest {
         // Arrange
         List<Post> posts = Collections.singletonList(testPost);
         Page<Post> postsPage = new PageImpl<>(posts, pageable, posts.size());
-        when(postService.findAllPaginated(any(UUID.class), any(Pageable.class))).thenReturn(postsPage);
+        when(postService.findAllPaginated(any(Pageable.class))).thenReturn(postsPage);
 
         // Act
         ResponseEntity<PostResponse> response = postController.findAll(0, 10);
@@ -105,16 +103,20 @@ class PostControllerTest {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> responseData = (Map<String, Object>) response.getBody().getData();
-        assertEquals(1, ((List<?>) responseData.get("content")).size());
+        @SuppressWarnings("unchecked")
+        List<PostData> postDataList = (List<PostData>) responseData.get("content");
+        assertEquals(1, postDataList.size());
+        PostData postData = postDataList.getFirst();
+        assertEquals(testPost.getId(), postData.getId());
 
-        verify(postService).findAllPaginated(eq(testUserId), any(Pageable.class));
+        verify(postService).findAllPaginated(any(Pageable.class));
     }
 
     @Test
     void findAll_emptyList() {
         // Arrange
         Page<Post> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
-        when(postService.findAllPaginated(any(UUID.class), any(Pageable.class))).thenReturn(emptyPage);
+        when(postService.findAllPaginated(any(Pageable.class))).thenReturn(emptyPage);
 
         // Act
         ResponseEntity<PostResponse> response = postController.findAll(0, 10);
@@ -131,7 +133,7 @@ class PostControllerTest {
     @Test
     void findAll_serviceThrowsException() {
         // Arrange
-        when(postService.findAllPaginated(any(UUID.class), any(Pageable.class)))
+        when(postService.findAllPaginated(any(Pageable.class)))
                 .thenThrow(new RuntimeException("Test error"));
 
         // Act
@@ -147,7 +149,7 @@ class PostControllerTest {
     // ------------------- Get Posts Feed By Distance Tests -------------------
 
     @Test
-    void getPostsFeedByDistance_withFilters() throws InvalidCredentialsException {
+    void getPostsFeedByDistance_withFilters() {
         // Arrange
         Map<String, Object> postData = new HashMap<>();
         postData.put("post", Map.of("title", "Test Post"));
@@ -159,9 +161,10 @@ class PostControllerTest {
         LocalDate from = LocalDate.now().minusDays(7);
         LocalDate to = LocalDate.now();
 
-        when(postService.findPostsByDistanceFeed(
-                anyDouble(), anyDouble(), anyList(), anyString(),
-                any(), any(), any(UUID.class), any(Pageable.class)))
+        // Capture the QueryDTO that will be created
+        ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+
+        when(postService.getFeed(queryCaptor.capture(), eq("distance")))
                 .thenReturn(postsPage);
 
         // Act
@@ -171,6 +174,18 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
+
+        // Verify the captured QueryDTO has the correct values
+        FeedQueryDTO capturedQuery = queryCaptor.getValue();
+        assertEquals(40.7128, capturedQuery.getUserLat());
+        assertEquals(-74.0060, capturedQuery.getUserLon());
+        assertEquals(categories, capturedQuery.getCategories());
+        assertEquals("test", capturedQuery.getKeyword());
+        assertEquals(LocalDateTime.of(from, LocalTime.MIN), capturedQuery.getDateFrom());
+        assertEquals(LocalDateTime.of(to, LocalTime.MAX), capturedQuery.getDateTo());
+        assertEquals(testUserId, capturedQuery.getUserId());
+        assertEquals(0, capturedQuery.getPageable().getPageNumber());
+        assertEquals(10, capturedQuery.getPageable().getPageSize());
     }
 
     @Test
@@ -206,10 +221,10 @@ class PostControllerTest {
         List<Map<String, Object>> posts = Collections.singletonList(postData);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
-        // Test case where both dates are null
-        when(postService.findPostsByDistanceFeed(
-                eq(40.7128), eq(-74.0060), isNull(), eq("test"),
-                isNull(), isNull(), eq(testUserId), eq(pageable)))
+        // Capture the QueryDTO that will be created
+        ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+
+        when(postService.getFeed(queryCaptor.capture(), eq("distance")))
                 .thenReturn(postsPage);
 
         // Act
@@ -219,16 +234,22 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
-        verify(postService).findPostsByDistanceFeed(
-                eq(40.7128), eq(-74.0060), isNull(), eq("test"),
-                isNull(), isNull(), eq(testUserId), eq(pageable));
-    }
 
+        // Verify the captured QueryDTO has the correct values
+        FeedQueryDTO capturedQuery = queryCaptor.getValue();
+        assertEquals(40.7128, capturedQuery.getUserLat());
+        assertEquals(-74.0060, capturedQuery.getUserLon());
+        assertNull(capturedQuery.getCategories());
+        assertEquals("test", capturedQuery.getKeyword());
+        assertNull(capturedQuery.getDateFrom());
+        assertNull(capturedQuery.getDateTo());
+        assertEquals(testUserId, capturedQuery.getUserId());
+    }
 
     // ------------------- Get Posts Feed By Timestamp Tests -------------------
 
     @Test
-    void getPostsFeedByTimestamp_success() throws InvalidCredentialsException {
+    void getPostsFeedByTimestamp_success() {
         // Arrange
         Map<String, Object> postData = new HashMap<>();
         postData.put("post", Map.of("title", "Test Post"));
@@ -238,12 +259,10 @@ class PostControllerTest {
         LocalDate from = LocalDate.now().minusDays(7);
         LocalDate to = LocalDate.now();
 
-        // Mock the service to return postsPage when parameters match
-        when(postService.findPostsByTimestampFeed(
-                eq(categories), eq("test"),
-                eq(LocalDateTime.of(from, LocalTime.MIN)),
-                eq(LocalDateTime.of(to, LocalTime.MAX)),
-                eq(testUserId), any(Pageable.class)))
+        // Capture the QueryDTO that will be created
+        ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+
+        when(postService.getFeed(queryCaptor.capture(), eq("timestamp")))
                 .thenReturn(postsPage);
 
         // Act
@@ -253,31 +272,16 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
-    }
 
-    @Test
-    void getPostsFeedByTimestamp_withFilters() throws InvalidCredentialsException {
-        // Arrange
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("post", Map.of("title", "Test Post"));
-        List<Map<String, Object>> posts = Collections.singletonList(postData);
-        Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-        List<String> categories = List.of("DANGER");
-        LocalDate from = LocalDate.now().minusDays(7);
-        LocalDate to = LocalDate.now();
-
-        when(postService.findPostsByTimestampFeed(
-                anyList(), anyString(), any(), any(), any(UUID.class), any(Pageable.class)))
-                .thenReturn(postsPage);
-
-        // Act
-        ResponseEntity<PostResponse> response = postController.getPostsFeedByTimestamp(
-                categories, "test", from, to, 0, 10);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        // Verify the captured QueryDTO has the correct values
+        FeedQueryDTO capturedQuery = queryCaptor.getValue();
+        assertNull(capturedQuery.getUserLat()); // Should be null for timestamp feed
+        assertNull(capturedQuery.getUserLon()); // Should be null for timestamp feed
+        assertEquals(categories, capturedQuery.getCategories());
+        assertEquals("test", capturedQuery.getKeyword());
+        assertEquals(LocalDateTime.of(from, LocalTime.MIN), capturedQuery.getDateFrom());
+        assertEquals(LocalDateTime.of(to, LocalTime.MAX), capturedQuery.getDateTo());
+        assertEquals(testUserId, capturedQuery.getUserId());
     }
 
     @Test
@@ -290,9 +294,10 @@ class PostControllerTest {
 
         List<String> categories = List.of("DANGER");
 
-        when(postService.findPostsByTimestampFeed(
-                eq(categories), eq("test"), isNull(), isNull(),
-                eq(testUserId), eq(pageable)))
+        // Capture the QueryDTO that will be created
+        ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+
+        when(postService.getFeed(queryCaptor.capture(), eq("timestamp")))
                 .thenReturn(postsPage);
 
         // Act
@@ -302,9 +307,16 @@ class PostControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().isSuccess());
-        verify(postService).findPostsByTimestampFeed(
-                eq(categories), eq("test"), isNull(), isNull(),
-                eq(testUserId), eq(pageable));
+
+        // Verify the captured QueryDTO has the correct values
+        FeedQueryDTO capturedQuery = queryCaptor.getValue();
+        assertNull(capturedQuery.getUserLat());
+        assertNull(capturedQuery.getUserLon());
+        assertEquals(categories, capturedQuery.getCategories());
+        assertEquals("test", capturedQuery.getKeyword());
+        assertNull(capturedQuery.getDateFrom());
+        assertNull(capturedQuery.getDateTo());
+        assertEquals(testUserId, capturedQuery.getUserId());
     }
 
     // ------------------- Create Post Tests -------------------
@@ -398,10 +410,9 @@ class PostControllerTest {
         assertTrue(response.getBody().isSuccess());
         assertNotNull(response.getBody().getData());
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> postData = (Map<String, Object>) response.getBody().getData();
-        assertEquals(testPostId, postData.get("id"));
-        assertEquals("Test Post", postData.get("title"));
+        PostData postData = (PostData) response.getBody().getData();
+        assertEquals(testPostId, postData.getId());
+        assertEquals("Test Post", postData.getTitle());
 
         verify(postService).findById(testPostId);
     }
@@ -479,7 +490,8 @@ class PostControllerTest {
     @Test
     void handleArgumentTypeMismatch() {
         // Act
-        ResponseEntity<PostResponse> response = postController.handleArgumentTypeMismatch(typeMismatchException);
+        ResponseEntity<PostResponse> response = postController
+                .handleArgumentTypeMismatch(typeMismatchException);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

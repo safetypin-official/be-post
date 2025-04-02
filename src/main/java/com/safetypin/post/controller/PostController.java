@@ -1,8 +1,6 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -40,20 +38,6 @@ public class PostController {
         this.postService = postService;
     }
 
-    // Helper method to format post data
-    private Map<String, Object> formatPostData(Post post) {
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("id", post.getId());
-        postData.put("title", post.getTitle());
-        postData.put("caption", post.getCaption());
-        postData.put("latitude", post.getLatitude());
-        postData.put("longitude", post.getLongitude());
-        postData.put("createdAt", post.getCreatedAt());
-        postData.put("category", post.getCategory());
-        postData.put("postedBy", post.getPostedBy()); // Add postedBy to response
-        return postData;
-    }
-
     // Helper method to create pagination data from a Page object
     private <T> Map<String, Object> createPaginationData(Page<T> page) {
         return Map.of(
@@ -64,11 +48,6 @@ public class PostController {
                 "pageSize", page.getSize(),
                 "hasNext", page.hasNext(),
                 "hasPrevious", page.hasPrevious());
-    }
-
-    // Helper method to create a pageable object
-    private Pageable createPageable(int page, int size) {
-        return PageRequest.of(page, size);
     }
 
     // Generic exception handler for controller methods
@@ -122,11 +101,11 @@ public class PostController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UUID userId = userDetails.getUserId();
 
-            Pageable pageable = createPageable(page, size);
-            Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Post> postsPage = postService.findAllPaginated(pageable);
 
-            List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-                    .map(this::formatPostData)
+            List<PostData> formattedPosts = postsPage.getContent().stream()
+                    .map(post -> PostData.fromPostAndUserId(post, userId))
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
@@ -157,18 +136,23 @@ public class PostController {
             // Validate location parameters
             validateLocationParams(lat, lon);
 
-            // Convert LocalDate to LocalDateTime if provided
-            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
-            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
+            // Create request DTO
+            FeedRequestDTO requestDTO = FeedRequestDTO.builder()
+                    .categories(categories)
+                    .keyword(keyword)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .page(page)
+                    .size(size)
+                    .lat(lat)
+                    .lon(lon)
+                    .build();
 
-            // Set up pagination
-            Pageable pageable = createPageable(page, size);
+            // Convert to FeedQueryDTO
+            FeedQueryDTO queryDTO = FeedQueryDTO.fromFeedRequestAndUserId(requestDTO, userId);
 
-            // Get posts sorted by distance with filters
-            Page<Map<String, Object>> posts;
-            posts = postService.findPostsByDistanceFeed(
-                    lat, lon, categories, keyword, fromDateTime, toDateTime,
-                    userId, pageable);
+            // Get posts using strategy pattern
+            Page<Map<String, Object>> posts = postService.getFeed(queryDTO, "distance");
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -192,18 +176,21 @@ public class PostController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UUID userId = userDetails.getUserId();
 
-            // Convert LocalDate to LocalDateTime if provided
-            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
-            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
+            // Create request DTO
+            FeedRequestDTO requestDTO = FeedRequestDTO.builder()
+                    .categories(categories)
+                    .keyword(keyword)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .page(page)
+                    .size(size)
+                    .build();
 
-            // Set up pagination
-            Pageable pageable = createPageable(page, size);
+            // Convert to FeedQueryDTO
+            FeedQueryDTO queryDTO = FeedQueryDTO.fromFeedRequestAndUserId(requestDTO, userId);
 
-            // Get posts sorted by timestamp with filters
-            Page<Map<String, Object>> posts;
-            posts = postService.findPostsByTimestampFeed(
-                    categories, keyword, fromDateTime, toDateTime,
-                    userId, pageable);
+            // Get posts using strategy pattern
+            Page<Map<String, Object>> posts = postService.getFeed(queryDTO, "timestamp");
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -246,8 +233,13 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
         return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
             Post post = postService.findById(id);
-            Map<String, Object> postData = formatPostData(post);
+            PostData postData = PostData.fromPostAndUserId(post, userId);
             return createSuccessResponse(postData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
