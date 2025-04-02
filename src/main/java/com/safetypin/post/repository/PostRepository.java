@@ -1,6 +1,8 @@
 package com.safetypin.post.repository;
 
 import com.safetypin.post.model.Post;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +16,5 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
-    List<Post> findByPostedByOrderByCreatedAtDesc(UUID postedBy);
+    Page<Post> findByPostedByOrderByCreatedAtDesc(UUID postedBy, Pageable pageable);
 }

@@ -143,19 +143,15 @@ public class PostServiceImpl implements PostService {
         }
 
         // Get all posts with filters and ordered
-        List<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId);
+        Page<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId, pageable);
 
-        // Map to response format
-        List<Map<String, Object>> filteredPosts = allPosts.stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-                    PostData postData = PostData.fromPostAndUserId(post, postUserId);
-                    result.put("post", postData);
-                    return result;
-                })
-                .toList();
-
-        return paginateResults(filteredPosts, pageable);
+        // Map to PostData and return page
+        return allPosts.map(post -> {
+            Map<String, Object> result = new HashMap<>();
+            PostData postData = PostData.fromPostAndUserId(post, postUserId);
+            result.put("post", postData);
+            return result;
+        });
     }
 
     // Helper method to validate that all categories exist
@@ -166,15 +162,5 @@ public class PostServiceImpl implements PostService {
                 throw new InvalidPostDataException("Category does not exist: " + category);
             }
         }
-    }
-
-    private Page<Map<String, Object>> paginateResults(List<Map<String, Object>> results, Pageable pageable) {
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), results.size());
-
-        List<Map<String, Object>> pageContent = start >= results.size() ? Collections.emptyList()
-                : results.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, results.size());
     }
 }

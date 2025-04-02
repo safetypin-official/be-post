@@ -11,6 +11,9 @@ import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
@@ -68,7 +71,7 @@ class PostRepositoryTests {
         post2.setCategory(traffic.getName());
         post2.setLocation(geometryFactory.createPoint(new Coordinate(-6.1751, 106.8650))); // Also Jakarta
         post2.setCreatedAt(now.minusHours(12));
-        post2.setPostedBy(userPost2);
+        post2.setPostedBy(userPost1);
 
         post3 = new Post();
         post3.setTitle("Post 3");
@@ -138,7 +141,8 @@ class PostRepositoryTests {
         Category nonExisting = new Category("Non existing");
         categoryRepository.save(nonExisting);
         // Test with a category that doesn't exist
-        List<Post> nonExistingCategoryPosts = postRepository.findByCategory(nonExisting.getName());
+        List<Post> nonExistingCategoryPosts
+                = postRepository.findByCategory(nonExisting.getName());
         assertThat(nonExistingCategoryPosts).isEmpty();
     }
 
@@ -152,6 +156,7 @@ class PostRepositoryTests {
         List<Post> post1Only = postRepository.findByCreatedAtBetween(now.minusDays(2), now.minusDays(1).plusSeconds(1));
         assertThat(post1Only).hasSize(1).contains(post1);
 
+
         // Test with a range that includes no posts
         List<Post> noPosts = postRepository.findByCreatedAtBetween(now.plusDays(1), now.plusDays(2));
         assertThat(noPosts).isEmpty();
@@ -159,36 +164,54 @@ class PostRepositoryTests {
 
     @Test
     void testFindByPostedByOrderByCreatedAtDesc() {
+        Pageable pageable = PageRequest.of(0, 3);
+
         // Retrieve posts by userId
-        List<Post> userPosts = postRepository.findByPostedByOrderByCreatedAtDesc(userPost1);
+        Page<Post> userPosts = postRepository.findByPostedByOrderByCreatedAtDesc(userPost1, pageable);
 
         // Verify results
-        assertThat(userPosts).hasSize(2)
-                .containsExactly(post3, post1) // Verify order (newest first)
-                .doesNotContain(post2);
+        assertThat(userPosts).hasSize(3)
+                .containsExactly(post3, post2, post1); // Verify order (newest first)
+
 
         // Test with non-existent user ID
-        List<Post> nonExistentUserPosts = postRepository.findByPostedByOrderByCreatedAtDesc(UUID.randomUUID());
+        Page<Post> nonExistentUserPosts = postRepository.findByPostedByOrderByCreatedAtDesc(userPost2, pageable);
         assertThat(nonExistentUserPosts).isEmpty();
     }
 
     @Test
-    void testFindPostsWithinPoint() {
+    void testFindByPostedByOrderByCreatedAtDesc_WithPagination() {
+        Pageable firstPage = PageRequest.of(0, 2);
+        Pageable secondPage = PageRequest.of(1, 2);
+
+        // Retrieve posts by userId with pages
+        Page<Post> userPostsFirstPage = postRepository.findByPostedByOrderByCreatedAtDesc(userPost1, firstPage);
+        Page<Post> userPostsSecondPage = postRepository.findByPostedByOrderByCreatedAtDesc(userPost1, secondPage);
+
+        // Verify results
+        assertThat(userPostsFirstPage).hasSize(2)
+                .containsExactly(post3, post2)
+                .doesNotContain(post1);
+        assertThat(userPostsSecondPage).hasSize(1)
+                .containsExactly(post1)
+                .doesNotContain(post3, post2); // Doesn't have first page posts
+    }
+
+    @Test
+    void testFindPostsWithinPointAndRadius() {
         // Skip this test or use a different approach for testing spatial queries
         // Option 1: Use @Sql to set up data and query using H2-compatible functions
         // Option 2: Mock the repository for this specific test
         // Option 3: Refactor the test as shown below
 
-        // Instead of using the spatial query directly, we can test other repository
-        // methods
+        // Instead of using the spatial query directly, we can test other repository methods
         // and assume the spatial query works if configured correctly in production
 
         // Verify other non-spatial functionality
         List<Post> allPosts = postRepository.findAll();
         assertThat(allPosts).hasSize(3);
 
-        // For spatial testing, we can check if our test posts have the correct
-        // coordinates
+        // For spatial testing, we can check if our test posts have the correct coordinates
         Optional<Post> foundPost1 = postRepository.findById(post1.getId());
         assertThat(foundPost1).isPresent();
         Point location = foundPost1.get().getLocation();

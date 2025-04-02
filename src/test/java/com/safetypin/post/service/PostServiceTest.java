@@ -1708,8 +1708,11 @@ class PostServiceTest {
         UUID userId = userId1;
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId))
-                .thenReturn(Arrays.asList(post3, post1));
+        List<Post> posts = Arrays.asList(post3, post1);
+        Page<Post> expectedPage = new PageImpl<>(posts, pageable, posts.size());
+
+        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId, pageable))
+                .thenReturn(expectedPage);
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
@@ -1728,7 +1731,7 @@ class PostServiceTest {
         assertEquals(post1.getTitle(), secondPost.getTitle());
         assertEquals(userId, secondPost.getPostedBy());
 
-        verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId);
+        verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
     }
 
     @Test
@@ -1750,8 +1753,10 @@ class PostServiceTest {
         UUID userId = UUID.randomUUID();
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId))
-                .thenReturn(Collections.emptyList());
+        Page<Post> expectedPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId, pageable))
+                .thenReturn(expectedPage);
 
         // When
         Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
@@ -1761,7 +1766,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
         assertEquals(0, result.getTotalElements());
 
-        verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId);
+        verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
     }
 
     @Test
@@ -1783,8 +1788,21 @@ class PostServiceTest {
                 userPosts.add(post);
         }
 
-        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId))
-                .thenReturn(userPosts);
+        // Setup expected pages
+        Page<Post> expectedFirstPage = new PageImpl<>(
+                Arrays.asList(userPosts.get(0), userPosts.get(1)), firstPage, userPosts.size());
+        Page<Post> expectedSecondPage = new PageImpl<>(
+                Arrays.asList(userPosts.get(2), userPosts.get(3)), secondPage, userPosts.size());
+        Page<Post> expectedLastPage = new PageImpl<>(
+                Collections.singletonList(userPosts.get(4)), lastPage, userPosts.size());
+        // Set mocks to repository
+        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId, firstPage))
+                .thenReturn(expectedFirstPage);
+        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId, secondPage))
+                .thenReturn(expectedSecondPage);
+        when(postRepository.findByPostedByOrderByCreatedAtDesc(userId, lastPage))
+                .thenReturn(expectedLastPage);
+
 
         // When - First page
         Page<Map<String, Object>> firstPageResult = postService.findPostsByUser(userId, firstPage);
@@ -1793,7 +1811,7 @@ class PostServiceTest {
         assertNotNull(firstPageResult);
         assertEquals(2, firstPageResult.getContent().size());
         assertEquals(5, firstPageResult.getTotalElements());
-        assertEquals(3, firstPageResult.getTotalPages());       // ceil(5/2) = 3
+        assertEquals(3, firstPageResult.getTotalPages());     // ceil(5/2) = 3
         assertTrue(firstPageResult.hasNext());
         assertFalse(firstPageResult.hasPrevious());
 
@@ -1815,6 +1833,7 @@ class PostServiceTest {
         assertFalse(result.hasNext());
         assertTrue(result.hasPrevious());
 
-        verify(postRepository, times(3)).findByPostedByOrderByCreatedAtDesc(userId);
+        verify(postRepository, times(3))
+                .findByPostedByOrderByCreatedAtDesc(eq(userId), any(Pageable.class));
     }
 }
