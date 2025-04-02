@@ -138,8 +138,7 @@ class PostRepositoryTests {
         Category nonExisting = new Category("Non existing");
         categoryRepository.save(nonExisting);
         // Test with a category that doesn't exist
-        List<Post> nonExistingCategoryPosts
-                = postRepository.findByCategory(nonExisting.getName());
+        List<Post> nonExistingCategoryPosts = postRepository.findByCategory(nonExisting.getName());
         assertThat(nonExistingCategoryPosts).isEmpty();
     }
 
@@ -152,7 +151,6 @@ class PostRepositoryTests {
         // Test with a range that includes only post1
         List<Post> post1Only = postRepository.findByCreatedAtBetween(now.minusDays(2), now.minusDays(1).plusSeconds(1));
         assertThat(post1Only).hasSize(1).contains(post1);
-
 
         // Test with a range that includes no posts
         List<Post> noPosts = postRepository.findByCreatedAtBetween(now.plusDays(1), now.plusDays(2));
@@ -175,20 +173,22 @@ class PostRepositoryTests {
     }
 
     @Test
-    void testFindPostsWithinPointAndRadius() {
+    void testFindPostsWithinPoint() {
         // Skip this test or use a different approach for testing spatial queries
         // Option 1: Use @Sql to set up data and query using H2-compatible functions
         // Option 2: Mock the repository for this specific test
         // Option 3: Refactor the test as shown below
 
-        // Instead of using the spatial query directly, we can test other repository methods
+        // Instead of using the spatial query directly, we can test other repository
+        // methods
         // and assume the spatial query works if configured correctly in production
 
         // Verify other non-spatial functionality
         List<Post> allPosts = postRepository.findAll();
         assertThat(allPosts).hasSize(3);
 
-        // For spatial testing, we can check if our test posts have the correct coordinates
+        // For spatial testing, we can check if our test posts have the correct
+        // coordinates
         Optional<Post> foundPost1 = postRepository.findById(post1.getId());
         assertThat(foundPost1).isPresent();
         Point location = foundPost1.get().getLocation();

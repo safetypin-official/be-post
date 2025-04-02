@@ -12,8 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -23,26 +23,20 @@ import static org.mockito.Mockito.*;
 
 class JWTFilterTest {
 
-    @Mock
-    private JWTUtil jwtUtil;
-
-    @Mock
-    private HttpServletRequest request;
-
-    @Mock
-    private HttpServletResponse response;
-
-    @Mock
-    private FilterChain filterChain;
-
-    @Mock
-    private Claims claims;
-
-    @InjectMocks
-    private JWTFilter jwtFilter;
-
     private final UUID testUserId = UUID.randomUUID();
     private final String testToken = "valid.test.token";
+    @Mock
+    private JWTUtil jwtUtil;
+    @Mock
+    private HttpServletRequest request;
+    @Mock
+    private HttpServletResponse response;
+    @Mock
+    private FilterChain filterChain;
+    @Mock
+    private Claims claims;
+    @InjectMocks
+    private JWTFilter jwtFilter;
 
     @BeforeEach
     void setUp() {
@@ -78,7 +72,6 @@ class JWTFilterTest {
 
         assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_USER")));
     }
-
 
 
     @Test

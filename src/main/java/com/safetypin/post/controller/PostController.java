@@ -1,9 +1,6 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostData;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -51,11 +48,6 @@ public class PostController {
                 "pageSize", page.getSize(),
                 "hasNext", page.hasNext(),
                 "hasPrevious", page.hasPrevious());
-    }
-
-    // Helper method to create a pageable object
-    private Pageable createPageable(int page, int size) {
-        return PageRequest.of(page, size);
     }
 
     // Generic exception handler for controller methods
@@ -109,8 +101,8 @@ public class PostController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UUID userId = userDetails.getUserId();
 
-            Pageable pageable = createPageable(page, size);
-            Page<Post> postsPage = postService.findAllPaginated(userId, pageable);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Post> postsPage = postService.findAllPaginated(pageable);
 
             List<PostData> formattedPosts = postsPage.getContent().stream()
                     .map(post -> PostData.fromPostAndUserId(post, userId))
@@ -144,18 +136,23 @@ public class PostController {
             // Validate location parameters
             validateLocationParams(lat, lon);
 
-            // Convert LocalDate to LocalDateTime if provided
-            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
-            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
+            // Create request DTO
+            FeedRequestDTO requestDTO = FeedRequestDTO.builder()
+                    .categories(categories)
+                    .keyword(keyword)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .page(page)
+                    .size(size)
+                    .lat(lat)
+                    .lon(lon)
+                    .build();
 
-            // Set up pagination
-            Pageable pageable = createPageable(page, size);
+            // Convert to FeedQueryDTO
+            FeedQueryDTO queryDTO = FeedQueryDTO.fromFeedRequestAndUserId(requestDTO, userId);
 
-            // Get posts sorted by distance with filters
-            Page<Map<String, Object>> posts;
-            posts = postService.findPostsByDistanceFeed(
-                    lat, lon, categories, keyword, fromDateTime, toDateTime,
-                    userId, pageable);
+            // Get posts using strategy pattern
+            Page<Map<String, Object>> posts = postService.getFeed(queryDTO, "distance");
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -179,18 +176,21 @@ public class PostController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UUID userId = userDetails.getUserId();
 
-            // Convert LocalDate to LocalDateTime if provided
-            LocalDateTime fromDateTime = dateFrom != null ? LocalDateTime.of(dateFrom, LocalTime.MIN) : null;
-            LocalDateTime toDateTime = dateTo != null ? LocalDateTime.of(dateTo, LocalTime.MAX) : null;
+            // Create request DTO
+            FeedRequestDTO requestDTO = FeedRequestDTO.builder()
+                    .categories(categories)
+                    .keyword(keyword)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .page(page)
+                    .size(size)
+                    .build();
 
-            // Set up pagination
-            Pageable pageable = createPageable(page, size);
+            // Convert to FeedQueryDTO
+            FeedQueryDTO queryDTO = FeedQueryDTO.fromFeedRequestAndUserId(requestDTO, userId);
 
-            // Get posts sorted by timestamp with filters
-            Page<Map<String, Object>> posts;
-            posts = postService.findPostsByTimestampFeed(
-                    categories, keyword, fromDateTime, toDateTime,
-                    userId, pageable);
+            // Get posts using strategy pattern
+            Page<Map<String, Object>> posts = postService.getFeed(queryDTO, "timestamp");
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(posts);
@@ -210,7 +210,7 @@ public class PostController {
             }
 
             // Set up pagination
-            Pageable pageable = createPageable(page, size);
+            Pageable pageable = PageRequest.of(page, size);
 
             // Get posts sorted by timestamp with filters
             Page<Map<String, Object>> posts;
