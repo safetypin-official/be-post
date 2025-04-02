@@ -8,6 +8,7 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.service.PostService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,7 +23,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -109,7 +109,7 @@ public class PostController {
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
-                    new org.springframework.data.domain.PageImpl<>(formattedPosts, pageable,
+                    new PageImpl<>(formattedPosts, pageable,
                             postsPage.getTotalElements()));
 
             return createSuccessResponse(paginationData);
@@ -199,6 +199,30 @@ public class PostController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<PostResponse> getPostBySpecificUser(
+            @RequestParam UUID postUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return executeWithExceptionHandling(() -> {
+            if (postUserId == null) {
+                return createErrorResponse(HttpStatus.BAD_REQUEST, "User ID is required");
+            }
+
+            // Set up pagination
+            Pageable pageable = PageRequest.of(page, size);
+
+            // Get posts sorted by timestamp with filters
+            Page<Map<String, Object>> posts;
+            posts = postService.findPostsByUser(postUserId, pageable);
+
+            // Create response with pagination data
+            Map<String, Object> paginationData = createPaginationData(posts);
+
+            return createSuccessResponse(paginationData);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(
             @RequestBody PostCreateRequest request) {
@@ -233,12 +257,13 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
         return executeWithExceptionHandling(() -> {
-            // Get user details from security context
+            // Get userId from security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UUID userId = userDetails.getUserId();
 
             Post post = postService.findById(id);
+
             PostData postData = PostData.fromPostAndUserId(post, userId);
             return createSuccessResponse(postData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostData;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -15,12 +16,11 @@ import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -134,6 +134,24 @@ public class PostServiceImpl implements PostService {
 
         // Apply strategy to posts
         return strategy.processFeed(allPosts, queryDTO);
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByUser(UUID postUserId, Pageable pageable) {
+        if (postUserId == null) {
+            throw new IllegalArgumentException("Post user ID is required");
+        }
+
+        // Get all posts with filters and ordered
+        Page<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId, pageable);
+
+        // Map to PostData and return page
+        return allPosts.map(post -> {
+            Map<String, Object> result = new HashMap<>();
+            PostData postData = PostData.fromPostAndUserId(post, postUserId);
+            result.put("post", postData);
+            return result;
+        });
     }
 
     // Helper method to validate that all categories exist
