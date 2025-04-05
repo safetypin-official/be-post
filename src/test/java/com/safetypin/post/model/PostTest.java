@@ -74,9 +74,10 @@ class PostTest {
     @Test
     void testGetLatitudeLongitudeWithNullLocation() {
         Post post = new Post();
+        post.setLocation(null);
 
-        assertNotNull(post.getLatitude());
-        assertNotNull(post.getLongitude());
+        assertNull(post.getLatitude());
+        assertNull(post.getLongitude());
     }
 
     @Test
@@ -367,4 +368,41 @@ class PostTest {
         assertEquals("Longitude cannot be null", exception.getMessage());
     }
 
+    @Test
+    void testSetLatitudeWithUninitializedLocation() {
+        Post post = new Post();
+        // Use reflection to set location to null
+        try {
+            java.lang.reflect.Field locationField = Post.class.getDeclaredField("location");
+            locationField.setAccessible(true);
+            locationField.set(post, null);
+        } catch (Exception e) {
+            fail("Failed to set location to null: " + e.getMessage());
+        }
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            post.setLatitude(20.0);
+        });
+
+        assertEquals("Location must be initialized before setting latitude", exception.getMessage());
+    }
+
+    @Test
+    void testSetLongitudeWithUninitializedLocation() {
+        Post post = new Post();
+        // Use reflection to set location to null
+        try {
+            java.lang.reflect.Field locationField = Post.class.getDeclaredField("location");
+            locationField.setAccessible(true);
+            locationField.set(post, null);
+        } catch (Exception e) {
+            fail("Failed to set location to null: " + e.getMessage());
+        }
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            post.setLongitude(10.0);
+        });
+
+        assertEquals("Location must be initialized before setting longitude", exception.getMessage());
+    }
 }

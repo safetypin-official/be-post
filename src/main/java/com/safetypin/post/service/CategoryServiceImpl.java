@@ -3,22 +3,30 @@ package com.safetypin.post.service;
 import com.safetypin.post.exception.CategoryException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.repository.CategoryRepository;
+import com.safetypin.post.repository.PostRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Autowired
-    public CategoryServiceImpl(CategoryRepository categoryRepository) {
+    public CategoryServiceImpl(CategoryRepository categoryRepository, PostRepository postRepository,
+                               EntityManager entityManager) {
         this.categoryRepository = categoryRepository;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -46,38 +54,45 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category updateCategory(Category category) throws CategoryException {
-        Optional<Category> toUpdate = categoryRepository.findById(category.getName());
+    @Transactional
+    public Category updateCategoryName(String oldCategoryName, String newCategoryName) throws CategoryException {
+        Category oldCategory = getCategoryByName(oldCategoryName);
 
-        if (toUpdate.isPresent()) {
-            Category updatedCategory = toUpdate.get();
-            updatedCategory.setDescription(category.getDescription());
-            return categoryRepository.save(updatedCategory);
-        } else {
-            log.error("Category with name: {}, not found", category.getName());
+        if (oldCategory == null) {
+            log.error("Category with name: {}, not found", oldCategoryName);
             throw new CategoryException("Category not found");
         }
-    }
 
-    @Override
-    public void deleteCategory(Category category) throws CategoryException {
-        if (!categoryRepository.existsById(category.getName())) {
-            throw new CategoryException("Category with name: " + category.getName() + " not found");
+        // If it's the same name, no update needed
+        if (oldCategoryName.equals(newCategoryName)) {
+            return oldCategory;
         }
 
-        categoryRepository.delete(category);
-        log.info("Category: {}; deleted", category);
-    }
-
-    @Override
-    public void deleteCategoryByName(String categoryName) throws CategoryException {
-        Category category = categoryRepository.findByName(categoryName);
-        if (category == null) {
-            log.error("Category with name: {}, not found", categoryName);
-            throw new CategoryException("Category with name: " + categoryName + " not found");
+        // Check if new name already exists and is different from old name
+        if (categoryRepository.existsById(newCategoryName)) {
+            throw new CategoryException("Category with name " + newCategoryName + " already exists");
         }
 
-        categoryRepository.delete(category);
-        log.info("Category: {}; deleted", category);
+        // First create and save the new category
+        Category newCategory = new Category(newCategoryName);
+
+        // Save new category first
+        categoryRepository.saveAndFlush(newCategory);
+
+        // Use a native query to update all posts - this avoids the entity relationship
+        // issues
+        int updatedCount = entityManager.createNativeQuery(
+                        "UPDATE posts SET name = :newCategory WHERE name = :oldCategory")
+                .setParameter("newCategory", newCategoryName)
+                .setParameter("oldCategory", oldCategoryName)
+                .executeUpdate();
+
+        log.info("Updated {} posts from category '{}' to '{}'",
+                updatedCount, oldCategoryName, newCategoryName);
+
+        // Delete the old category
+        categoryRepository.delete(oldCategory);
+
+        return newCategory;
     }
 }

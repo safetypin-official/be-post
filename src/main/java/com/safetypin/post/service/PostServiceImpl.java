@@ -1,53 +1,44 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostData;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
-import com.safetypin.post.utils.DistanceCalculator;
+import com.safetypin.post.service.strategy.DistanceFeedStrategy;
+import com.safetypin.post.service.strategy.FeedStrategy;
+import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
-    private static final String DISTANCE_KEY = "distance";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
-    private final GeometryFactory geometryFactory;
+    private final DistanceFeedStrategy distanceFeedStrategy;
+    private final TimestampFeedStrategy timestampFeedStrategy;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, GeometryFactory geometryFactory) {
+    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
+                           DistanceFeedStrategy distanceFeedStrategy,
+                           TimestampFeedStrategy timestampFeedStrategy) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
-        this.geometryFactory = geometryFactory;
-    }
-
-    // Add this helper method to map Post to Map
-    private Map<String, Object> mapPostToData(Post post) {
-        Map<String, Object> postData = new HashMap<>();
-        postData.put("id", post.getId());
-        postData.put("title", post.getTitle());
-        postData.put("caption", post.getCaption());
-        postData.put("latitude", post.getLatitude());
-        postData.put("longitude", post.getLongitude());
-        postData.put("createdAt", post.getCreatedAt());
-        postData.put("category", post.getCategory());
-        return postData;
+        this.distanceFeedStrategy = distanceFeedStrategy;
+        this.timestampFeedStrategy = timestampFeedStrategy;
     }
 
     // find all (debugging purposes)
@@ -62,138 +53,9 @@ public class PostServiceImpl implements PostService {
         return postRepository.findAll(pageable);
     }
 
-    // find posts given filter
     @Override
-    public Page<Map<String, Object>> findPostsByLocation(
-            Double centerLat, Double centerLon, Double radius,
-            String category, LocalDateTime dateFrom, LocalDateTime dateTo,
-            Pageable pageable) {
-        Point center = geometryFactory.createPoint(new Coordinate(centerLon, centerLat));
-        Page<Post> postsPage;
-
-        // Use a larger radius for database query to account for calculation differences
-        // The exact filtering will be done after calculating the actual distances
-        Double radiusInMeters = radius * 1000;
-
-        // Select appropriate query based on date parameters only, we'll filter by category later
-        if (dateFrom != null && dateTo != null) {
-            // Filter by date range only
-            postsPage = postRepository.findPostsByDateRange(
-                    center, radiusInMeters, dateFrom, dateTo, pageable);
-        } else {
-            // No date filters, just use radius
-            postsPage = postRepository.findPostsWithinRadius(center, radiusInMeters, pageable);
-        }
-
-        // Check if postsPage is null, return empty page if null
-        if (postsPage == null) {
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
-        }
-
-        // Transform Post entities to DTOs with distance, filtering by actual calculated distance and category
-        List<Map<String, Object>> filteredResults = postsPage.getContent().stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post);
-                    result.put("post", postData);
-
-                    double distance = 0.0;
-                    if (post.getLocation() != null) {
-                        distance = DistanceCalculator.calculateDistance(
-                                centerLat, centerLon, post.getLatitude(), post.getLongitude()
-                        );
-                        result.put(DISTANCE_KEY, distance);
-                    } else {
-                        result.put(DISTANCE_KEY, distance);
-                    }
-
-                    // Return the result with the calculated distance and category name for filtering
-                    return new AbstractMap.SimpleEntry<>(result, Map.entry(distance, post.getCategory()));
-                })
-                // Filter by the actual calculated distance (using the specified radius)
-                .filter(entry -> entry.getValue().getKey() != null && entry.getValue().getKey() <= radiusInMeters / 1000)
-                // Filter by category if provided
-                .filter(entry -> category == null ||
-                        (entry.getValue().getValue() != null &&
-                                entry.getValue().getValue().equalsIgnoreCase(category)))
-                // Extract just the result map
-                .map(AbstractMap.SimpleEntry::getKey)
-                .toList();
-
-        // Create a new page with the filtered results
-        return new PageImpl<>(
-                filteredResults,
-                pageable,
-                filteredResults.size()
-        );
-    }
-
-    @Override
-    public Page<Map<String, Object>> findPostsByDistanceFeed(Double userLat, Double userLon, Pageable pageable) {
-        // Get all posts
-        List<Post> allPosts = postRepository.findAll();
-
-        // Calculate distance and create result objects
-        List<Map<String, Object>> postsWithDistance = allPosts.stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post);
-                    result.put("post", postData);
-
-                    // Calculate distance from user
-                    double distance = DistanceCalculator.calculateDistance(
-                            userLat, userLon, post.getLatitude(), post.getLongitude());
-                    result.put(DISTANCE_KEY, distance);
-
-                    return result;
-                })
-                // Sort by distance (nearest first)
-                .sorted(Comparator.comparingDouble(post -> (Double) post.get(DISTANCE_KEY)))
-                .toList();
-
-        // Manual pagination
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), postsWithDistance.size());
-
-        // Create sub-list for current page - handle case when start might be out of bounds
-        List<Map<String, Object>> pageContent = start >= postsWithDistance.size() ?
-                Collections.emptyList() : postsWithDistance.subList(start, end);
-
-        // Return paginated result
-        return new PageImpl<>(pageContent, pageable, postsWithDistance.size());
-    }
-
-    @Override
-    public Page<Map<String, Object>> findPostsByTimestampFeed(Pageable pageable) {
-        // Get posts sorted by timestamp (newest first)
-        Page<Post> postsPage = postRepository.findAll(pageable);
-
-        // Transform Post entities to response format
-        List<Map<String, Object>> formattedPosts = postsPage.getContent().stream()
-                .map(post -> {
-                    Map<String, Object> result = new HashMap<>();
-
-                    // Use helper method instead of duplicated code
-                    Map<String, Object> postData = mapPostToData(post);
-                    result.put("post", postData);
-
-                    return result;
-                })
-                .sorted(Comparator.comparing(post ->
-                                ((LocalDateTime) ((Map<String, Object>) post.get("post")).get("createdAt")),
-                        Comparator.reverseOrder()))
-                .toList();
-
-        // Return paginated result
-        return new PageImpl<>(formattedPosts, pageable, postsPage.getTotalElements());
-    }
-
-    @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, String category) {
+    public Post createPost(String title, String content, Double latitude, Double longitude, String category,
+                           UUID postedBy) {
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -205,6 +67,9 @@ public class PostServiceImpl implements PostService {
         }
         if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
+        }
+        if (postedBy == null) {
+            throw new InvalidPostDataException("User ID (postedBy) is required");
         }
 
         // Verify that the category exists
@@ -219,6 +84,7 @@ public class PostServiceImpl implements PostService {
                 .caption(content)
                 .location(latitude, longitude)
                 .category(category)
+                .postedBy(postedBy) // Set the postedBy value
                 .build();
 
         try {
@@ -233,5 +99,68 @@ public class PostServiceImpl implements PostService {
     public Post findById(UUID id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post not found with id: " + id));
+    }
+
+    @Override
+    public void deletePost(UUID postId, UUID userId) {
+        Post post = findById(postId);
+        if (!post.getPostedBy().equals(userId)) {
+            throw new UnauthorizedAccessException("User not authorized to delete this post");
+        }
+        postRepository.delete(post);
+    }
+
+    @Override
+    public Page<Map<String, Object>> getFeed(FeedQueryDTO queryDTO, String feedType) {
+        // Validate categories if provided
+        if (queryDTO.getCategories() != null && !queryDTO.getCategories().isEmpty()) {
+            validateCategories(queryDTO.getCategories());
+        }
+
+        // Validate feed type
+        if (feedType == null) {
+            throw new IllegalArgumentException("Feed type is required");
+        }
+
+        // Choose strategy based on feed type
+        FeedStrategy strategy = switch (feedType.toLowerCase()) {
+            case "distance" -> distanceFeedStrategy;
+            case "timestamp" -> timestampFeedStrategy;
+            default -> throw new IllegalArgumentException("Invalid feed type: " + feedType);
+        };
+
+        // Get all posts
+        List<Post> allPosts = postRepository.findAll();
+
+        // Apply strategy to posts
+        return strategy.processFeed(allPosts, queryDTO);
+    }
+
+    @Override
+    public Page<Map<String, Object>> findPostsByUser(UUID postUserId, Pageable pageable) {
+        if (postUserId == null) {
+            throw new IllegalArgumentException("Post user ID is required");
+        }
+
+        // Get all posts with filters and ordered
+        Page<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId, pageable);
+
+        // Map to PostData and return page
+        return allPosts.map(post -> {
+            Map<String, Object> result = new HashMap<>();
+            PostData postData = PostData.fromPostAndUserId(post, postUserId);
+            result.put("post", postData);
+            return result;
+        });
+    }
+
+    // Helper method to validate that all categories exist
+    private void validateCategories(List<String> categories) {
+        for (String category : categories) {
+            Category categoryObj = categoryRepository.findByName(category);
+            if (categoryObj == null) {
+                throw new InvalidPostDataException("Category does not exist: " + category);
+            }
+        }
     }
 }

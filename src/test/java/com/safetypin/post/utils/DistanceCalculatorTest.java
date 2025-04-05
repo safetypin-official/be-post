@@ -46,9 +46,9 @@ class DistanceCalculatorTest {
             // Known distances between major cities
             // lat1, lon1, lat2, lon2, expected distance (km)
             "40.7128, -74.0060, 34.0522, -118.2437, 3935.0", // New York to Los Angeles
-            "51.5074, -0.1278, 48.8566, 2.3522, 334.0",      // London to Paris
-            "35.6762, 139.6503, 22.3193, 114.1694, 2892.0",  // Tokyo to Hong Kong
-            "33.9249, 18.4241, 33.8688, 151.2093, 11009.0",  // Cape Town to Sydney
+            "51.5074, -0.1278, 48.8566, 2.3522, 334.0", // London to Paris
+            "35.6762, 139.6503, 22.3193, 114.1694, 2892.0", // Tokyo to Hong Kong
+            "33.9249, 18.4241, 33.8688, 151.2093, 11009.0", // Cape Town to Sydney
             "-33.4489, -70.6693, -34.6037, -58.3816, 1137.0" // Santiago to Buenos Aires
     })
     void testKnownDistances(double lat1, double lon1, double lat2, double lon2, double expected) {
@@ -99,7 +99,8 @@ class DistanceCalculatorTest {
         double distance = DistanceCalculator.calculateDistance(10.0, 20.0, 10.0, 20.0);
         assertEquals(0.0, distance, DELTA);
 
-        // When only latitude differs, should use the haversine value for latitude difference
+        // When only latitude differs, should use the haversine value for latitude
+        // difference
         double lat1 = 10.0;
         double lat2 = 11.0;
         double lon = 20.0;
@@ -112,5 +113,87 @@ class DistanceCalculatorTest {
 
         double actual = DistanceCalculator.calculateDistance(lat1, lon, lat2, lon);
         assertEquals(expected, actual, 0.1);
+    }
+
+    @Test
+    void testCalculateDistance() {
+        // Jakarta coordinates
+        double lat1 = -6.2088;
+        double lon1 = 106.8456;
+
+        // Bandung coordinates
+        double lat2 = -6.9032;
+        double lon2 = 107.6519;
+
+        double distance = DistanceCalculator.calculateDistance(lat1, lon1, lat2, lon2);
+
+        // The distance should be approximately 126.7 km, but we'll use a range to
+        // account for calculation variations
+        assertTrue(distance > 115 && distance < 130, "Distance should be approximately 126.7 km");
+    }
+
+    @Test
+    void testCalculateDistanceForSamePoint() {
+        double lat = -6.2088;
+        double lon = 106.8456;
+
+        double distance = DistanceCalculator.calculateDistance(lat, lon, lat, lon);
+
+        assertEquals(0.0, distance, 0.0001, "Distance should be 0 for the same point");
+    }
+
+    @Test
+    void testCalculateDistanceWithNorthPole() {
+        double lat1 = 90.0; // North Pole
+        double lon1 = 0.0;
+
+        double lat2 = 0.0; // Equator
+        double lon2 = 0.0;
+
+        double distance = DistanceCalculator.calculateDistance(lat1, lon1, lat2, lon2);
+
+        // The distance should be approximately 10,000 km (1/4 of Earth's circumference)
+        assertTrue(distance > 9900 && distance < 10100, "Distance should be approximately 10,000 km");
+    }
+
+    @Test
+    void calculateDistance_samePoint_returnsZero() {
+        // Act
+        double distance = DistanceCalculator.calculateDistance(0.0, 0.0, 0.0, 0.0);
+
+        // Assert
+        assertEquals(0.0, distance, 0.00001);
+    }
+
+    @Test
+    void calculateDistance_differentPoints_returnsCorrectDistance() {
+        // Known coordinates and distance
+        double lat1 = 40.7128; // New York
+        double lon1 = -74.0060;
+        double lat2 = 34.0522; // Los Angeles
+        double lon2 = -118.2437;
+
+        // Act
+        double distance = DistanceCalculator.calculateDistance(lat1, lon1, lat2, lon2);
+
+        // Assert - approximately 3935 km between NY and LA
+        assertTrue(distance > 3900);
+        assertTrue(distance < 4000);
+    }
+
+    @Test
+    void calculateDistance_closePoints_returnsSmallDistance() {
+        // Points 100 meters apart approximately
+        double lat1 = 0.0;
+        double lon1 = 0.0;
+        double lat2 = 0.001; // approximately 111 meters north
+        double lon2 = 0.0;
+
+        // Act
+        double distance = DistanceCalculator.calculateDistance(lat1, lon1, lat2, lon2);
+
+        // Assert
+        assertTrue(distance > 0);
+        assertTrue(distance < 1);
     }
 }

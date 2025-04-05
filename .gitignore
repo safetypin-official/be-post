@@ -35,3 +35,8 @@ build/
 ### env file ###
 .env
 htmlReport/
+
+loadtest.js
+repomix-output.txt
+*.csv
+*.ipynb

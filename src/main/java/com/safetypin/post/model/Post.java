@@ -8,6 +8,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -34,9 +35,8 @@ public class Post extends BasePost {
     @Column(nullable = false, name = "name")
     private String category;
 
-    @ManyToOne
-    @JoinColumn(name = "name", referencedColumnName = "name", insertable = false, updatable = false)
-    private Category categoryEntity;
+    @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private transient List<Vote> votes;
 
     // Additional fields as needed
 
@@ -92,8 +92,7 @@ public class Post extends BasePost {
             // Create a new Point with the updated latitude
             location = geometryFactory.createPoint(new Coordinate(location.getX(), latitude));
         } else {
-            // Create a new Point with the provided latitude and default longitude (0.0)
-            location = geometryFactory.createPoint(new Coordinate(0.0d, latitude));
+            throw new IllegalArgumentException("Location must be initialized before setting latitude");
         }
     }
 
@@ -110,8 +109,7 @@ public class Post extends BasePost {
             // Create a new Point with the updated longitude
             location = geometryFactory.createPoint(new Coordinate(longitude, location.getY()));
         } else {
-            // Create a new Point with the provided longitude and default latitude (0.0)
-            location = geometryFactory.createPoint(new Coordinate(longitude, 0.0d));
+            throw new IllegalArgumentException("Location must be initialized before setting longitude");
         }
     }
 
@@ -120,6 +118,23 @@ public class Post extends BasePost {
         if (getCreatedAt() == null) {
             setCreatedAt(LocalDateTime.now());
         }
+    }
+
+    public Long getUpvoteCount() {
+        return votes == null ? 0 : votes.stream().filter(Vote::isUpvote).count();
+    }
+
+    public Long getDownvoteCount() {
+        return votes == null ? 0 : votes.stream().filter(v -> !v.isUpvote()).count();
+    }
+
+    public VoteType currentVote(UUID userId) {
+        if (votes == null) return VoteType.NONE;
+        return votes.stream()
+                .filter(v -> v.getId().getUserId().equals(userId))
+                .map(v -> (v.isUpvote()) ? VoteType.UPVOTE : VoteType.DOWNVOTE)
+                .findFirst()
+                .orElse(VoteType.NONE);
     }
 
     /**
@@ -133,6 +148,7 @@ public class Post extends BasePost {
         private LocalDateTime createdAt;
         private Double latitude;
         private Double longitude;
+        private UUID postedBy; // Add postedBy field
 
         public Builder() {
             /* This constructor is intentionally empty as it is used by the Builder pattern.
@@ -181,6 +197,11 @@ public class Post extends BasePost {
             return this;
         }
 
+        public Builder postedBy(UUID postedBy) {
+            this.postedBy = postedBy;
+            return this;
+        }
+
         public Post build() {
             Post post = new Post();
             post.setId(id);
@@ -188,6 +209,7 @@ public class Post extends BasePost {
             post.setTitle(title);
             post.setCategory(category);
             post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
+            post.setPostedBy(postedBy); // Set postedBy
 
             // Validate and set location
             if (latitude == null || longitude == null) {
