@@ -114,6 +114,8 @@ mvn test
 
 Tests are written using JUnit 5 and cover controllers, services, repository interactions, and utility components such as OTP generation and validation.
 
+## Development and Contribution
+
 ## Development
 
 - **Code Style:** The project adheres to standard Java coding conventions and uses Lombok to reduce boilerplate.
