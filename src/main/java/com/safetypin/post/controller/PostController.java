@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 
 @Slf4j
 @RestController
-@RequestMapping("/post")
+@RequestMapping("/posts")
 public class PostController {
     private final PostService postService;
 
