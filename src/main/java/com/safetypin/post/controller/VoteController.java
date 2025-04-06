@@ -16,7 +16,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 
-@RequestMapping("/vote")
+@RequestMapping("/posts/vote")
 public class VoteController {
 
     final VoteService voteService;
