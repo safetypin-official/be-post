@@ -27,6 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
@@ -1717,7 +1718,7 @@ class PostServiceTest {
         // When
         Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
 
-        // Then
+        // Then - Last page
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
 

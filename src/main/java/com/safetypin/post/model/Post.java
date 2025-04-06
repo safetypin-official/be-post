@@ -38,6 +38,8 @@ public class Post extends BasePost {
     @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
     private transient List<Vote> votes;
 
+    private String imageUrl;
+
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
@@ -149,6 +151,7 @@ public class Post extends BasePost {
         private Double latitude;
         private Double longitude;
         private UUID postedBy; // Add postedBy field
+        private String imageUrl;
 
         public Builder() {
             /* This constructor is intentionally empty as it is used by the Builder pattern.
@@ -202,6 +205,11 @@ public class Post extends BasePost {
             return this;
         }
 
+        public Builder imageUrl(String imageUrl) {
+            this.imageUrl = imageUrl;
+            return this;
+        }
+
         public Post build() {
             Post post = new Post();
             post.setId(id);
@@ -210,6 +218,7 @@ public class Post extends BasePost {
             post.setCategory(category);
             post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
             post.setPostedBy(postedBy); // Set postedBy
+            post.setImageUrl(imageUrl);
 
             // Validate and set location
             if (latitude == null || longitude == null) {

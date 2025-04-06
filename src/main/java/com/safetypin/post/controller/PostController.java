@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 
 @Slf4j
 @RestController
-@RequestMapping("/posts")
+@RequestMapping("/post")
 public class PostController {
     private final PostService postService;
 
