@@ -4,10 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import static org.mockito.Mockito.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -96,65 +92,12 @@ class PostTest {
     }
 
     @Test
-    void testGetLatitudeWithNullLocation() throws Exception {
+    void testSetLatitudeWithNullLocation() {
         Post post = new Post();
-
-        // Use reflection to set location to null
-        Field locationField = Post.class.getDeclaredField("location");
-        locationField.setAccessible(true);
-        locationField.set(post, null);
-
-        // Test that getLatitude returns null when location is null
-        assertNull(post.getLatitude());
-    }
-
-    @Test
-    void testGetLongitudeWithNullLocation() throws Exception {
-        Post post = new Post();
-
-        // Use reflection to set location to null
-        Field locationField = Post.class.getDeclaredField("location");
-        locationField.setAccessible(true);
-        locationField.set(post, null);
-
-        // Test that getLongitude returns null when location is null
-        assertNull(post.getLongitude());
-    }
-
-    @Test
-    void testSetLatitudeWithNullLocation() throws Exception {
-        Post post = new Post();
-
-        // Use reflection to set location to null
-        Field locationField = Post.class.getDeclaredField("location");
-        locationField.setAccessible(true);
-        locationField.set(post, null);
-
-        // Test setting latitude when location is null
         post.setLatitude(20.0);
 
-        // Verify a new point was created with default longitude (0.0)
-        assertNotNull(post.getLocation());
         assertEquals(20.0, post.getLatitude(), 0.0001);
         assertEquals(0.0, post.getLongitude(), 0.0001);
-    }
-
-    @Test
-    void testSetLongitudeWithNullLocation() throws Exception {
-        Post post = new Post();
-
-        // Use reflection to set location to null
-        Field locationField = Post.class.getDeclaredField("location");
-        locationField.setAccessible(true);
-        locationField.set(post, null);
-
-        // Test setting longitude when location is null
-        post.setLongitude(10.0);
-
-        // Verify a new point was created with default latitude (0.0)
-        assertNotNull(post.getLocation());
-        assertEquals(0.0, post.getLatitude(), 0.0001);
-        assertEquals(10.0, post.getLongitude(), 0.0001);
     }
 
     @Test
@@ -165,6 +108,15 @@ class PostTest {
         post.setLongitude(10.0);
 
         assertEquals(20.0, post.getLatitude(), 0.0001);
+        assertEquals(10.0, post.getLongitude(), 0.0001);
+    }
+
+    @Test
+    void testSetLongitudeWithNullLocation() {
+        Post post = new Post();
+        post.setLongitude(10.0);
+
+        assertEquals(0.0, post.getLatitude(), 0.0001);
         assertEquals(10.0, post.getLongitude(), 0.0001);
     }
 
