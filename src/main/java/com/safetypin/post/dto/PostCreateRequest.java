@@ -30,4 +30,5 @@ public class PostCreateRequest {
 
     private UUID postedBy;
     private String imageUrl;
+    private String address;
 }
