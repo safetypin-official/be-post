@@ -40,6 +40,8 @@ public class Post extends BasePost {
 
     private String imageUrl;
 
+    private String address;
+
     // Additional fields as needed
 
     // Add constructor that accepts latitude and longitude as separate parameters
@@ -153,6 +155,8 @@ public class Post extends BasePost {
         private UUID postedBy; // Add postedBy field
         private String imageUrl;
 
+        private String address;
+
         public Builder() {
             /* This constructor is intentionally empty as it is used by the Builder pattern.
              * No initialization is needed here since all fields are set via the builder methods.
@@ -210,6 +214,11 @@ public class Post extends BasePost {
             return this;
         }
 
+        public Builder address(String address) {
+            this.address = address;
+            return this;
+        }
+
         public Post build() {
             Post post = new Post();
             post.setId(id);
@@ -219,6 +228,7 @@ public class Post extends BasePost {
             post.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
             post.setPostedBy(postedBy); // Set postedBy
             post.setImageUrl(imageUrl);
+            post.setAddress(address);
 
             // Validate and set location
             if (latitude == null || longitude == null) {
