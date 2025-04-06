@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +14,7 @@ import java.util.UUID;
 @Service
 public interface PostService {
 
-    Post createPost(String title, String content, Double latitude, Double longitude, String category,
-                    UUID postedBy);
+    Post createPost(PostCreateRequest postCreateRequest);
 
     List<Post> findAll(); // debugging purposes
 
