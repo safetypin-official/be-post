@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostData;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
@@ -16,7 +17,6 @@ import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -54,8 +54,17 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, String category,
-                           UUID postedBy) {
+    public Post createPost(PostCreateRequest postCreateRequest) {
+        
+        String title = postCreateRequest.getTitle();
+        String content = postCreateRequest.getCaption();
+        Double latitude = postCreateRequest.getLatitude();
+        Double longitude = postCreateRequest.getLongitude();
+        String category = postCreateRequest.getCategory();
+        UUID postedBy = postCreateRequest.getPostedBy();
+        String imageUrl = postCreateRequest.getImageUrl();
+        String address = postCreateRequest.getAddress();
+
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -85,6 +94,8 @@ public class PostServiceImpl implements PostService {
                 .location(latitude, longitude)
                 .category(category)
                 .postedBy(postedBy) // Set the postedBy value
+                .imageUrl(imageUrl)
+                .address(address)
                 .build();
 
         try {

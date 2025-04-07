@@ -411,10 +411,12 @@ class PostControllerTest {
         request.setLatitude(40.7128);
         request.setLongitude(-74.0060);
         request.setCategory("DANGER");
+        request.setImageUrl("http://example.com/image.jpg");
 
-        when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
-                .thenReturn(testPost);
+        // Capture the request that is passed to the service
+        ArgumentCaptor<PostCreateRequest> requestCaptor = ArgumentCaptor.forClass(PostCreateRequest.class);
+
+        when(postService.createPost(requestCaptor.capture())).thenReturn(testPost);
 
         // Act
         ResponseEntity<PostResponse> response = postController.createPost(request);
@@ -425,9 +427,15 @@ class PostControllerTest {
         assertEquals("Post created successfully", response.getBody().getMessage());
         assertNotNull(response.getBody().getData());
 
-        verify(postService).createPost(
-                "New Post", "New Content", 40.7128, -74.0060,
-                "DANGER", testUserId);
+        // Verify the request was properly passed with userId set
+        PostCreateRequest capturedRequest = requestCaptor.getValue();
+        assertEquals("New Post", capturedRequest.getTitle());
+        assertEquals("New Content", capturedRequest.getCaption());
+        assertEquals(40.7128, capturedRequest.getLatitude());
+        assertEquals(-74.0060, capturedRequest.getLongitude());
+        assertEquals("DANGER", capturedRequest.getCategory());
+        assertEquals("http://example.com/image.jpg", capturedRequest.getImageUrl());
+        assertEquals(testUserId, capturedRequest.getPostedBy());
     }
 
     @Test
@@ -440,8 +448,7 @@ class PostControllerTest {
         request.setLongitude(-74.0060);
         request.setCategory("DANGER");
 
-        when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
+        when(postService.createPost(any(PostCreateRequest.class)))
                 .thenThrow(new InvalidPostDataException("Title is required"));
 
         // Act
@@ -463,8 +470,7 @@ class PostControllerTest {
         request.setLongitude(-74.0060);
         request.setCategory("DANGER");
 
-        when(postService.createPost(
-                anyString(), anyString(), anyDouble(), anyDouble(), anyString(), any(UUID.class)))
+        when(postService.createPost(any(PostCreateRequest.class)))
                 .thenThrow(new RuntimeException("Database error"));
 
         // Act
@@ -474,6 +480,33 @@ class PostControllerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
         assertTrue(response.getBody().getMessage().contains("Database error"));
+    }
+
+    // Test that imageUrl is correctly passed to the service
+    @Test
+    void createPost_withImageUrl() {
+        // Arrange
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle("New Post");
+        request.setCaption("New Content");
+        request.setLatitude(40.7128);
+        request.setLongitude(-74.0060);
+        request.setCategory("DANGER");
+        request.setImageUrl("http://example.com/image.jpg");
+
+        ArgumentCaptor<PostCreateRequest> requestCaptor = ArgumentCaptor.forClass(PostCreateRequest.class);
+
+        when(postService.createPost(requestCaptor.capture())).thenReturn(testPost);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.createPost(request);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+
+        // Verify imageUrl was correctly passed
+        PostCreateRequest capturedRequest = requestCaptor.getValue();
+        assertEquals("http://example.com/image.jpg", capturedRequest.getImageUrl());
     }
 
     // ------------------- Get Post By ID Tests -------------------

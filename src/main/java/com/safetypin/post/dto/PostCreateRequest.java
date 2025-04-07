@@ -29,4 +29,6 @@ public class PostCreateRequest {
     private String category;
 
     private UUID postedBy;
+    private String imageUrl;
+    private String address;
 }

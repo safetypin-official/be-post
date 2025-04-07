@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostData;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.*;
 class PostServiceTest {
 
     private final Category safety = new Category("Safety"),
-                    crime = new Category("Crime");
+            crime = new Category("Crime");
     @Mock
     private PostRepository postRepository;
     @Mock
@@ -55,6 +56,9 @@ class PostServiceTest {
     private UUID userId1, userId2;
     private Post postWithoutLocation;
     private Category safetyCategory;
+    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     /**
      * Arguments provider for title and content validation tests
@@ -128,9 +132,17 @@ class PostServiceTest {
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(category.getName());
+        request.setPostedBy(userId);
+
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                category.getName(), userId);
+        Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -146,9 +158,18 @@ class PostServiceTest {
         Double longitude = 2.0;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                .createPost(title, content, latitude, longitude, categoryName, userId));
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
@@ -158,14 +179,22 @@ class PostServiceTest {
         // Given
         String title = "Test Post";
         String content = "This is a test post";
-        Double latitude = null;
+        Double latitude = null; // Null latitude
         Double longitude = 2.0;
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(category.getName());
+        request.setPostedBy(userId);
+
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                category.getName(), userId);
+        Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -190,13 +219,21 @@ class PostServiceTest {
         String title = "Test Post";
         String content = "This is a test post";
         Double latitude = 1.0;
-        Double longitude = null;
+        Double longitude = null; // Null longitude
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(category.getName());
+        request.setPostedBy(userId);
+
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                category.getName(), userId);
+        Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -228,30 +265,41 @@ class PostServiceTest {
         double longitude = 2.0;
         String categoryName = "Safety";
         UUID userId = UUID.randomUUID();
+        String imageUrl = "http://example.com/image.jpg"; // Test with image URL
 
         Post expectedPost = new Post();
         expectedPost.setTitle(title);
         expectedPost.setCaption(content);
         expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
         expectedPost.setCategory(categoryName);
+        expectedPost.setImageUrl(imageUrl);
+
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+        request.setImageUrl(imageUrl);
 
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
 
         // When
-        Post result = postService.createPost(title, content, latitude, longitude, categoryName, userId);
+        Post result = postService.createPost(request);
 
         // Then
         assertNotNull(result);
         assertEquals(title, result.getTitle());
         assertEquals(content, result.getCaption());
         assertEquals(categoryName, result.getCategory());
+        assertEquals(imageUrl, result.getImageUrl());
 
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testCreatePost_NonExistentCategory() {
@@ -263,11 +311,20 @@ class PostServiceTest {
         String categoryName = "NonExistentCategory";
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         when(categoryRepository.findByName(categoryName)).thenReturn(null);
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                .createPost(title, content, latitude, longitude, categoryName, userId));
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
 
         assertEquals("Category does not exist: " + categoryName, exception.getMessage());
         verify(categoryRepository).findByName(categoryName);
@@ -284,12 +341,21 @@ class PostServiceTest {
         String categoryName = "Safety";
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenThrow(new RuntimeException("Database error"));
 
         // When & Then
-        PostException exception = assertThrows(PostException.class, () -> postService.createPost(title, content,
-                latitude, longitude, categoryName, userId));
+        PostException exception = assertThrows(PostException.class,
+                () -> postService.createPost(request));
 
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
@@ -330,8 +396,6 @@ class PostServiceTest {
         verify(postRepository).findById(id);
     }
 
-    // POSITIVE TEST CASES FOR SEARCH POSTS
-
     @Test
     void testCreatePost_NullPostedBy() {
         // Given
@@ -342,9 +406,18 @@ class PostServiceTest {
         String categoryName = "Safety";
         UUID postedBy = null; // Null user ID
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(postedBy);
+
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                .createPost(title, content, latitude, longitude, categoryName, postedBy));
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
 
         assertEquals("User ID (postedBy) is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -389,6 +462,95 @@ class PostServiceTest {
         assertEquals("User not authorized to delete this post", exception.getMessage());
         verify(postRepository).findById(postId);
         verify(postRepository, never()).delete(any(Post.class));
+    }
+
+    // Test for imageUrl in createPost
+    @Test
+    void testCreatePost_WithImageUrl() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        double latitude = 1.0;
+        double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+        String imageUrl = "http://example.com/image.jpg";
+
+        Post expectedPost = new Post();
+        expectedPost.setTitle(title);
+        expectedPost.setCaption(content);
+        expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+        expectedPost.setCategory(categoryName);
+        expectedPost.setImageUrl(imageUrl);
+
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+        request.setImageUrl(imageUrl);
+
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
+
+        // When
+        Post result = postService.createPost(request);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(imageUrl, result.getImageUrl());
+
+        // Verify the post saved has the image URL
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(imageUrl, postCaptor.getValue().getImageUrl());
+
+        verify(categoryRepository).findByName(categoryName);
+    }
+
+    @Test
+    void testCreatePost_NullImageUrl() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        double latitude = 1.0;
+        double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+        String imageUrl = null; // Null image URL should be allowed
+
+        Post expectedPost = new Post();
+        expectedPost.setTitle(title);
+        expectedPost.setCaption(content);
+        expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+        expectedPost.setCategory(categoryName);
+        expectedPost.setImageUrl(imageUrl);
+
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+        request.setImageUrl(imageUrl);
+
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
+
+        // When
+        Post result = postService.createPost(request);
+
+        // Then
+        assertNotNull(result);
+        // No assertion for imageUrl since it's null
+
+        verify(categoryRepository).findByName(categoryName);
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test
@@ -1443,7 +1605,16 @@ class PostServiceTest {
         Double latitude = 90.0; // Max valid latitude
         Double longitude = 180.0; // Max valid longitude
         String categoryName = "Safety";
+
         UUID userId = UUID.randomUUID();
+
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
 
         Post expectedPost = new Post();
         expectedPost.setTitle(title);
@@ -1455,7 +1626,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
 
         // When
-        Post result = postService.createPost(title, content, latitude, longitude, categoryName, userId);
+        Post result = postService.createPost(request);
 
         // Then
         assertNotNull(result);
@@ -1480,14 +1651,21 @@ class PostServiceTest {
         String categoryName = "Safety";
         UUID userId = UUID.randomUUID();
 
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class)))
                 .thenThrow(new RuntimeException("Database connection error"));
 
         // When & Then
         PostException exception = assertThrows(PostException.class,
-                () -> postService.createPost(title, content, latitude, longitude, categoryName,
-                        userId));
+                () -> postService.createPost(request));
 
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
@@ -1717,7 +1895,7 @@ class PostServiceTest {
         // When
         Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
 
-        // Then
+        // Then - Last page
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
 

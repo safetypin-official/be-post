@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -233,14 +231,10 @@ public class PostController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UUID userId = userDetails.getUserId();
 
+
+            request.setPostedBy(userId); // Set the postedBy field
             // Create the post
-            Post post = postService.createPost(
-                    request.getTitle(),
-                    request.getCaption(),
-                    request.getLatitude(),
-                    request.getLongitude(),
-                    request.getCategory(),
-                    userId);
+            Post post = postService.createPost(request);
 
             // Return success response
             PostResponse response = new PostResponse(
