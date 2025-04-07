@@ -36,7 +36,7 @@ public class Post extends BasePost {
     private String category;
 
     @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private transient List<Vote> votes;
+    private List<Vote> votes;
 
     private String imageUrl;
 
