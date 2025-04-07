@@ -79,7 +79,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> strategy.processFeed(posts, queryDTO));
+        assertThrows(IllegalArgumentException.class, () -> strategy.processFeed(posts, queryDTO, null));
     }
 
     @Test
@@ -92,7 +92,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> strategy.processFeed(posts, queryDTO));
+        assertThrows(IllegalArgumentException.class, () -> strategy.processFeed(posts, queryDTO, null));
     }
 
     @Test
@@ -105,7 +105,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> strategy.processFeed(posts, queryDTO));
+        assertThrows(IllegalArgumentException.class, () -> strategy.processFeed(posts, queryDTO, null));
     }
 
     @Test
@@ -119,7 +119,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(Collections.emptyList(), queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(Collections.emptyList(), queryDTO, null);
 
         // Assert
         assertTrue(result.isEmpty());
@@ -137,7 +137,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(3, result.getTotalElements());
@@ -169,7 +169,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getTotalElements());
@@ -188,7 +188,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getTotalElements());
@@ -207,7 +207,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getTotalElements());
@@ -225,7 +225,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getTotalElements());
@@ -245,7 +245,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getTotalElements());
@@ -263,7 +263,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getContent().size());
@@ -284,7 +284,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getContent().size());
@@ -321,7 +321,7 @@ class DistanceFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(testPosts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(testPosts, queryDTO, null);
 
         // Assert
         assertEquals(3, result.getTotalElements());

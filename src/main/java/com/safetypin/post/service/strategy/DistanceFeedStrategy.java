@@ -2,6 +2,7 @@ package com.safetypin.post.service.strategy;
 
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.utils.DistanceCalculator;
 import org.springframework.data.domain.Page;
@@ -16,8 +17,9 @@ import java.util.Map;
 public class DistanceFeedStrategy extends AbstractFeedStrategy {
     private static final String DISTANCE_KEY = "distance";
 
+
     @Override
-    public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO) {
+    public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, List<PostedByData> profileList) {
         if (queryDTO.getUserLat() == null || queryDTO.getUserLon() == null) {
             throw new IllegalArgumentException("Latitude and longitude are required for distance feed");
         }
@@ -28,7 +30,8 @@ public class DistanceFeedStrategy extends AbstractFeedStrategy {
                 .filter(post -> matchesDateRange(post, queryDTO.getDateFrom(), queryDTO.getDateTo()))
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
-                    PostData postData = PostData.fromPostAndUserId(post, queryDTO.getUserId());
+
+                    PostData postData = PostData.fromPostAndUserId(post, queryDTO.getUserId(), profileList);
                     result.put("post", postData);
 
                     // Calculate distance from user

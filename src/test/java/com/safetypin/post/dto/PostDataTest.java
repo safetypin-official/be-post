@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 class PostDataTest {
 
+
     @Test
     void testPostDataBuilder() {
         // Given
@@ -25,7 +26,14 @@ class PostDataTest {
         Long upvoteCount = 10L;
         Long downvoteCount = 5L;
         VoteType currentVote = VoteType.UPVOTE;
-        UUID postedBy = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        String name = "Hoho";
+        String profilePicture = "www.google.com";
+        PostedByData postedBy = PostedByData.builder()
+                .id(userId)
+                .name(name)
+                .profilePicture(profilePicture)
+                .build();
 
         // When
         PostData postData = PostData.builder()
@@ -51,7 +59,7 @@ class PostDataTest {
         assertEquals(upvoteCount, postData.getUpvoteCount());
         assertEquals(downvoteCount, postData.getDownvoteCount());
         assertEquals(currentVote, postData.getCurrentVote());
-        assertEquals(postedBy, postData.getPostedBy());
+        assertEquals(postedBy.getId(), postData.getPostedBy().getId());
     }
 
     @Test
@@ -83,7 +91,7 @@ class PostDataTest {
         when(mockPost.getPostedBy()).thenReturn(postedById);
 
         // When
-        PostData result = PostData.fromPostAndUserId(mockPost, userId);
+        PostData result = PostData.fromPostAndUserId(mockPost, userId, null);
 
         // Then
         assertNotNull(result);
@@ -96,7 +104,7 @@ class PostDataTest {
         assertEquals(upvoteCount, result.getUpvoteCount());
         assertEquals(downvoteCount, result.getDownvoteCount());
         assertEquals(currentVote, result.getCurrentVote());
-        assertEquals(postedById, result.getPostedBy());
+        assertEquals(postedById, result.getPostedBy().getId());
 
         // Verify that currentVote was called with the correct userId
         Mockito.verify(mockPost).currentVote(userId);
@@ -120,7 +128,7 @@ class PostDataTest {
         when(mockPost.getPostedBy()).thenReturn(null);
 
         // When
-        PostData result = PostData.fromPostAndUserId(mockPost, userId);
+        PostData result = PostData.fromPostAndUserId(mockPost, userId, null);
 
         // Then
         assertNotNull(result);
@@ -133,14 +141,21 @@ class PostDataTest {
         assertNull(result.getUpvoteCount());
         assertNull(result.getDownvoteCount());
         assertNull(result.getCurrentVote());
-        assertNull(result.getPostedBy());
+        assertNull(result.getPostedBy().getId());
     }
 
     @Test
     void testEqualsAndHashCode() {
         // Given
         LocalDateTime now = LocalDateTime.now();
-        UUID postedBy = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        String name = "Hoho";
+        String profilePicture = "www.google.com";
+        PostedByData postedBy = PostedByData.builder()
+                .id(userId)
+                .name(name)
+                .profilePicture(profilePicture)
+                .build();
 
         PostData postData1 = PostData.builder()
                 .title("Title")
@@ -193,7 +208,14 @@ class PostDataTest {
     void testToString() {
         // Given
         LocalDateTime now = LocalDateTime.now();
-        UUID postedBy = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        String name = "Hoho";
+        String profilePicture = "www.google.com";
+        PostedByData postedBy = PostedByData.builder()
+                .id(userId)
+                .name(name)
+                .profilePicture(profilePicture)
+                .build();
 
         PostData postData = PostData.builder()
                 .title("Title")
@@ -223,4 +245,5 @@ class PostDataTest {
         assertTrue(toStringResult.contains("UPVOTE"));
         assertTrue(toStringResult.contains(postedBy.toString()));
     }
+
 }

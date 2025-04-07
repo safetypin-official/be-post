@@ -26,10 +26,14 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class PostControllerTest {
@@ -151,7 +155,8 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_withFilters() {
         // Arrange
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        List<PostedByData> profileList = postService.fetchProfiles();
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
         Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -214,7 +219,8 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_withNullDates() {
         // Arrange
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        List<PostedByData> profileList = postService.fetchProfiles();
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
         Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -249,7 +255,8 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_success() {
         // Arrange
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        List<PostedByData> profileList = postService.fetchProfiles();
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
         Map<String, Object> postMap = Map.of("post", postData);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -286,7 +293,8 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_withNullDates() {
         // Arrange
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        List<PostedByData> profileList = postService.fetchProfiles();
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
         Map<String, Object> postMap = Map.of("post", postData);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -323,7 +331,8 @@ class PostControllerTest {
     @Test
     void getPostBySpecificUser_success() {
         // Arrange
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId);
+        List<PostedByData> profileList = postService.fetchProfiles();
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
         Map<String, Object> postMap = Map.of("post", postData);
         List<Map<String, Object>> posts = List.of(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());

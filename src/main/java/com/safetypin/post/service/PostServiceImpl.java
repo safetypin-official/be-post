@@ -1,8 +1,7 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostData;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -16,9 +15,14 @@ import com.safetypin.post.service.strategy.FeedStrategy;
 import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
@@ -30,6 +34,8 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
+    @Value("${be-auth:localhost:8080}")
+    private String apiEndpoint;
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
@@ -55,7 +61,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(PostCreateRequest postCreateRequest) {
-        
+
         String title = postCreateRequest.getTitle();
         String content = postCreateRequest.getCaption();
         Double latitude = postCreateRequest.getLatitude();
@@ -143,8 +149,11 @@ public class PostServiceImpl implements PostService {
         // Get all posts
         List<Post> allPosts = postRepository.findAll();
 
+        // fetch profiles
+        List<PostedByData> profileList = fetchProfiles();
+
         // Apply strategy to posts
-        return strategy.processFeed(allPosts, queryDTO);
+        return strategy.processFeed(allPosts, queryDTO, profileList);
     }
 
     @Override
@@ -156,10 +165,13 @@ public class PostServiceImpl implements PostService {
         // Get all posts with filters and ordered
         Page<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId, pageable);
 
+        // fetch profiles
+        List<PostedByData> profileList = fetchProfiles();
+
         // Map to PostData and return page
         return allPosts.map(post -> {
             Map<String, Object> result = new HashMap<>();
-            PostData postData = PostData.fromPostAndUserId(post, postUserId);
+            PostData postData = PostData.fromPostAndUserId(post, postUserId, profileList);
             result.put("post", postData);
             return result;
         });
@@ -173,5 +185,35 @@ public class PostServiceImpl implements PostService {
                 throw new InvalidPostDataException("Category does not exist: " + category);
             }
         }
+    }
+
+    @Override
+    public List<PostedByData> fetchProfiles() {
+        // fetch profiles
+        RestTemplate restTemplate = new RestTemplate();
+        String uri = apiEndpoint + "/api/profiles"; // or any other uri
+        System.out.println("fetching profiles: " + uri);
+        HttpEntity<String> entity = new HttpEntity<>(null, null);
+        ResponseEntity<AuthResponse> result = restTemplate.exchange(uri, HttpMethod.GET, entity, AuthResponse.class);
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            //return mapper.readValue((JsonParser) Objects.requireNonNull(result.getBody()).getData(), new TypeReference<List<PostedByData>>() {});
+            List<LinkedHashMap<String, String>> linkedHashMapList = (List<LinkedHashMap<String, String>>) Objects.requireNonNull(result.getBody()).getData();
+
+            List<PostedByData> output = new ArrayList<PostedByData>();
+            for (LinkedHashMap<String, String> map : linkedHashMapList) {
+                PostedByData postedByData = PostedByData.builder()
+                        .name(map.get("name"))
+                        .id(UUID.fromString(map.get("id")))
+                        .profilePicture(map.get("profilePicture"))
+                        .build();
+                output.add(postedByData);
+            }
+            return output;
+        } catch (Exception e) {
+            throw new InvalidPostDataException("Failed parsing profiles");
+        }
+
     }
 }
