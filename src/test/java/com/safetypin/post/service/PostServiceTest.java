@@ -3,6 +3,7 @@ package com.safetypin.post.service;
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
@@ -28,6 +29,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
@@ -56,9 +58,6 @@ class PostServiceTest {
     private UUID userId1, userId2;
     private Post postWithoutLocation;
     private Category safetyCategory;
-    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
 
     /**
      * Arguments provider for title and content validation tests
@@ -211,7 +210,9 @@ class PostServiceTest {
 
         // Then
         assertEquals(allPosts, result);
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testCreatePost_NullLongitude() {
@@ -617,7 +618,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -628,7 +629,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -664,7 +665,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -675,7 +676,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -725,7 +726,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -736,7 +737,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -782,7 +783,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -793,7 +794,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -843,7 +844,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -854,7 +855,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -900,8 +901,9 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
+        when(postService.fetchProfiles()).thenReturn(null);
 
         // Call the method we're testing
         Page<Map<String, Object>> result = postService.getFeed(expectedDto, "distance");
@@ -911,7 +913,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -971,7 +973,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -982,7 +984,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -1057,7 +1059,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1068,7 +1070,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
         // Verify category repository is not called since we're not validating
         // categories
@@ -1115,7 +1117,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1126,7 +1128,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -1158,7 +1160,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -1169,7 +1171,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -1204,7 +1206,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1215,7 +1217,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1261,7 +1263,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1272,7 +1274,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1338,7 +1340,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1349,7 +1351,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
         // Verify category repository is not called since we're not validating
         // categories
@@ -1403,7 +1405,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1414,7 +1416,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1468,7 +1470,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1479,7 +1481,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1514,7 +1516,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -1525,7 +1527,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1580,7 +1582,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1591,7 +1593,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -1705,7 +1707,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1716,7 +1718,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1753,7 +1755,7 @@ class PostServiceTest {
                 pageable, 1);
 
         // Setup the strategy mock
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // When
@@ -1766,7 +1768,7 @@ class PostServiceTest {
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
 
-        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture());
+        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), null);
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1803,7 +1805,7 @@ class PostServiceTest {
                 pageable, 1);
 
         // Setup the strategy mock
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // When
@@ -1816,7 +1818,7 @@ class PostServiceTest {
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
 
-        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture());
+        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), null);
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1878,7 +1880,6 @@ class PostServiceTest {
         verifyNoInteractions(timestampFeedStrategy);
         verifyNoInteractions(distanceFeedStrategy);
     }
-
 
     @Test
     void testFindPostsByUser_Success() {
@@ -1959,11 +1960,11 @@ class PostServiceTest {
         // Create 5 posts
         List<Post> userPosts = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-                Post post = new Post();
-                post.setTitle("Post " + i);
-                post.setPostedBy(userId);
-                post.setCreatedAt(now.minusDays(i));
-                userPosts.add(post);
+            Post post = new Post();
+            post.setTitle("Post " + i);
+            post.setPostedBy(userId);
+            post.setCreatedAt(now.minusDays(i));
+            userPosts.add(post);
         }
 
         // Setup expected pages
@@ -2014,4 +2015,14 @@ class PostServiceTest {
         verify(postRepository, times(3))
                 .findByPostedByOrderByCreatedAtDesc(eq(userId), any(Pageable.class));
     }
+
+    @Test
+    void testFetchProfiles() throws IOException {
+        List<PostedByData> profileList = postService.fetchProfiles();
+        assertNotNull(profileList);
+    }
+
+
+
+
 }

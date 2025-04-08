@@ -1,6 +1,7 @@
 package com.safetypin.post.service.strategy;
 
 import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.model.Post;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -281,7 +282,7 @@ class AbstractFeedStrategyTest {
     // Concrete implementation for testing
     private static class TestFeedStrategy extends AbstractFeedStrategy {
         @Override
-        public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO) {
+        public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, List<PostedByData> profileList) {
             // Simple implementation for testing
             List<Map<String, Object>> results = new ArrayList<>();
             return paginateResults(results, queryDTO.getPageable());
