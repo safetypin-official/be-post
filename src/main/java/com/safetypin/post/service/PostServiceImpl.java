@@ -1,6 +1,5 @@
 package com.safetypin.post.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
@@ -34,8 +33,8 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
-    @Value("${be-auth:localhost:8080}")
-    private String apiEndpoint;
+    @Value("${be-auth:https://safetypin.ppl.cs.ui.ac.id}")
+    private String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
@@ -194,8 +193,8 @@ public class PostServiceImpl implements PostService {
         String uri = apiEndpoint + "/api/profiles"; // or any other uri
         System.out.println("fetching profiles: " + uri);
         HttpEntity<String> entity = new HttpEntity<>(null, null);
+        System.out.println("uri: " + uri);
         ResponseEntity<AuthResponse> result = restTemplate.exchange(uri, HttpMethod.GET, entity, AuthResponse.class);
-        ObjectMapper mapper = new ObjectMapper();
 
         try {
             //return mapper.readValue((JsonParser) Objects.requireNonNull(result.getBody()).getData(), new TypeReference<List<PostedByData>>() {});
