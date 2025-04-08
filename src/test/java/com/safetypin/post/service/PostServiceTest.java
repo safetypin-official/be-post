@@ -210,9 +210,7 @@ class PostServiceTest {
 
         // Then
         assertEquals(allPosts, result);
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testCreatePost_NullLongitude() {
@@ -379,7 +377,9 @@ class PostServiceTest {
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testFindById_NotFound() {
@@ -903,7 +903,6 @@ class PostServiceTest {
         // Setup the strategy mock to return our expected result
         when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
-        when(postService.fetchProfiles()).thenReturn(null);
 
         // Call the method we're testing
         Page<Map<String, Object>> result = postService.getFeed(expectedDto, "distance");
@@ -1767,8 +1766,9 @@ class PostServiceTest {
         // Verify strategy was called with correct parameters
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+        ArgumentCaptor<List<PostedByData>> dtoProfiles = ArgumentCaptor.forClass(List.class);
 
-        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), null);
+        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1817,8 +1817,9 @@ class PostServiceTest {
         // Verify strategy was called with correct parameters
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+        ArgumentCaptor<List<PostedByData>> dtoProfiles = ArgumentCaptor.forClass(List.class);
 
-        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), null);
+        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1903,12 +1904,12 @@ class PostServiceTest {
         // Verify first post
         PostData firstPost = (PostData) result.getContent().getFirst().get("post");
         assertEquals(post3.getTitle(), firstPost.getTitle());
-        assertEquals(userId, firstPost.getPostedBy());
+        assertEquals(userId, firstPost.getPostedBy().getId());
 
         // Verify second post
         PostData secondPost = (PostData) result.getContent().get(1).get("post");
         assertEquals(post1.getTitle(), secondPost.getTitle());
-        assertEquals(userId, secondPost.getPostedBy());
+        assertEquals(userId, secondPost.getPostedBy().getId());
 
         verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
     }

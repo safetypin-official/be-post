@@ -1,6 +1,5 @@
 package com.safetypin.post.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
@@ -15,7 +14,6 @@ import com.safetypin.post.service.strategy.FeedStrategy;
 import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
@@ -34,8 +32,8 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
-    @Value("${be-auth:localhost:8080}")
-    private String apiEndpoint;
+    //@Value("${be-auth}")
+    private final String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
@@ -45,6 +43,26 @@ public class PostServiceImpl implements PostService {
         this.categoryRepository = categoryRepository;
         this.distanceFeedStrategy = distanceFeedStrategy;
         this.timestampFeedStrategy = timestampFeedStrategy;
+    }
+
+    private static List<LinkedHashMap<String, String>> getLinkedHashMaps(ResponseEntity<AuthResponse> result) {
+        Object data = Objects.requireNonNull(result.getBody()).getData();
+        List<?> rawList = (List<?>) data;
+        List<LinkedHashMap<String, String>> linkedHashMapList = new ArrayList<>();
+
+        for (Object obj : rawList) {
+            if (obj instanceof LinkedHashMap<?, ?> map) {
+                LinkedHashMap<String, String> stringMap = new LinkedHashMap<>();
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    stringMap.put(
+                            String.valueOf(entry.getKey()),
+                            String.valueOf(entry.getValue())  // force String conversion
+                    );
+                }
+                linkedHashMapList.add(stringMap);
+            }
+        }
+        return linkedHashMapList;
     }
 
     // find all (debugging purposes)
@@ -192,14 +210,11 @@ public class PostServiceImpl implements PostService {
         // fetch profiles
         RestTemplate restTemplate = new RestTemplate();
         String uri = apiEndpoint + "/api/profiles"; // or any other uri
-        System.out.println("fetching profiles: " + uri);
         HttpEntity<String> entity = new HttpEntity<>(null, null);
         ResponseEntity<AuthResponse> result = restTemplate.exchange(uri, HttpMethod.GET, entity, AuthResponse.class);
-        ObjectMapper mapper = new ObjectMapper();
 
         try {
-            //return mapper.readValue((JsonParser) Objects.requireNonNull(result.getBody()).getData(), new TypeReference<List<PostedByData>>() {});
-            List<LinkedHashMap<String, String>> linkedHashMapList = (List<LinkedHashMap<String, String>>) Objects.requireNonNull(result.getBody()).getData();
+            List<LinkedHashMap<String, String>> linkedHashMapList = getLinkedHashMaps(result);
 
             List<PostedByData> output = new ArrayList<PostedByData>();
             for (LinkedHashMap<String, String> map : linkedHashMapList) {
@@ -211,7 +226,7 @@ public class PostServiceImpl implements PostService {
                 output.add(postedByData);
             }
             return output;
-        } catch (Exception e) {
+        } catch (ClassCastException e) {
             throw new InvalidPostDataException("Failed parsing profiles");
         }
 

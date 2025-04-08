@@ -119,7 +119,7 @@ class TimestampFeedStrategyTest {
 
         // Assert
         assertEquals(1, result.getTotalElements());
-        assertEquals("Safety Tips", ((PostData) result.getContent().get(0).get("post")).getTitle());
+        assertEquals("Safety Tips", ((PostData) result.getContent().getFirst().get("post")).getTitle());
     }
 
     @Test
