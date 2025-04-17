@@ -1,13 +1,14 @@
 package com.safetypin.post.dto;
 
-import com.safetypin.post.model.Post;
-import com.safetypin.post.model.VoteType;
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import com.safetypin.post.model.Post;
+import com.safetypin.post.model.VoteType;
+
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder
@@ -33,7 +34,6 @@ public class PostData {
      * @return A PostData instance
      */
     public static PostData fromPostAndUserId(Post post, UUID userId, List<PostedByData> profiles) {
-
 
         PostedByData postedByData = new PostedByData(post.getPostedBy(), null, null);
         if (profiles == null || profiles.isEmpty()) {
