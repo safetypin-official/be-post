@@ -1,22 +1,30 @@
 package com.safetypin.post.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.CommentOnComment;
 import com.safetypin.post.model.CommentOnPost;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class CommentServiceImplTest {
 
@@ -40,7 +48,6 @@ class CommentServiceImplTest {
         CommentRequest req = new CommentRequest();
         req.setCaption("Nice post!");
         req.setParentId(postId);
-
 
         Post mockPost = Post.builder()
                 .id(postId)
@@ -78,7 +85,6 @@ class CommentServiceImplTest {
         req.setCaption("Nice post!");
         req.setParentId(postId);
 
-
         when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
         assertThrows(PostNotFoundException.class, () -> commentService.createCommentOnPost(userId, req));
@@ -92,7 +98,6 @@ class CommentServiceImplTest {
         CommentRequest req = new CommentRequest();
         req.setCaption("Nice post!");
         req.setParentId(commentId);
-
 
         CommentOnPost parentComment = CommentOnPost.builder()
                 .id(commentId)
@@ -127,10 +132,141 @@ class CommentServiceImplTest {
         req.setCaption("I agree!");
         req.setParentId(commentId);
 
-
         when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.empty());
 
         assertThrows(PostNotFoundException.class, () -> commentService.createCommentOnComment(userId, req));
         verify(commentOnCommentRepository, never()).save(any());
+    }
+
+    @Test
+    void testDeleteParentComment_Success() {
+        // Prepare test data
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        CommentOnPost comment = CommentOnPost.builder()
+                .id(commentId)
+                .caption("Parent comment")
+                .postedBy(userId) // Same user is deleting
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // Mock repository response
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        // Execute
+        commentService.deleteComment(commentId, userId, false);
+
+        // Verify
+        verify(commentOnPostRepository).findById(commentId);
+        verify(commentOnPostRepository).delete(comment);
+    }
+
+    @Test
+    void testDeleteParentComment_NotFound() {
+        // Prepare test data
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        // Mock repository response
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.empty());
+
+        // Execute and verify
+        assertThrows(PostNotFoundException.class,
+                () -> commentService.deleteComment(commentId, userId, false));
+
+        verify(commentOnPostRepository).findById(commentId);
+        verify(commentOnPostRepository, never()).delete(any());
+    }
+
+    @Test
+    void testDeleteParentComment_Unauthorized() {
+        // Prepare test data
+        UUID commentId = UUID.randomUUID();
+        UUID commentOwnerId = UUID.randomUUID();
+        UUID differentUserId = UUID.randomUUID(); // Different user
+
+        CommentOnPost comment = CommentOnPost.builder()
+                .id(commentId)
+                .caption("Parent comment")
+                .postedBy(commentOwnerId) // Different from the user trying to delete
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // Mock repository response
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        // Execute and verify
+        assertThrows(UnauthorizedAccessException.class,
+                () -> commentService.deleteComment(commentId, differentUserId, false));
+
+        verify(commentOnPostRepository).findById(commentId);
+        verify(commentOnPostRepository, never()).delete(any());
+    }
+
+    @Test
+    void testDeleteChildComment_Success() {
+        // Prepare test data
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        CommentOnComment comment = CommentOnComment.builder()
+                .id(commentId)
+                .caption("Reply comment")
+                .postedBy(userId) // Same user is deleting
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // Mock repository response
+        when(commentOnCommentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        // Execute
+        commentService.deleteComment(commentId, userId, true);
+
+        // Verify
+        verify(commentOnCommentRepository).findById(commentId);
+        verify(commentOnCommentRepository).delete(comment);
+    }
+
+    @Test
+    void testDeleteChildComment_NotFound() {
+        // Prepare test data
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        // Mock repository response
+        when(commentOnCommentRepository.findById(commentId)).thenReturn(Optional.empty());
+
+        // Execute and verify
+        assertThrows(PostNotFoundException.class,
+                () -> commentService.deleteComment(commentId, userId, true));
+
+        verify(commentOnCommentRepository).findById(commentId);
+        verify(commentOnCommentRepository, never()).delete(any());
+    }
+
+    @Test
+    void testDeleteChildComment_Unauthorized() {
+        // Prepare test data
+        UUID commentId = UUID.randomUUID();
+        UUID commentOwnerId = UUID.randomUUID();
+        UUID differentUserId = UUID.randomUUID(); // Different user
+
+        CommentOnComment comment = CommentOnComment.builder()
+                .id(commentId)
+                .caption("Reply comment")
+                .postedBy(commentOwnerId) // Different from the user trying to delete
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // Mock repository response
+        when(commentOnCommentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        // Execute and verify
+        assertThrows(UnauthorizedAccessException.class,
+                () -> commentService.deleteComment(commentId, differentUserId, true));
+
+        verify(commentOnCommentRepository).findById(commentId);
+        verify(commentOnCommentRepository, never()).delete(any());
     }
 }

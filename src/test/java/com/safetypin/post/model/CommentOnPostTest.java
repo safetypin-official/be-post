@@ -1,12 +1,18 @@
 package com.safetypin.post.model;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class CommentOnPostTest {
 
@@ -79,5 +85,207 @@ class CommentOnPostTest {
     void testInstanceOfBasePost() {
         CommentOnPost comment = new CommentOnPost();
         assertInstanceOf(BasePost.class, comment);
+    }
+
+    @Test
+    void testDefaultConstructor() {
+        CommentOnPost comment = new CommentOnPost();
+
+        assertNull(comment.getId());
+        assertNull(comment.getCaption());
+        assertNull(comment.getCreatedAt());
+        assertNull(comment.getParent());
+        assertNull(comment.getPostedBy());
+        assertNull(comment.getComments());
+    }
+
+    @Test
+    void testAllArgsConstructor() {
+        UUID id = UUID.randomUUID();
+        String caption = "Test caption";
+        LocalDateTime createdAt = LocalDateTime.now();
+        Post parent = new Post();
+        UUID postedBy = UUID.randomUUID();
+        List<CommentOnComment> comments = List.of(new CommentOnComment(), new CommentOnComment());
+
+        CommentOnPost comment = new CommentOnPost(parent, comments);
+        comment.setId(id);
+        comment.setCaption(caption);
+        comment.setCreatedAt(createdAt);
+        comment.setPostedBy(postedBy);
+
+        assertEquals(id, comment.getId());
+        assertEquals(caption, comment.getCaption());
+        assertEquals(createdAt, comment.getCreatedAt());
+        assertEquals(parent, comment.getParent());
+        assertEquals(postedBy, comment.getPostedBy());
+        assertEquals(comments, comment.getComments());
+    }
+
+    @Test
+    void testBuilderWithAllFields() {
+        UUID id = UUID.randomUUID();
+        String caption = "Test caption";
+        LocalDateTime createdAt = LocalDateTime.now();
+        UUID postedBy = UUID.randomUUID();
+        Post parent = Post.builder()
+                .id(UUID.randomUUID())
+                .title("Parent title")
+                .caption("Parent caption")
+                .location(0.0, 0.0)
+                .build();
+
+        CommentOnPost comment = CommentOnPost.builder()
+                .id(id)
+                .caption(caption)
+                .createdAt(createdAt)
+                .postedBy(postedBy)
+                .parent(parent)
+                .build();
+
+        assertEquals(id, comment.getId());
+        assertEquals(caption, comment.getCaption());
+        assertEquals(createdAt, comment.getCreatedAt());
+        assertEquals(postedBy, comment.getPostedBy());
+        assertEquals(parent, comment.getParent());
+    }
+
+    @Test
+    void testSetAndGetCaption() {
+        CommentOnPost comment = new CommentOnPost();
+        String caption = "Test caption";
+
+        comment.setCaption(caption);
+
+        assertEquals(caption, comment.getCaption());
+    }
+
+    @Test
+    void testSetAndGetId() {
+        CommentOnPost comment = new CommentOnPost();
+        UUID id = UUID.randomUUID();
+
+        comment.setId(id);
+
+        assertEquals(id, comment.getId());
+    }
+
+    @Test
+    void testSetAndGetPostedBy() {
+        CommentOnPost comment = new CommentOnPost();
+        UUID postedBy = UUID.randomUUID();
+
+        comment.setPostedBy(postedBy);
+
+        assertEquals(postedBy, comment.getPostedBy());
+    }
+
+    @Test
+    void testSetAndGetCreatedAt() {
+        CommentOnPost comment = new CommentOnPost();
+        LocalDateTime createdAt = LocalDateTime.now();
+
+        comment.setCreatedAt(createdAt);
+
+        assertEquals(createdAt, comment.getCreatedAt());
+    }
+
+    @Test
+    void testPrePersistWithExistingCreatedAt() {
+        LocalDateTime existing = LocalDateTime.now().minusDays(1);
+        CommentOnPost comment = new CommentOnPost();
+        comment.setCreatedAt(existing);
+
+        comment.onCreate();
+
+        // The onCreate method always sets a new timestamp, it doesn't check if one
+        // exists
+        assertNotEquals(existing, comment.getCreatedAt());
+    }
+
+    @Test
+    void testEqualsWithDifferentObjects() {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        Post parent1 = Post.builder().id(UUID.randomUUID()).title("Title 1").location(0.0, 0.0).build();
+        Post parent2 = Post.builder().id(UUID.randomUUID()).title("Title 2").location(0.0, 0.0).build();
+
+        CommentOnPost c1 = CommentOnPost.builder()
+                .id(id1)
+                .caption("Caption 1")
+                .parent(parent1)
+                .build();
+
+        CommentOnPost c2 = CommentOnPost.builder()
+                .id(id2)
+                .caption("Caption 2")
+                .parent(parent2)
+                .build();
+
+        assertNotEquals(c1, c2);
+        assertNotEquals(c1.hashCode(), c2.hashCode());
+        assertNotEquals(null, c1);
+        assertNotEquals(new Object(), c1);
+    }
+
+    @Test
+    void testEqualsWithSameObject() {
+        CommentOnPost comment = new CommentOnPost();
+
+        assertEquals(comment, comment);
+        assertEquals(comment.hashCode(), comment.hashCode());
+    }
+
+    @Test
+    void testToString() {
+        UUID id = UUID.randomUUID();
+        Post parent = Post.builder().id(UUID.randomUUID()).title("Parent title").location(0.0, 0.0).build();
+
+        CommentOnPost comment = CommentOnPost.builder()
+                .id(id)
+                .caption("Test comment")
+                .parent(parent)
+                .build();
+
+        String toString = comment.toString();
+
+        assertTrue(toString.contains("id=" + id));
+        assertTrue(toString.contains("caption=Test comment"));
+        assertTrue(toString.contains("parent=" + parent));
+    }
+
+    @Test
+    void testPrePersistBehavior() {
+        // Verify that the @PrePersist annotation works correctly
+        // by checking that the method correctly sets createdAt
+        CommentOnPost comment = new CommentOnPost();
+        assertNull(comment.getCreatedAt());
+
+        // Direct invocation of the method that has the @PrePersist annotation
+        comment.onCreate();
+
+        // The method should always set a new timestamp, regardless of previous value
+        LocalDateTime createdAt = comment.getCreatedAt();
+        assertNotNull(createdAt);
+        assertTrue(createdAt.isBefore(LocalDateTime.now().plusSeconds(1)));
+        assertTrue(createdAt.isAfter(LocalDateTime.now().minusSeconds(10)));
+
+        // Test that the method always sets a new timestamp, even if one already exists
+        LocalDateTime oldTimestamp = comment.getCreatedAt();
+
+        // Wait a small amount of time to ensure timestamps would be different
+        try {
+            Thread.sleep(5);
+        } catch (InterruptedException e) {
+            fail("Test was interrupted");
+        }
+
+        comment.onCreate();
+        LocalDateTime newTimestamp = comment.getCreatedAt();
+
+        // The timestamps should be different because CommentOnPost always sets a new
+        // timestamp
+        // without checking if one already exists
+        assertNotEquals(oldTimestamp, newTimestamp);
     }
 }
