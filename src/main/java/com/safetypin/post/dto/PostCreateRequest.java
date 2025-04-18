@@ -28,5 +28,5 @@ public class PostCreateRequest {
     @JsonProperty(value = "Category", required = true)
     private String category;
 
-    private UUID postedBy;
+    private UUID postedBy; // DEPRECIATED?? @sefriano
 }

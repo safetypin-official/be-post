@@ -38,7 +38,8 @@ public class Post extends BasePost {
     @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
     private transient List<Vote> votes;
 
-    // Additional fields as needed
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private transient List<CommentOnPost> comments;
 
     // Add constructor that accepts latitude and longitude as separate parameters
     public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
