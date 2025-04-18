@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@Table(name = "COMMENT_ON_POST")
 public class CommentOnPost extends BasePost {
     @ManyToOne
     @JoinColumn(nullable = false)
@@ -24,7 +25,7 @@ public class CommentOnPost extends BasePost {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private transient List<CommentOnComment> comments;
 
-    
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());
