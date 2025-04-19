@@ -298,7 +298,7 @@ class CommentServiceImplTest {
         Page<CommentOnPost> result = commentService.getCommentOnPost(postId, pageable);
 
         assertEquals(2, result.getContent().size());
-        assertEquals("First Comment", result.getContent().get(0).getCaption());
+        assertEquals("First Comment", result.getContent().getFirst().getCaption());
     }
 
     @Test
@@ -343,7 +343,7 @@ class CommentServiceImplTest {
         Page<CommentOnComment> result = commentService.getCommentOnComment(commentId, pageable);
 
         assertEquals(2, result.getContent().size());
-        assertEquals("Reply 1", result.getContent().get(0).getCaption());
+        assertEquals("Reply 1", result.getContent().getFirst().getCaption());
     }
 
     @Test
@@ -353,7 +353,7 @@ class CommentServiceImplTest {
 
         when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 commentService.getCommentOnComment(commentId, pageable));
 
 

@@ -30,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,7 +58,6 @@ class CommentControllerTest {
     private UserDetails userDetails;
     private CommentOnPost commentOnPost;
     private CommentOnComment commentOnComment;
-    private Post parentPost;
     private UUID postId;
     private UUID commentId;
 
@@ -73,7 +73,7 @@ class CommentControllerTest {
         validCommentRequest = new CommentRequest("This is a test comment", parentId);
 
         // Setup post with coordinates
-        parentPost = Post.builder()
+        Post parentPost = Post.builder()
                 .id(parentId)
                 .title("Test Post")
                 .caption("Test Content")
@@ -126,7 +126,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Comment created successfully", response.getBody().getMessage());
         assertEquals(commentOnPost, response.getBody().getData());
         verify(commentService).createCommentOnPost(userId, validCommentRequest);
@@ -145,7 +145,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Post not found", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).createCommentOnPost(userId, validCommentRequest);
@@ -164,7 +164,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Invalid comment data", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).createCommentOnPost(userId, validCommentRequest);
@@ -183,7 +183,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Unexpected error"));
         assertNull(response.getBody().getData());
         verify(commentService).createCommentOnPost(userId, validCommentRequest);
@@ -203,7 +203,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Comment created successfully", response.getBody().getMessage());
         assertEquals(commentOnComment, response.getBody().getData());
         verify(commentService).createCommentOnComment(userId, validCommentRequest);
@@ -222,7 +222,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Parent comment not found", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).createCommentOnComment(userId, validCommentRequest);
@@ -241,7 +241,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Invalid reply data", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).createCommentOnComment(userId, validCommentRequest);
@@ -260,7 +260,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Database connection failed"));
         assertNull(response.getBody().getData());
         verify(commentService).createCommentOnComment(userId, validCommentRequest);
@@ -281,7 +281,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Comment and all its replies deleted successfully", response.getBody().getMessage());
 
         // Verify response data contains expected properties
@@ -309,7 +309,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Comment not found", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).deleteComment(commentId, userId, false);
@@ -329,7 +329,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("User not authorized to delete this comment", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).deleteComment(commentId, userId, false);
@@ -348,7 +348,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Database error"));
         assertNull(response.getBody().getData());
         verify(commentService).deleteComment(commentId, userId, false);
@@ -369,7 +369,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Reply deleted successfully", response.getBody().getMessage());
 
         // Verify response data contains expected properties
@@ -397,7 +397,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Reply not found", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).deleteComment(commentId, userId, true);
@@ -417,7 +417,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("User not authorized to delete this reply", response.getBody().getMessage());
         assertNull(response.getBody().getData());
         verify(commentService).deleteComment(commentId, userId, true);
@@ -436,7 +436,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Server error"));
         assertNull(response.getBody().getData());
         verify(commentService).deleteComment(commentId, userId, true);
@@ -457,7 +457,7 @@ class CommentControllerTest {
         // Verify
         assertResponseNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Error processing request"));
         assertTrue(response.getBody().getMessage().contains("Test exception"));
         assertNull(response.getBody().getData());
@@ -474,7 +474,7 @@ class CommentControllerTest {
         // Verify error response was generated
         assertResponseNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
+        assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Error processing request"));
     }
 
@@ -494,7 +494,7 @@ class CommentControllerTest {
             // Verify
             assertResponseNotNull(response);
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
-            assertTrue(response.getBody().isSuccess());
+            assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         }
     }
 
@@ -639,7 +639,7 @@ class CommentControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(((Map<?, ?>) response.getBody().getData()).containsKey("content"));
     }
 
@@ -658,7 +658,7 @@ class CommentControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().isSuccess());
+        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(((Map<?, ?>) response.getBody().getData()).containsKey("content"));
     }
 

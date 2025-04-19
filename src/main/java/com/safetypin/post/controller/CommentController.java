@@ -43,9 +43,9 @@ public class CommentController {
 
         return executeWithExceptionHandling(() -> {
             // Get user details from security context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            UUID userId = userDetails.getUserId();
+//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//            UUID userId = userDetails.getUserId();
 
             // userId is not required to fetch comments
 
@@ -72,9 +72,9 @@ public class CommentController {
 
         return executeWithExceptionHandling(() -> {
             // Get user details from security context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            UUID userId = userDetails.getUserId();
+//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//            UUID userId = userDetails.getUserId();
 
             // userId is not required to fetch comments
 
