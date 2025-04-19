@@ -11,6 +11,9 @@ import com.safetypin.post.model.CommentOnPost;
 import com.safetypin.post.service.CommentService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +32,65 @@ import java.util.function.Supplier;
 public class CommentController {
 
     private final CommentService commentService;
+
+
+    // fetch comments on post
+    @GetMapping("/onpost/{postId}")
+    public ResponseEntity<PostResponse> getCommentOnPost(
+            @PathVariable UUID postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
+            // userId is not required to fetch comments
+
+            // make pageable
+            Pageable pageable = PageRequest.of(page, size);
+
+            // Create the comment
+            Page<CommentOnPost> comments = commentService.getCommentOnPost(postId, pageable);
+
+            // Create response with pagination data
+            Map<String, Object> paginationData = createPaginationData(comments);
+
+            // Return success response
+            return createSuccessResponse(paginationData);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // fetch comments on post
+    @GetMapping("/oncomment/{commentId}")
+    public ResponseEntity<PostResponse> getCommentOnComment(
+            @PathVariable UUID commentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
+            // userId is not required to fetch comments
+
+            // make pageable
+            Pageable pageable = PageRequest.of(page, size);
+
+            // Create the comment
+            Page<CommentOnComment> comments = commentService.getCommentOnComment(commentId, pageable);
+
+            // Create response with pagination data
+            Map<String, Object> paginationData = createPaginationData(comments);
+
+            // Return success response
+            return createSuccessResponse(paginationData);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     // create commentOnPost
     @PostMapping("/onpost")
@@ -142,6 +204,7 @@ public class CommentController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+
     // Generic exception handler for controller methods
     private ResponseEntity<PostResponse> executeWithExceptionHandling(
             Supplier<ResponseEntity<PostResponse>> action,
@@ -174,5 +237,17 @@ public class CommentController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
+    }
+
+    // Helper method to create pagination data from a Page object
+    private <T> Map<String, Object> createPaginationData(Page<T> page) {
+        return Map.of(
+                "content", page.getContent(),
+                "totalPages", page.getTotalPages(),
+                "totalElements", page.getTotalElements(),
+                "currentPage", page.getNumber(),
+                "pageSize", page.getSize(),
+                "hasNext", page.hasNext(),
+                "hasPrevious", page.hasPrevious());
     }
 }
