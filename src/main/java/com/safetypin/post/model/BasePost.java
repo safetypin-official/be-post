@@ -2,7 +2,9 @@ package com.safetypin.post.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
@@ -14,6 +16,8 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @SuperBuilder
+@Getter
+@Setter
 public abstract class BasePost implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

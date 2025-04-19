@@ -1,14 +1,8 @@
 package com.safetypin.post.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
@@ -20,9 +14,12 @@ import java.time.LocalDateTime;
 @SuperBuilder(builderMethodName = "superBuilder")
 @ToString(callSuper = true)
 @Table(name = "COMMENT_ON_COMMENT")
+@Getter
+@Setter
 public class CommentOnComment extends BasePost {
     @ManyToOne
     @JoinColumn(nullable = false)
+    @JsonIgnore
     public CommentOnPost parent;
 
     // Static builder method that sets default values

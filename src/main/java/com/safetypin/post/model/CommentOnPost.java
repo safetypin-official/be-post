@@ -1,10 +1,8 @@
 package com.safetypin.post.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
@@ -17,12 +15,16 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 @Table(name = "COMMENT_ON_POST")
+@Getter
+@Setter
 public class CommentOnPost extends BasePost {
     @ManyToOne
     @JoinColumn(nullable = false)
+    @JsonIgnore
     public Post parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private transient List<CommentOnComment> comments;
 
 
