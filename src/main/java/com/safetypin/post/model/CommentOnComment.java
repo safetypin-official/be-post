@@ -29,8 +29,6 @@ public class CommentOnComment extends BasePost {
 
     @PrePersist
     protected void onCreate() {
-        if (this.getCreatedAt() == null) {
-            this.setCreatedAt(LocalDateTime.now());
-        }
+        this.setCreatedAt(LocalDateTime.now());
     }
 }

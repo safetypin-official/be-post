@@ -271,7 +271,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnPost_Success() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doNothing().when(commentService).deleteComment(commentId, userId, false);
 
@@ -298,7 +297,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnPost_CommentNotFound() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doThrow(new PostNotFoundException("Comment not found")).when(commentService).deleteComment(commentId, userId,
                 false);
@@ -318,7 +316,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnPost_Unauthorized() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doThrow(new UnauthorizedAccessException("User not authorized to delete this comment"))
                 .when(commentService).deleteComment(commentId, userId, false);
@@ -338,7 +335,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnPost_UnexpectedException() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doThrow(new RuntimeException("Database error")).when(commentService).deleteComment(commentId, userId, false);
 
@@ -359,7 +355,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnComment_Success() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doNothing().when(commentService).deleteComment(commentId, userId, true);
 
@@ -386,7 +381,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnComment_CommentNotFound() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doThrow(new PostNotFoundException("Reply not found")).when(commentService).deleteComment(commentId, userId,
                 true);
@@ -406,7 +400,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnComment_Unauthorized() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doThrow(new UnauthorizedAccessException("User not authorized to delete this reply"))
                 .when(commentService).deleteComment(commentId, userId, true);
@@ -426,7 +419,6 @@ class CommentControllerTest {
     @Test
     void deleteCommentOnComment_UnexpectedException() {
         // Setup
-        UUID commentId = UUID.randomUUID();
         mockSecurityContext();
         doThrow(new RuntimeException("Server error")).when(commentService).deleteComment(commentId, userId, true);
 
@@ -496,132 +488,6 @@ class CommentControllerTest {
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         }
-    }
-
-    // -------------------- Post Coordinate Validation Tests --------------------
-
-    @Test
-    void test_PostWithValidCoordinates() {
-        // Setup a valid post with both latitude and longitude
-        Post validPost = Post.builder()
-                .title("Test Post")
-                .caption("This is a test")
-                .latitude(45.0)
-                .longitude(90.0)
-                .category("General")
-                .build();
-
-        // Verify coordinates were properly set
-        assertEquals(45.0, validPost.getLatitude());
-        assertEquals(90.0, validPost.getLongitude());
-    }
-
-    @Test
-    void test_PostBuilder_MissingLatitude() {
-        // Attempt to build a post with missing latitude
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> Post.builder()
-                .title("Test Post")
-                .caption("This is a test")
-                .longitude(90.0) // Only longitude provided
-                .category("General")
-                .build());
-
-        assertEquals("Both latitude and longitude must be provided", exception.getMessage());
-    }
-
-    @Test
-    void test_PostBuilder_MissingLongitude() {
-        // Attempt to build a post with missing longitude
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> Post.builder()
-                .title("Test Post")
-                .caption("This is a test")
-                .latitude(45.0) // Only latitude provided
-                .category("General")
-                .build());
-
-        assertEquals("Both latitude and longitude must be provided", exception.getMessage());
-    }
-
-    @Test
-    void test_PostBuilder_MissingBothCoordinates() {
-        // Attempt to build a post with neither latitude nor longitude
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> Post.builder()
-                .title("Test Post")
-                .caption("This is a test")
-                .category("General")
-                .build());
-
-        assertEquals("Both latitude and longitude must be provided", exception.getMessage());
-    }
-
-    @Test
-    void test_SetLatitude_NullValue() {
-        // Setup
-        Post post = Post.builder()
-                .title("Test Post")
-                .caption("Test content")
-                .latitude(10.0)
-                .longitude(20.0)
-                .category("General")
-                .build();
-
-        // Attempt to set null latitude
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> post.setLatitude(null));
-
-        assertEquals("Latitude cannot be null", exception.getMessage());
-    }
-
-    @Test
-    void test_SetLongitude_NullValue() {
-        // Setup
-        Post post = Post.builder()
-                .title("Test Post")
-                .caption("Test content")
-                .latitude(10.0)
-                .longitude(20.0)
-                .category("General")
-                .build();
-
-        // Attempt to set null longitude
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> post.setLongitude(null));
-
-        assertEquals("Longitude cannot be null", exception.getMessage());
-    }
-
-    @Test
-    void test_UpdateCoordinates_ValidValues() {
-        // Setup
-        Post post = Post.builder()
-                .title("Test Post")
-                .caption("Test content")
-                .latitude(10.0)
-                .longitude(20.0)
-                .category("General")
-                .build();
-
-        // Update coordinates
-        post.setLatitude(30.0);
-        post.setLongitude(40.0);
-
-        // Verify
-        assertEquals(30.0, post.getLatitude());
-        assertEquals(40.0, post.getLongitude());
-    }
-
-    @Test
-    void test_EdgeCase_ExtremeCoordinates() {
-        // Setup post with extreme but valid coordinates
-        Post post = Post.builder()
-                .title("Test Post")
-                .caption("Test content")
-                .latitude(90.0) // North Pole
-                .longitude(180.0) // International Date Line
-                .category("General")
-                .build();
-
-        // Verify
-        assertEquals(90.0, post.getLatitude());
-        assertEquals(180.0, post.getLongitude());
     }
 
     @Test

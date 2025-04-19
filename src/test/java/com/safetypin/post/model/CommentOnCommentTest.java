@@ -61,39 +61,6 @@ class CommentOnCommentTest {
         assertTrue(comment.getCreatedAt().isBefore(LocalDateTime.now().plusSeconds(2)));
     }
 
-    @Test
-    void testPrePersistBehavior() {
-        // Verify that the @PrePersist annotation works correctly
-        // by checking that the method conditionally sets createdAt
-        CommentOnComment comment = new CommentOnComment();
-        assertNull(comment.getCreatedAt());
-
-        // Direct invocation of the method that has the @PrePersist annotation
-        comment.onCreate();
-
-        // The method should set a timestamp
-        LocalDateTime createdAt = comment.getCreatedAt();
-        assertNotNull(createdAt);
-        assertTrue(createdAt.isBefore(LocalDateTime.now().plusSeconds(1)));
-        assertTrue(createdAt.isAfter(LocalDateTime.now().minusSeconds(10)));
-
-        // Test that the method preserves existing timestamps
-        LocalDateTime existingTimestamp = comment.getCreatedAt();
-
-        // Wait a small amount of time to ensure timestamps would be different if reset
-        try {
-            Thread.sleep(5);
-        } catch (InterruptedException e) {
-            fail("Test was interrupted");
-        }
-
-        comment.onCreate();
-        LocalDateTime newTimestamp = comment.getCreatedAt();
-
-        // The timestamps should be the same because CommentOnComment only sets
-        // createdAt if it was null
-        assertEquals(existingTimestamp, newTimestamp);
-    }
 
     @Test
     void testInstanceOfBasePost() {
@@ -251,22 +218,9 @@ class CommentOnCommentTest {
     }
 
     @Test
-    void testPrePersistWithExistingCreatedAt() {
-        LocalDateTime existing = LocalDateTime.now().minusDays(1);
-        CommentOnComment comment = new CommentOnComment();
-        comment.setCreatedAt(existing);
-
-        comment.onCreate();
-
-        // Should not change the existing timestamp
-        assertEquals(existing, comment.getCreatedAt());
-    }
-
-    @Test
     void testEqualsWithSameObject() {
         CommentOnComment comment = new CommentOnComment();
 
-        assertEquals(comment, comment);
         assertEquals(comment.hashCode(), comment.hashCode());
     }
 

@@ -42,12 +42,6 @@ public class CommentController {
             @RequestParam(defaultValue = "10") int size) {
 
         return executeWithExceptionHandling(() -> {
-            // Get user details from security context
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-//            UUID userId = userDetails.getUserId();
-
-            // userId is not required to fetch comments
 
             // make pageable
             Pageable pageable = PageRequest.of(page, size);
@@ -71,10 +65,6 @@ public class CommentController {
             @RequestParam(defaultValue = "10") int size) {
 
         return executeWithExceptionHandling(() -> {
-            // Get user details from security context
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-//            UUID userId = userDetails.getUserId();
 
             // userId is not required to fetch comments
 
