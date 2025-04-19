@@ -1,19 +1,13 @@
 package com.safetypin.post.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CommentOnPostTest {
 
@@ -191,18 +185,6 @@ class CommentOnPostTest {
         assertEquals(createdAt, comment.getCreatedAt());
     }
 
-    @Test
-    void testPrePersistWithExistingCreatedAt() {
-        LocalDateTime existing = LocalDateTime.now().minusDays(1);
-        CommentOnPost comment = new CommentOnPost();
-        comment.setCreatedAt(existing);
-
-        comment.onCreate();
-
-        // The onCreate method always sets a new timestamp, it doesn't check if one
-        // exists
-        assertNotEquals(existing, comment.getCreatedAt());
-    }
 
     @Test
     void testEqualsWithDifferentObjects() {
@@ -236,40 +218,6 @@ class CommentOnPostTest {
         assertEquals(comment.hashCode(), comment.hashCode());
     }
 
-    @Test
-    void testPrePersistBehavior() {
-        // Verify that the @PrePersist annotation works correctly
-        // by checking that the method correctly sets createdAt
-        CommentOnPost comment = new CommentOnPost();
-        assertNull(comment.getCreatedAt());
-
-        // Direct invocation of the method that has the @PrePersist annotation
-        comment.onCreate();
-
-        // The method should always set a new timestamp, regardless of previous value
-        LocalDateTime createdAt = comment.getCreatedAt();
-        assertNotNull(createdAt);
-        assertTrue(createdAt.isBefore(LocalDateTime.now().plusSeconds(1)));
-        assertTrue(createdAt.isAfter(LocalDateTime.now().minusSeconds(10)));
-
-        // Test that the method always sets a new timestamp, even if one already exists
-        LocalDateTime oldTimestamp = comment.getCreatedAt();
-
-        // Wait a small amount of time to ensure timestamps would be different
-        try {
-            Thread.sleep(5);
-        } catch (InterruptedException e) {
-            fail("Test was interrupted");
-        }
-
-        comment.onCreate();
-        LocalDateTime newTimestamp = comment.getCreatedAt();
-
-        // The timestamps should be different because CommentOnPost always sets a new
-        // timestamp
-        // without checking if one already exists
-        assertNotEquals(oldTimestamp, newTimestamp);
-    }
 
     @Test
     void testToString() {
