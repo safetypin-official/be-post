@@ -3,6 +3,7 @@ package com.safetypin.post.service;
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
+import com.safetypin.post.model.BasePost;
 import com.safetypin.post.model.CommentOnComment;
 import com.safetypin.post.model.CommentOnPost;
 import com.safetypin.post.model.Post;
@@ -11,8 +12,13 @@ import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +29,50 @@ public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
     private final CommentOnPostRepository commentOnPostRepository;
     private final CommentOnCommentRepository commentOnCommentRepository;
+
+    // fetch comment on post
+    public Page<CommentOnPost> getCommentOnPost(UUID postId, Pageable pageable) {
+        if (postRepository.findById(postId).isEmpty()) {
+            throw new IllegalArgumentException("PostId is not found");
+        }
+
+        List<CommentOnPost> comments = commentOnPostRepository.findByParentId(postId);
+
+        // sort by timestamp
+        List<CommentOnPost> sortedComments = comments.stream()
+                .sorted(Comparator.comparing(BasePost::getCreatedAt))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
+
+        List<CommentOnPost> pageContent = start >= sortedComments.size() ? Collections.emptyList()
+                : sortedComments.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, sortedComments.size());
+    }
+
+    // fetch comment on comment
+    public Page<CommentOnComment> getCommentOnComment(UUID commentId, Pageable pageable) {
+        if (commentOnPostRepository.findById(commentId).isEmpty()) {
+            throw new IllegalArgumentException("CommentId is not found");
+        }
+
+        List<CommentOnComment> comments = commentOnCommentRepository.findByParentId(commentId);
+
+        // sort by timestamp
+        List<CommentOnComment> sortedComments = comments.stream()
+                .sorted(Comparator.comparing(BasePost::getCreatedAt))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
+
+        List<CommentOnComment> pageContent = start >= sortedComments.size() ? Collections.emptyList()
+                : sortedComments.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, sortedComments.size());
+    }
 
     // create comment on post
     public CommentOnPost createCommentOnPost(UUID userId, CommentRequest req) {
