@@ -11,8 +11,12 @@ import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -262,5 +266,96 @@ class CommentServiceImplTest {
 
         verify(commentOnCommentRepository).findById(commentId);
         verify(commentOnCommentRepository, never()).delete(any());
+    }
+
+    @Test
+    void getCommentOnPost_shouldReturnComments_whenPostExists() {
+        UUID postId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Post post = new Post.Builder()
+                .id(postId)
+                .title("Test")
+                .caption("Caption")
+                .location(10.0, 20.0)
+                .build();
+
+        CommentOnPost comment1 = CommentOnPost.builder()
+                .id(UUID.randomUUID())
+                .caption("First Comment")
+                .createdAt(LocalDateTime.now().minusMinutes(10))
+                .build();
+
+        CommentOnPost comment2 = CommentOnPost.builder()
+                .id(UUID.randomUUID())
+                .caption("Second Comment")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+        when(commentOnPostRepository.findByParentId(postId)).thenReturn(List.of(comment1, comment2));
+
+        Page<CommentOnPost> result = commentService.getCommentOnPost(postId, pageable);
+
+        assertEquals(2, result.getContent().size());
+        assertEquals("First Comment", result.getContent().get(0).getCaption());
+    }
+
+    @Test
+    void getCommentOnPost_shouldThrowException_whenPostDoesNotExist() {
+        UUID postId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(postRepository.findById(postId)).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                commentService.getCommentOnPost(postId, pageable));
+
+        assertEquals("PostId is not found", exception.getMessage());
+    }
+
+    @Test
+    void getCommentOnComment_shouldReturnComments_whenCommentExists() {
+        UUID commentId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        CommentOnPost parentComment = CommentOnPost.builder()
+                .id(commentId)
+                .caption("Parent Comment")
+                .createdAt(LocalDateTime.now().minusHours(1))
+                .build();
+
+        CommentOnComment reply1 = CommentOnComment.builder()
+                .id(UUID.randomUUID())
+                .caption("Reply 1")
+                .createdAt(LocalDateTime.now().minusMinutes(30))
+                .build();
+
+        CommentOnComment reply2 = CommentOnComment.builder()
+                .id(UUID.randomUUID())
+                .caption("Reply 2")
+                .createdAt(LocalDateTime.now().minusMinutes(10))
+                .build();
+
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(parentComment));
+        when(commentOnCommentRepository.findByParentId(commentId)).thenReturn(List.of(reply1, reply2));
+
+        Page<CommentOnComment> result = commentService.getCommentOnComment(commentId, pageable);
+
+        assertEquals(2, result.getContent().size());
+        assertEquals("Reply 1", result.getContent().get(0).getCaption());
+    }
+
+    @Test
+    void getCommentOnComment_shouldThrowException_whenCommentDoesNotExist() {
+        UUID commentId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                commentService.getCommentOnComment(commentId, pageable));
+
+
     }
 }
