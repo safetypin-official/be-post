@@ -355,7 +355,47 @@ class CommentServiceImplTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 commentService.getCommentOnComment(commentId, pageable));
-
-
     }
+
+
+    // tests for when page offset is greater than comment counts
+    @Test
+    void getCommentOnPost_shouldReturnEmptyPage_whenOffsetIsGreaterThanCommentCount() {
+        UUID postId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(10, 10); // Offset is greater than comment count
+
+        Post post = new Post.Builder()
+                .id(postId)
+                .title("Test")
+                .caption("Caption")
+                .location(10.0, 20.0)
+                .build();
+
+        when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+        when(commentOnPostRepository.findByParentId(postId)).thenReturn(List.of());
+
+        Page<CommentOnPost> result = commentService.getCommentOnPost(postId, pageable);
+
+        assertEquals(0, result.getContent().size());
+    }
+
+    @Test
+    void getCommentOnComment_shouldReturnEmptyPage_whenOffsetIsGreaterThanCommentCount() {
+        UUID commentId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(10, 10); // Offset is greater than comment count
+
+        CommentOnPost parentComment = CommentOnPost.builder()
+                .id(commentId)
+                .caption("Parent Comment")
+                .createdAt(LocalDateTime.now().minusHours(1))
+                .build();
+
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(parentComment));
+        when(commentOnCommentRepository.findByParentId(commentId)).thenReturn(List.of());
+
+        Page<CommentOnComment> result = commentService.getCommentOnComment(commentId, pageable);
+
+        assertEquals(0, result.getContent().size());
+    }
+
 }
