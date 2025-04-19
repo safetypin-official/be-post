@@ -1,14 +1,13 @@
 package com.safetypin.post.dto;
 
+import com.safetypin.post.model.Post;
+import com.safetypin.post.model.VoteType;
+import lombok.Builder;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
-import com.safetypin.post.model.Post;
-import com.safetypin.post.model.VoteType;
-
-import lombok.Builder;
-import lombok.Data;
 
 @Data
 @Builder
@@ -36,9 +35,7 @@ public class PostData {
     public static PostData fromPostAndUserId(Post post, UUID userId, List<PostedByData> profiles) {
 
         PostedByData postedByData = new PostedByData(post.getPostedBy(), null, null);
-        if (profiles == null || profiles.isEmpty()) {
-            // can't fetch postedBy
-        } else {
+        if (profiles != null && !profiles.isEmpty()) {
             // iterate profiles
             PostedByData profileResponse = null;
             for (PostedByData profile : profiles) {
@@ -47,16 +44,13 @@ public class PostData {
                     break;
                 }
             }
-            if (profileResponse == null) {
-                // can't fetch postedBy
-            } else {
+            if (profileResponse != null) {
                 postedByData = PostedByData.builder()
                         .id(userId)
                         .profilePicture(profileResponse.getProfilePicture())
                         .name(profileResponse.getName())
                         .build();
             }
-
         }
 
         return PostData.builder()

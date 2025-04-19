@@ -103,7 +103,7 @@ public class PostController {
             Page<Post> postsPage = postService.findAllPaginated(pageable);
 
             // fetch profiles
-            List<PostedByData> profileList = null;
+            List<PostedByData> profileList;
             profileList = postService.fetchProfiles();
 
             List<PostedByData> finalProfileList = profileList;

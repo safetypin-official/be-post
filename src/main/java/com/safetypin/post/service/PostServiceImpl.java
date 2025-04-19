@@ -216,7 +216,7 @@ public class PostServiceImpl implements PostService {
         try {
             List<LinkedHashMap<String, String>> linkedHashMapList = getLinkedHashMaps(result);
 
-            List<PostedByData> output = new ArrayList<PostedByData>();
+            List<PostedByData> output = new ArrayList<>();
             for (LinkedHashMap<String, String> map : linkedHashMapList) {
                 PostedByData postedByData = PostedByData.builder()
                         .name(map.get("name"))

@@ -21,7 +21,6 @@ class DistanceFeedStrategyTest {
     private DistanceFeedStrategy strategy;
     private List<Post> posts;
     private UUID testUserId;
-    private LocalDateTime now;
     private LocalDateTime yesterday;
     private LocalDateTime lastWeek;
 
@@ -29,9 +28,9 @@ class DistanceFeedStrategyTest {
     void setUp() {
         strategy = new DistanceFeedStrategy();
         testUserId = UUID.randomUUID();
-        now = LocalDateTime.now();
-        yesterday = now.minusDays(1);
-        lastWeek = now.minusWeeks(1);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime yesterday = now.minusDays(1);
+        LocalDateTime lastWeek = now.minusWeeks(1);
 
         // Create test posts with different locations and properties
         Post post1 = Post.builder()
