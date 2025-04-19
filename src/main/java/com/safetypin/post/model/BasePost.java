@@ -2,6 +2,10 @@ package com.safetypin.post.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -10,6 +14,10 @@ import java.util.UUID;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @Data
+@NoArgsConstructor
+@SuperBuilder
+@Getter
+@Setter
 public abstract class BasePost implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

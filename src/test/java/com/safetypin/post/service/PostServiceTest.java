@@ -359,7 +359,9 @@ class PostServiceTest {
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testFindById_Success() {
@@ -377,9 +379,7 @@ class PostServiceTest {
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testFindById_NotFound() {
@@ -442,6 +442,8 @@ class PostServiceTest {
         verify(postRepository).findById(postId);
         verify(postRepository).delete(post);
     }
+
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testDeletePost_UnauthorizedAccess() {
