@@ -17,6 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,6 +28,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,10 +58,14 @@ class CommentControllerTest {
     private CommentOnPost commentOnPost;
     private CommentOnComment commentOnComment;
     private Post parentPost;
+    private UUID postId;
+    private UUID commentId;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
+        postId = UUID.randomUUID();
+        commentId = UUID.randomUUID();
         userDetails = new UserDetails("USER", true, userId, "Test User");
 
         // Setup comment request
@@ -614,4 +623,79 @@ class CommentControllerTest {
         assertEquals(90.0, post.getLatitude());
         assertEquals(180.0, post.getLongitude());
     }
+
+    @Test
+    void testGetCommentOnPost_success() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<CommentOnPost> mockPage = new PageImpl<>(Collections.singletonList(commentOnPost));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(commentService.getCommentOnPost(postId, pageable)).thenReturn(mockPage);
+
+        ResponseEntity<PostResponse> response = commentController.getCommentOnPost(postId, 0, 10);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isSuccess());
+        assertTrue(((Map<?, ?>) response.getBody().getData()).containsKey("content"));
+    }
+
+    @Test
+    void testGetCommentOnComment_success() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<CommentOnComment> mockPage = new PageImpl<>(Collections.singletonList(commentOnComment));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(commentService.getCommentOnComment(commentId, pageable)).thenReturn(mockPage);
+
+        ResponseEntity<PostResponse> response = commentController.getCommentOnComment(commentId, 0, 10);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isSuccess());
+        assertTrue(((Map<?, ?>) response.getBody().getData()).containsKey("content"));
+    }
+
+    @Test
+    void testGetCommentOnPost_postNotFound_shouldReturnErrorResponse() {
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(commentService.getCommentOnPost(postId, pageable))
+                .thenThrow(new IllegalArgumentException("PostId is not found"));
+
+        ResponseEntity<PostResponse> response = commentController.getCommentOnPost(postId, 0, 10);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Error processing request: PostId is not found", response.getBody().getMessage());
+    }
+
+    @Test
+    void testGetCommentOnComment_commentNotFound_shouldReturnErrorResponse() {
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(commentService.getCommentOnComment(commentId, pageable))
+                .thenThrow(new IllegalArgumentException("CommentId is not found"));
+
+        ResponseEntity<PostResponse> response = commentController.getCommentOnComment(commentId, 0, 10);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Error processing request: CommentId is not found", response.getBody().getMessage());
+    }
+
 }
