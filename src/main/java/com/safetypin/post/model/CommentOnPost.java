@@ -24,7 +24,7 @@ public class CommentOnPost extends BasePost {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private transient List<CommentOnComment> comments;
 
-    
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());

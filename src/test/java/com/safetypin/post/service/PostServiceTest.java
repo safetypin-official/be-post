@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
 class PostServiceTest {
 
     private final Category safety = new Category("Safety"),
-                    crime = new Category("Crime");
+            crime = new Category("Crime");
     @Mock
     private PostRepository postRepository;
     @Mock
@@ -249,9 +249,7 @@ class PostServiceTest {
 
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testCreatePost_NonExistentCategory() {
@@ -272,7 +270,9 @@ class PostServiceTest {
         assertEquals("Category does not exist: " + categoryName, exception.getMessage());
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository, never()).save(any(Post.class));
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testCreatePost_RepositoryException() {
@@ -330,8 +330,6 @@ class PostServiceTest {
         verify(postRepository).findById(id);
     }
 
-    // POSITIVE TEST CASES FOR SEARCH POSTS
-
     @Test
     void testCreatePost_NullPostedBy() {
         // Given
@@ -349,6 +347,8 @@ class PostServiceTest {
         assertEquals("User ID (postedBy) is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
+
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testDeletePost_Success() {
@@ -1701,7 +1701,6 @@ class PostServiceTest {
         verifyNoInteractions(distanceFeedStrategy);
     }
 
-
     @Test
     void testFindPostsByUser_Success() {
         // Given
@@ -1781,11 +1780,11 @@ class PostServiceTest {
         // Create 5 posts
         List<Post> userPosts = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-                Post post = new Post();
-                post.setTitle("Post " + i);
-                post.setPostedBy(userId);
-                post.setCreatedAt(now.minusDays(i));
-                userPosts.add(post);
+            Post post = new Post();
+            post.setTitle("Post " + i);
+            post.setPostedBy(userId);
+            post.setCreatedAt(now.minusDays(i));
+            userPosts.add(post);
         }
 
         // Setup expected pages
@@ -1836,4 +1835,6 @@ class PostServiceTest {
         verify(postRepository, times(3))
                 .findByPostedByOrderByCreatedAtDesc(eq(userId), any(Pageable.class));
     }
+
+
 }

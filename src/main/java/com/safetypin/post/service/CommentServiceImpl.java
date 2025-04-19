@@ -1,10 +1,5 @@
 package com.safetypin.post.service;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -14,9 +9,12 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service

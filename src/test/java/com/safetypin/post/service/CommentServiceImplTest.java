@@ -1,21 +1,5 @@
 package com.safetypin.post.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -25,6 +9,16 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class CommentServiceImplTest {
 

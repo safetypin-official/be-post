@@ -1,7 +1,5 @@
 package com.safetypin.post.model;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -11,6 +9,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+
+import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -23,15 +23,15 @@ public class CommentOnComment extends BasePost {
     @JoinColumn(nullable = false)
     public CommentOnPost parent;
 
+    // Static builder method that sets default values
+    public static CommentOnCommentBuilder<?, ?> builder() {
+        return superBuilder().createdAt(LocalDateTime.now());
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.getCreatedAt() == null) {
             this.setCreatedAt(LocalDateTime.now());
         }
-    }
-
-    // Static builder method that sets default values
-    public static CommentOnCommentBuilder<?, ?> builder() {
-        return superBuilder().createdAt(LocalDateTime.now());
     }
 }

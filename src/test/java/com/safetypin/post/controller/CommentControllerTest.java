@@ -1,23 +1,15 @@
 package com.safetypin.post.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
-
+import com.safetypin.post.dto.CommentRequest;
+import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
+import com.safetypin.post.model.CommentOnComment;
+import com.safetypin.post.model.CommentOnPost;
+import com.safetypin.post.model.Post;
+import com.safetypin.post.service.CommentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,16 +23,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.safetypin.post.dto.CommentRequest;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
-import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.exception.PostNotFoundException;
-import com.safetypin.post.exception.UnauthorizedAccessException;
-import com.safetypin.post.model.CommentOnComment;
-import com.safetypin.post.model.CommentOnPost;
-import com.safetypin.post.model.Post;
-import com.safetypin.post.service.CommentService;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CommentControllerTest {
