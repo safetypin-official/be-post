@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @SuperBuilder(builderMethodName = "superBuilder")
 @ToString(callSuper = true)
+@Table(name = "COMMENT_ON_COMMENT")
 public class CommentOnComment extends BasePost {
     @ManyToOne
     @JoinColumn(nullable = false)

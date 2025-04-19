@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@Table(name = "COMMENT_ON_POST")
 public class CommentOnPost extends BasePost {
     @ManyToOne
     @JoinColumn(nullable = false)
