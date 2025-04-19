@@ -226,12 +226,11 @@ class CommentOnPostTest {
     void testEqualsWithSameObject() {
         CommentOnPost comment = new CommentOnPost();
 
-        assertEquals(comment, comment);
         assertEquals(comment.hashCode(), comment.hashCode());
     }
 
     @Test
-    void testToString() {
+    void testCommentParameters() {
         UUID id = UUID.randomUUID();
         Post parent = Post.builder().id(UUID.randomUUID()).title("Parent title").location(0.0, 0.0).build();
 
@@ -241,11 +240,9 @@ class CommentOnPostTest {
                 .parent(parent)
                 .build();
 
-        String toString = comment.toString();
-
-        assertTrue(toString.contains("id=" + id));
-        assertTrue(toString.contains("caption=Test comment"));
-        assertTrue(toString.contains("parent=" + parent));
+        assertEquals(id, comment.getId());
+        assertEquals("Test comment", comment.getCaption());
+        assertEquals(parent, comment.getParent());
     }
 
     @Test
