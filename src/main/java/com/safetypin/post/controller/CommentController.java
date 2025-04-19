@@ -167,12 +167,4 @@ public class CommentController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(errorResponse);
     }
-
-    // Helper method to create success responses
-    private ResponseEntity<PostResponse> createSuccessResponse(Object data) {
-        PostResponse response = new PostResponse(true, null, data);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(response);
-    }
 }

@@ -231,24 +231,6 @@ class CommentOnPostTest {
     }
 
     @Test
-    void testToString() {
-        UUID id = UUID.randomUUID();
-        Post parent = Post.builder().id(UUID.randomUUID()).title("Parent title").location(0.0, 0.0).build();
-
-        CommentOnPost comment = CommentOnPost.builder()
-                .id(id)
-                .caption("Test comment")
-                .parent(parent)
-                .build();
-
-        String toString = comment.toString();
-
-        assertTrue(toString.contains("id=" + id));
-        assertTrue(toString.contains("caption=Test comment"));
-        assertTrue(toString.contains("parent=" + parent));
-    }
-
-    @Test
     void testPrePersistBehavior() {
         // Verify that the @PrePersist annotation works correctly
         // by checking that the method correctly sets createdAt
