@@ -1,7 +1,6 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -17,12 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -32,6 +32,8 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
+    //@Value("${be-auth}")
+    private final String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
@@ -41,6 +43,26 @@ public class PostServiceImpl implements PostService {
         this.categoryRepository = categoryRepository;
         this.distanceFeedStrategy = distanceFeedStrategy;
         this.timestampFeedStrategy = timestampFeedStrategy;
+    }
+
+    private static List<LinkedHashMap<String, String>> getLinkedHashMaps(ResponseEntity<AuthResponse> result) {
+        Object data = Objects.requireNonNull(result.getBody()).getData();
+        List<?> rawList = (List<?>) data;
+        List<LinkedHashMap<String, String>> linkedHashMapList = new ArrayList<>();
+
+        for (Object obj : rawList) {
+            if (obj instanceof LinkedHashMap<?, ?> map) {
+                LinkedHashMap<String, String> stringMap = new LinkedHashMap<>();
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    stringMap.put(
+                            String.valueOf(entry.getKey()),
+                            String.valueOf(entry.getValue())  // force String conversion
+                    );
+                }
+                linkedHashMapList.add(stringMap);
+            }
+        }
+        return linkedHashMapList;
     }
 
     // find all (debugging purposes)
@@ -56,8 +78,17 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post createPost(String title, String content, Double latitude, Double longitude, String category,
-                           UUID postedBy) {
+    public Post createPost(PostCreateRequest postCreateRequest) {
+
+        String title = postCreateRequest.getTitle();
+        String content = postCreateRequest.getCaption();
+        Double latitude = postCreateRequest.getLatitude();
+        Double longitude = postCreateRequest.getLongitude();
+        String category = postCreateRequest.getCategory();
+        UUID postedBy = postCreateRequest.getPostedBy();
+        String imageUrl = postCreateRequest.getImageUrl();
+        String address = postCreateRequest.getAddress();
+
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
@@ -87,6 +118,8 @@ public class PostServiceImpl implements PostService {
                 .location(latitude, longitude)
                 .category(category)
                 .postedBy(postedBy) // Set the postedBy value
+                .imageUrl(imageUrl)
+                .address(address)
                 .build();
 
         try {
@@ -134,8 +167,11 @@ public class PostServiceImpl implements PostService {
         // Get all posts
         List<Post> allPosts = postRepository.findAll();
 
+        // fetch profiles
+        List<PostedByData> profileList = fetchProfiles();
+
         // Apply strategy to posts
-        return strategy.processFeed(allPosts, queryDTO);
+        return strategy.processFeed(allPosts, queryDTO, profileList);
     }
 
     @Override
@@ -147,10 +183,13 @@ public class PostServiceImpl implements PostService {
         // Get all posts with filters and ordered
         Page<Post> allPosts = postRepository.findByPostedByOrderByCreatedAtDesc(postUserId, pageable);
 
+        // fetch profiles
+        List<PostedByData> profileList = fetchProfiles();
+
         // Map to PostData and return page
         return allPosts.map(post -> {
             Map<String, Object> result = new HashMap<>();
-            PostData postData = PostData.fromPostAndUserId(post, postUserId);
+            PostData postData = PostData.fromPostAndUserId(post, postUserId, profileList);
             result.put("post", postData);
             return result;
         });
@@ -164,5 +203,32 @@ public class PostServiceImpl implements PostService {
                 throw new InvalidPostDataException("Category does not exist: " + category);
             }
         }
+    }
+
+    @Override
+    public List<PostedByData> fetchProfiles() {
+        // fetch profiles
+        RestTemplate restTemplate = new RestTemplate();
+        String uri = apiEndpoint + "/api/profiles"; // or any other uri
+        HttpEntity<String> entity = new HttpEntity<>(null, null);
+        ResponseEntity<AuthResponse> result = restTemplate.exchange(uri, HttpMethod.GET, entity, AuthResponse.class);
+
+        try {
+            List<LinkedHashMap<String, String>> linkedHashMapList = getLinkedHashMaps(result);
+
+            List<PostedByData> output = new ArrayList<PostedByData>();
+            for (LinkedHashMap<String, String> map : linkedHashMapList) {
+                PostedByData postedByData = PostedByData.builder()
+                        .name(map.get("name"))
+                        .id(UUID.fromString(map.get("id")))
+                        .profilePicture(map.get("profilePicture"))
+                        .build();
+                output.add(postedByData);
+            }
+            return output;
+        } catch (ClassCastException e) {
+            throw new InvalidPostDataException("Failed parsing profiles");
+        }
+
     }
 }

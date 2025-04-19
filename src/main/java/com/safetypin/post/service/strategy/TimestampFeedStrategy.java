@@ -2,6 +2,7 @@ package com.safetypin.post.service.strategy;
 
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -14,15 +15,16 @@ import java.util.Map;
 @Component
 public class TimestampFeedStrategy extends AbstractFeedStrategy {
 
+
     @Override
-    public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO) {
+    public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, List<PostedByData> profileList) {
         List<Map<String, Object>> filteredPosts = posts.stream()
                 .filter(post -> matchesCategories(post, queryDTO.getCategories()))
                 .filter(post -> matchesKeyword(post, queryDTO.getKeyword()))
                 .filter(post -> matchesDateRange(post, queryDTO.getDateFrom(), queryDTO.getDateTo()))
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
-                    PostData postData = PostData.fromPostAndUserId(post, queryDTO.getUserId());
+                    PostData postData = PostData.fromPostAndUserId(post, queryDTO.getUserId(), profileList);
                     result.put("post", postData);
                     return result;
                 })

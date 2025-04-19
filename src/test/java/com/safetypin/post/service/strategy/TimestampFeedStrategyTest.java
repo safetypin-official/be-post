@@ -77,7 +77,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(Collections.emptyList(), queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(Collections.emptyList(), queryDTO, null);
 
         // Assert
         assertTrue(result.isEmpty());
@@ -93,7 +93,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(3, result.getTotalElements());
@@ -115,11 +115,11 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getTotalElements());
-        assertEquals("Safety Tips", ((PostData) result.getContent().get(0).get("post")).getTitle());
+        assertEquals("Safety Tips", ((PostData) result.getContent().getFirst().get("post")).getTitle());
     }
 
     @Test
@@ -132,7 +132,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getTotalElements());
@@ -149,7 +149,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getTotalElements());
@@ -165,7 +165,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getTotalElements());
@@ -183,7 +183,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getTotalElements());
@@ -198,7 +198,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getContent().size());
@@ -217,7 +217,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(1, result.getContent().size());
@@ -236,7 +236,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertTrue(result.isEmpty());
@@ -268,7 +268,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(testPosts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(testPosts, queryDTO, null);
 
         // Assert
         assertEquals(0, result.getTotalElements());
@@ -285,7 +285,7 @@ class TimestampFeedStrategyTest {
                 .build();
 
         // Act
-        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO);
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
 
         // Assert
         assertEquals(2, result.getTotalElements());

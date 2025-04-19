@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 
-@RequestMapping("/vote")
+@RequestMapping("/posts/vote")
 public class VoteController {
 
     final VoteService voteService;

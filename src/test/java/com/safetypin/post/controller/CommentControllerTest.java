@@ -629,8 +629,6 @@ class CommentControllerTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<CommentOnPost> mockPage = new PageImpl<>(Collections.singletonList(commentOnPost));
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
 
         when(commentService.getCommentOnPost(postId, pageable)).thenReturn(mockPage);
@@ -648,8 +646,6 @@ class CommentControllerTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<CommentOnComment> mockPage = new PageImpl<>(Collections.singletonList(commentOnComment));
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
 
         when(commentService.getCommentOnComment(commentId, pageable)).thenReturn(mockPage);
@@ -666,8 +662,6 @@ class CommentControllerTest {
     void testGetCommentOnPost_postNotFound_shouldReturnErrorResponse() {
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
 
         when(commentService.getCommentOnPost(postId, pageable))
@@ -684,8 +678,6 @@ class CommentControllerTest {
     void testGetCommentOnComment_commentNotFound_shouldReturnErrorResponse() {
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
 
         when(commentService.getCommentOnComment(commentId, pageable))

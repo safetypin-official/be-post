@@ -1,7 +1,9 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostCreateRequest;
 import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
@@ -27,6 +29,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
@@ -128,9 +131,17 @@ class PostServiceTest {
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(category.getName());
+        request.setPostedBy(userId);
+
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                category.getName(), userId);
+        Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -146,9 +157,18 @@ class PostServiceTest {
         Double longitude = 2.0;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                .createPost(title, content, latitude, longitude, categoryName, userId));
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
@@ -158,14 +178,22 @@ class PostServiceTest {
         // Given
         String title = "Test Post";
         String content = "This is a test post";
-        Double latitude = null;
+        Double latitude = null; // Null latitude
         Double longitude = 2.0;
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(category.getName());
+        request.setPostedBy(userId);
+
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                category.getName(), userId);
+        Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -190,13 +218,21 @@ class PostServiceTest {
         String title = "Test Post";
         String content = "This is a test post";
         Double latitude = 1.0;
-        Double longitude = null;
+        Double longitude = null; // Null longitude
         Category category = safety;
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(category.getName());
+        request.setPostedBy(userId);
+
         // When & Then
-        Executable executable = () -> postService.createPost(title, content, latitude, longitude,
-                category.getName(), userId);
+        Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
@@ -228,24 +264,37 @@ class PostServiceTest {
         double longitude = 2.0;
         String categoryName = "Safety";
         UUID userId = UUID.randomUUID();
+        String imageUrl = "http://example.com/image.jpg"; // Test with image URL
 
         Post expectedPost = new Post();
         expectedPost.setTitle(title);
         expectedPost.setCaption(content);
         expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
         expectedPost.setCategory(categoryName);
+        expectedPost.setImageUrl(imageUrl);
+
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+        request.setImageUrl(imageUrl);
 
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
 
         // When
-        Post result = postService.createPost(title, content, latitude, longitude, categoryName, userId);
+        Post result = postService.createPost(request);
 
         // Then
         assertNotNull(result);
         assertEquals(title, result.getTitle());
         assertEquals(content, result.getCaption());
         assertEquals(categoryName, result.getCategory());
+        assertEquals(imageUrl, result.getImageUrl());
 
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
@@ -261,18 +310,25 @@ class PostServiceTest {
         String categoryName = "NonExistentCategory";
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         when(categoryRepository.findByName(categoryName)).thenReturn(null);
 
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                .createPost(title, content, latitude, longitude, categoryName, userId));
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
 
         assertEquals("Category does not exist: " + categoryName, exception.getMessage());
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository, never()).save(any(Post.class));
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testCreatePost_RepositoryException() {
@@ -284,17 +340,28 @@ class PostServiceTest {
         String categoryName = "Safety";
         UUID userId = UUID.randomUUID();
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class))).thenThrow(new RuntimeException("Database error"));
 
         // When & Then
-        PostException exception = assertThrows(PostException.class, () -> postService.createPost(title, content,
-                latitude, longitude, categoryName, userId));
+        PostException exception = assertThrows(PostException.class,
+                () -> postService.createPost(request));
 
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testFindById_Success() {
@@ -340,15 +407,22 @@ class PostServiceTest {
         String categoryName = "Safety";
         UUID postedBy = null; // Null user ID
 
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(postedBy);
+
         // When & Then
-        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, () -> postService
-                .createPost(title, content, latitude, longitude, categoryName, postedBy));
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
 
         assertEquals("User ID (postedBy) is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
     }
-
-    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testDeletePost_Success() {
@@ -368,6 +442,8 @@ class PostServiceTest {
         verify(postRepository).findById(postId);
         verify(postRepository).delete(post);
     }
+
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testDeletePost_UnauthorizedAccess() {
@@ -389,6 +465,95 @@ class PostServiceTest {
         assertEquals("User not authorized to delete this post", exception.getMessage());
         verify(postRepository).findById(postId);
         verify(postRepository, never()).delete(any(Post.class));
+    }
+
+    // Test for imageUrl in createPost
+    @Test
+    void testCreatePost_WithImageUrl() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        double latitude = 1.0;
+        double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+        String imageUrl = "http://example.com/image.jpg";
+
+        Post expectedPost = new Post();
+        expectedPost.setTitle(title);
+        expectedPost.setCaption(content);
+        expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+        expectedPost.setCategory(categoryName);
+        expectedPost.setImageUrl(imageUrl);
+
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+        request.setImageUrl(imageUrl);
+
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
+
+        // When
+        Post result = postService.createPost(request);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(imageUrl, result.getImageUrl());
+
+        // Verify the post saved has the image URL
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(imageUrl, postCaptor.getValue().getImageUrl());
+
+        verify(categoryRepository).findByName(categoryName);
+    }
+
+    @Test
+    void testCreatePost_NullImageUrl() {
+        // Given
+        String title = "Test Post";
+        String content = "This is a test post";
+        double latitude = 1.0;
+        double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+        String imageUrl = null; // Null image URL should be allowed
+
+        Post expectedPost = new Post();
+        expectedPost.setTitle(title);
+        expectedPost.setCaption(content);
+        expectedPost.setLocation(geometryFactory.createPoint(new Coordinate(longitude, latitude)));
+        expectedPost.setCategory(categoryName);
+        expectedPost.setImageUrl(imageUrl);
+
+        // Create PostCreateRequest with the test parameters
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+        request.setImageUrl(imageUrl);
+
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
+
+        // When
+        Post result = postService.createPost(request);
+
+        // Then
+        assertNotNull(result);
+        // No assertion for imageUrl since it's null
+
+        verify(categoryRepository).findByName(categoryName);
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test
@@ -455,7 +620,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -466,7 +631,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -502,7 +667,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -513,7 +678,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -563,7 +728,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -574,7 +739,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -620,7 +785,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -631,7 +796,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -681,7 +846,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -692,7 +857,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -738,7 +903,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -749,7 +914,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -809,7 +974,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -820,7 +985,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -895,7 +1060,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -906,7 +1071,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
         // Verify category repository is not called since we're not validating
         // categories
@@ -953,7 +1118,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -964,7 +1129,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -996,7 +1161,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -1007,7 +1172,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -1042,7 +1207,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1053,7 +1218,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1099,7 +1264,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1110,7 +1275,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1176,7 +1341,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1187,7 +1352,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
         // Verify category repository is not called since we're not validating
         // categories
@@ -1241,7 +1406,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1252,7 +1417,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1306,7 +1471,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1317,7 +1482,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1352,7 +1517,7 @@ class PostServiceTest {
         Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // Call the method we're testing
@@ -1363,7 +1528,7 @@ class PostServiceTest {
         assertTrue(result.getContent().isEmpty());
 
         // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1418,7 +1583,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1429,7 +1594,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
@@ -1443,7 +1608,16 @@ class PostServiceTest {
         Double latitude = 90.0; // Max valid latitude
         Double longitude = 180.0; // Max valid longitude
         String categoryName = "Safety";
+
         UUID userId = UUID.randomUUID();
+
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
 
         Post expectedPost = new Post();
         expectedPost.setTitle(title);
@@ -1455,7 +1629,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(expectedPost);
 
         // When
-        Post result = postService.createPost(title, content, latitude, longitude, categoryName, userId);
+        Post result = postService.createPost(request);
 
         // Then
         assertNotNull(result);
@@ -1480,14 +1654,21 @@ class PostServiceTest {
         String categoryName = "Safety";
         UUID userId = UUID.randomUUID();
 
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
         when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
         when(postRepository.save(any(Post.class)))
                 .thenThrow(new RuntimeException("Database connection error"));
 
         // When & Then
         PostException exception = assertThrows(PostException.class,
-                () -> postService.createPost(title, content, latitude, longitude, categoryName,
-                        userId));
+                () -> postService.createPost(request));
 
         assertTrue(exception.getMessage().contains("Failed to save the post"));
         verify(categoryRepository).findByName(categoryName);
@@ -1527,7 +1708,7 @@ class PostServiceTest {
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
 
         // Setup the strategy mock to return our expected result
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(postsPage);
 
         // Call the method we're testing
@@ -1538,7 +1719,7 @@ class PostServiceTest {
         assertEquals(1, result.getContent().size());
 
         // Verify the correct strategy was called with expected parameters
-        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto));
+        verify(timestampFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
         verify(postRepository).findAll();
     }
 
@@ -1575,7 +1756,7 @@ class PostServiceTest {
                 pageable, 1);
 
         // Setup the strategy mock
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // When
@@ -1587,8 +1768,9 @@ class PostServiceTest {
         // Verify strategy was called with correct parameters
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+        ArgumentCaptor<List<PostedByData>> dtoProfiles = ArgumentCaptor.forClass(List.class);
 
-        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture());
+        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1625,7 +1807,7 @@ class PostServiceTest {
                 pageable, 1);
 
         // Setup the strategy mock
-        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class)))
+        when(timestampFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
                 .thenReturn(expectedResult);
 
         // When
@@ -1637,8 +1819,9 @@ class PostServiceTest {
         // Verify strategy was called with correct parameters
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+        ArgumentCaptor<List<PostedByData>> dtoProfiles = ArgumentCaptor.forClass(List.class);
 
-        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture());
+        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1716,19 +1899,19 @@ class PostServiceTest {
         // When
         Page<Map<String, Object>> result = postService.findPostsByUser(userId, pageable);
 
-        // Then
+        // Then - Last page
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
 
         // Verify first post
         PostData firstPost = (PostData) result.getContent().getFirst().get("post");
         assertEquals(post3.getTitle(), firstPost.getTitle());
-        assertEquals(userId, firstPost.getPostedBy());
+        assertEquals(userId, firstPost.getPostedBy().getId());
 
         // Verify second post
         PostData secondPost = (PostData) result.getContent().get(1).get("post");
         assertEquals(post1.getTitle(), secondPost.getTitle());
-        assertEquals(userId, secondPost.getPostedBy());
+        assertEquals(userId, secondPost.getPostedBy().getId());
 
         verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
     }
@@ -1835,6 +2018,14 @@ class PostServiceTest {
         verify(postRepository, times(3))
                 .findByPostedByOrderByCreatedAtDesc(eq(userId), any(Pageable.class));
     }
+
+    @Test
+    void testFetchProfiles() throws IOException {
+        List<PostedByData> profileList = postService.fetchProfiles();
+        assertNotNull(profileList);
+    }
+
+
 
 
 }
