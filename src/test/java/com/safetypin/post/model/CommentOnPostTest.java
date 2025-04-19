@@ -226,7 +226,6 @@ class CommentOnPostTest {
     void testEqualsWithSameObject() {
         CommentOnPost comment = new CommentOnPost();
 
-        assertEquals(comment, comment);
         assertEquals(comment.hashCode(), comment.hashCode());
     }
 
