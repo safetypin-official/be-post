@@ -28,8 +28,6 @@ class CommentRepositoryTest {
     @Autowired
     private PostRepository postRepository;
 
-    private GeometryFactory geometryFactory;
-
     private Post post;
     private CommentOnPost commentOnPost;
 
@@ -40,7 +38,7 @@ class CommentRepositoryTest {
         postRepository.deleteAll();
 
         // Initialize geometry factory for spatial operations
-        geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
         // Create a test post
         post = new Post();

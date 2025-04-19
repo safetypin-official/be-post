@@ -1,12 +1,19 @@
 package com.safetypin.post.model;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class CommentOnPostTest {
 
@@ -230,22 +237,6 @@ class CommentOnPostTest {
     }
 
     @Test
-    void testCommentParameters() {
-        UUID id = UUID.randomUUID();
-        Post parent = Post.builder().id(UUID.randomUUID()).title("Parent title").location(0.0, 0.0).build();
-
-        CommentOnPost comment = CommentOnPost.builder()
-                .id(id)
-                .caption("Test comment")
-                .parent(parent)
-                .build();
-
-        assertEquals(id, comment.getId());
-        assertEquals("Test comment", comment.getCaption());
-        assertEquals(parent, comment.getParent());
-    }
-
-    @Test
     void testPrePersistBehavior() {
         // Verify that the @PrePersist annotation works correctly
         // by checking that the method correctly sets createdAt
@@ -278,5 +269,91 @@ class CommentOnPostTest {
         // timestamp
         // without checking if one already exists
         assertNotEquals(oldTimestamp, newTimestamp);
+    }
+
+    @Test
+    void testToString() {
+        UUID id = UUID.randomUUID();
+        String caption = "Test caption";
+        LocalDateTime createdAt = LocalDateTime.now();
+        UUID postedBy = UUID.randomUUID();
+        Post parent = new Post();
+        parent.setId(UUID.randomUUID());
+
+        CommentOnPost comment = CommentOnPost.builder()
+                .id(id)
+                .caption(caption)
+                .createdAt(createdAt)
+                .postedBy(postedBy)
+                .parent(parent)
+                .build();
+
+        String toString = comment.toString();
+
+        // Verify toString contains essential fields
+        assertTrue(toString.contains("CommentOnPost"));
+        assertTrue(toString.contains("parent"));
+    }
+
+    @Test
+    void testEqualsWithDifferentCommentsList() {
+        UUID id = UUID.randomUUID();
+        Post parent = new Post();
+        parent.setId(UUID.randomUUID());
+
+        CommentOnComment comment1 = new CommentOnComment();
+        CommentOnComment comment2 = new CommentOnComment();
+
+        List<CommentOnComment> commentList1 = new ArrayList<>();
+        commentList1.add(comment1);
+
+        List<CommentOnComment> commentList2 = new ArrayList<>();
+        commentList2.add(comment2);
+
+        CommentOnPost post1 = CommentOnPost.builder()
+                .id(id)
+                .caption("Test caption")
+                .parent(parent)
+                .build();
+        post1.setComments(commentList1);
+
+        CommentOnPost post2 = CommentOnPost.builder()
+                .id(id)
+                .caption("Test caption")
+                .parent(parent)
+                .build();
+        post2.setComments(commentList2);
+
+        // Since comments are transient, they don't affect equality
+        assertEquals(post1, post2);
+        assertEquals(post1.hashCode(), post2.hashCode());
+    }
+
+    @Test
+    void testNullCommentsList() {
+        CommentOnPost comment = new CommentOnPost();
+        assertNull(comment.getComments());
+
+        comment.setComments(null);
+        assertNull(comment.getComments());
+
+        List<CommentOnComment> emptyList = new ArrayList<>();
+        comment.setComments(emptyList);
+        assertEquals(emptyList, comment.getComments());
+    }
+
+    @Test
+    void testBuilderTogetherWithSetter() {
+        UUID id = UUID.randomUUID();
+        Post parent = new Post();
+
+        CommentOnPost comment = CommentOnPost.builder()
+                .id(id)
+                .build();
+
+        comment.setParent(parent);
+
+        assertEquals(id, comment.getId());
+        assertEquals(parent, comment.getParent());
     }
 }
