@@ -94,15 +94,13 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(PostCreateRequest postCreateRequest) {
-        // Extract data from request
+        // Extract data from request for validation
         String title = postCreateRequest.getTitle();
         String content = postCreateRequest.getCaption();
         Double latitude = postCreateRequest.getLatitude();
         Double longitude = postCreateRequest.getLongitude();
         String category = postCreateRequest.getCategory();
         UUID postedBy = postCreateRequest.getPostedBy();
-        String imageUrl = postCreateRequest.getImageUrl();
-        String address = postCreateRequest.getAddress();
 
         // Get user details from security context
         UserDetails userDetails = getUserDetails();
@@ -111,7 +109,7 @@ public class PostServiceImpl implements PostService {
         validatePostData(title, content, latitude, longitude, category, postedBy, userDetails);
 
         // Create and save the post
-        return createAndSavePost(title, content, latitude, longitude, category, postedBy, imageUrl, address);
+        return createAndSavePost(postCreateRequest);
     }
 
     private UserDetails getUserDetails() {
@@ -172,16 +170,15 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    private Post createAndSavePost(String title, String content, Double latitude, Double longitude,
-            String category, UUID postedBy, String imageUrl, String address) {
+    private Post createAndSavePost(PostCreateRequest request) {
         Post post = new Post.Builder()
-                .title(title)
-                .caption(content)
-                .location(latitude, longitude)
-                .category(category)
-                .postedBy(postedBy)
-                .imageUrl(imageUrl)
-                .address(address)
+                .title(request.getTitle())
+                .caption(request.getCaption())
+                .location(request.getLatitude(), request.getLongitude())
+                .category(request.getCategory())
+                .postedBy(request.getPostedBy())
+                .imageUrl(request.getImageUrl())
+                .address(request.getAddress())
                 .build();
 
         try {
@@ -192,7 +189,6 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    @Override
     public Post findById(UUID id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post not found with id: " + id));
