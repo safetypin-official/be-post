@@ -94,7 +94,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(PostCreateRequest postCreateRequest) {
-
+        // Extract data from request
         String title = postCreateRequest.getTitle();
         String content = postCreateRequest.getCaption();
         Double latitude = postCreateRequest.getLatitude();
@@ -104,11 +104,23 @@ public class PostServiceImpl implements PostService {
         String imageUrl = postCreateRequest.getImageUrl();
         String address = postCreateRequest.getAddress();
 
-        // Get user details from security context to check role-based limits
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        // Get user details from security context
+        UserDetails userDetails = getUserDetails();
 
-        // Apply character limits based on user role
+        // Validate post data
+        validatePostData(title, content, latitude, longitude, category, postedBy, userDetails);
+
+        // Create and save the post
+        return createAndSavePost(title, content, latitude, longitude, category, postedBy, imageUrl, address);
+    }
+
+    private UserDetails getUserDetails() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (UserDetails) authentication.getPrincipal();
+    }
+
+    private void validatePostData(String title, String content, Double latitude, Double longitude,
+            String category, UUID postedBy, UserDetails userDetails) {
         int titleLimit = userDetails.getTitleCharacterLimit();
         int captionLimit = userDetails.getCaptionCharacterLimit();
 
@@ -147,14 +159,16 @@ public class PostServiceImpl implements PostService {
         if (categoryObj == null) {
             throw new InvalidPostDataException("Category does not exist: " + category);
         }
+    }
 
-        // Create the post
+    private Post createAndSavePost(String title, String content, Double latitude, Double longitude,
+            String category, UUID postedBy, String imageUrl, String address) {
         Post post = new Post.Builder()
                 .title(title)
                 .caption(content)
                 .location(latitude, longitude)
                 .category(category)
-                .postedBy(postedBy) // Set the postedBy value
+                .postedBy(postedBy)
                 .imageUrl(imageUrl)
                 .address(address)
                 .build();
