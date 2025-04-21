@@ -48,7 +48,7 @@ public class PostServiceImpl implements PostService {
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
     // @Value("${be-auth}")
-    private static final String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
+    private static final String API_ENDPOINT = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
@@ -246,7 +246,7 @@ public class PostServiceImpl implements PostService {
     public List<PostedByData> fetchProfiles() {
         // fetch profiles
         RestTemplate restTemplate = new RestTemplate();
-        String uri = apiEndpoint + "/api/profiles"; // or any other uri
+        String uri = API_ENDPOINT + "/api/profiles"; // or any other uri
         HttpEntity<String> entity = new HttpEntity<>(null, null);
         ResponseEntity<AuthResponse> result = restTemplate.exchange(uri, HttpMethod.GET, entity, AuthResponse.class);
 
