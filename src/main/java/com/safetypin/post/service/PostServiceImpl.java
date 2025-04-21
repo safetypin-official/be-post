@@ -1,6 +1,30 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.safetypin.post.dto.AuthResponse;
+import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostCreateRequest;
+import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -12,17 +36,8 @@ import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.service.strategy.DistanceFeedStrategy;
 import com.safetypin.post.service.strategy.FeedStrategy;
 import com.safetypin.post.service.strategy.TimestampFeedStrategy;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -32,13 +47,13 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
-    //@Value("${be-auth}")
-    private final String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
+    // @Value("${be-auth}")
+    private static final String API_ENDPOINT = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-                           DistanceFeedStrategy distanceFeedStrategy,
-                           TimestampFeedStrategy timestampFeedStrategy) {
+            DistanceFeedStrategy distanceFeedStrategy,
+            TimestampFeedStrategy timestampFeedStrategy) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.distanceFeedStrategy = distanceFeedStrategy;
@@ -56,7 +71,7 @@ public class PostServiceImpl implements PostService {
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
                     stringMap.put(
                             String.valueOf(entry.getKey()),
-                            String.valueOf(entry.getValue())  // force String conversion
+                            String.valueOf(entry.getValue()) // force String conversion
                     );
                 }
                 linkedHashMapList.add(stringMap);
@@ -89,18 +104,40 @@ public class PostServiceImpl implements PostService {
         String imageUrl = postCreateRequest.getImageUrl();
         String address = postCreateRequest.getAddress();
 
+        // Get user details from security context to check role-based limits
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        // Apply character limits based on user role
+        int titleLimit = userDetails.getTitleCharacterLimit();
+        int captionLimit = userDetails.getCaptionCharacterLimit();
+
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
+
+        if (title.length() > titleLimit) {
+            throw new InvalidPostDataException("Title exceeds the character limit of " + titleLimit +
+                    " characters for " + (userDetails.isPremiumUser() ? "premium" : "free") + " users");
+        }
+
         if (content == null || content.trim().isEmpty()) {
             throw new InvalidPostDataException("Content is required");
         }
+
+        if (content.length() > captionLimit) {
+            throw new InvalidPostDataException("Caption exceeds the character limit of " + captionLimit +
+                    " characters for " + (userDetails.isPremiumUser() ? "premium" : "free") + " users");
+        }
+
         if (latitude == null || longitude == null) {
             throw new InvalidPostDataException("Location coordinates are required");
         }
+
         if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
         }
+
         if (postedBy == null) {
             throw new InvalidPostDataException("User ID (postedBy) is required");
         }
@@ -209,7 +246,7 @@ public class PostServiceImpl implements PostService {
     public List<PostedByData> fetchProfiles() {
         // fetch profiles
         RestTemplate restTemplate = new RestTemplate();
-        String uri = apiEndpoint + "/api/profiles"; // or any other uri
+        String uri = API_ENDPOINT + "/api/profiles"; // or any other uri
         HttpEntity<String> entity = new HttpEntity<>(null, null);
         ResponseEntity<AuthResponse> result = restTemplate.exchange(uri, HttpMethod.GET, entity, AuthResponse.class);
 
