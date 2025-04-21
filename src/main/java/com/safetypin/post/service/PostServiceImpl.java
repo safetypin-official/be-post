@@ -121,8 +121,15 @@ public class PostServiceImpl implements PostService {
 
     private void validatePostData(String title, String content, Double latitude, Double longitude,
             String category, UUID postedBy, UserDetails userDetails) {
+        validateTitleAndContent(title, content, userDetails);
+        validateLocation(latitude, longitude);
+        validateCategoryAndUser(category, postedBy);
+    }
+
+    private void validateTitleAndContent(String title, String content, UserDetails userDetails) {
         int titleLimit = userDetails.getTitleCharacterLimit();
         int captionLimit = userDetails.getCaptionCharacterLimit();
+        String userType = userDetails.isPremiumUser() ? "premium" : "free";
 
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
@@ -130,7 +137,7 @@ public class PostServiceImpl implements PostService {
 
         if (title.length() > titleLimit) {
             throw new InvalidPostDataException("Title exceeds the character limit of " + titleLimit +
-                    " characters for " + (userDetails.isPremiumUser() ? "premium" : "free") + " users");
+                    " characters for " + userType + " users");
         }
 
         if (content == null || content.trim().isEmpty()) {
@@ -139,13 +146,17 @@ public class PostServiceImpl implements PostService {
 
         if (content.length() > captionLimit) {
             throw new InvalidPostDataException("Caption exceeds the character limit of " + captionLimit +
-                    " characters for " + (userDetails.isPremiumUser() ? "premium" : "free") + " users");
+                    " characters for " + userType + " users");
         }
+    }
 
+    private void validateLocation(Double latitude, Double longitude) {
         if (latitude == null || longitude == null) {
             throw new InvalidPostDataException("Location coordinates are required");
         }
+    }
 
+    private void validateCategoryAndUser(String category, UUID postedBy) {
         if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
         }
