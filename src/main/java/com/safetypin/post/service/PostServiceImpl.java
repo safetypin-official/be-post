@@ -48,7 +48,7 @@ public class PostServiceImpl implements PostService {
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
     // @Value("${be-auth}")
-    private final String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
+    private static final String apiEndpoint = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,

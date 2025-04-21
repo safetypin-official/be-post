@@ -16,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1550,8 +1549,6 @@ class PostServiceTest {
                 verify(postRepository).findAll();
         }
 
-
-
         // Test for findPostsByTimestampFeed with complex filters
         @Test
         void testFindPostsByTimestampFeed_WithComplexFilters() throws InvalidCredentialsException {
@@ -2041,7 +2038,7 @@ class PostServiceTest {
         }
 
         @Test
-        void testFetchProfiles() throws IOException {
+        void testFetchProfiles() {
                 List<PostedByData> profileList = postService.fetchProfiles();
                 assertNotNull(profileList);
         }
