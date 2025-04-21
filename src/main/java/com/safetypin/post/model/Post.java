@@ -42,7 +42,8 @@ public class Post extends BasePost {
 
     private String address;
 
-    // Additional fields as needed
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private transient List<CommentOnPost> comments;
 
     // Add constructor that accepts latitude and longitude as separate parameters
     public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {

@@ -28,7 +28,7 @@ public class PostCreateRequest {
     @JsonProperty(value = "Category", required = true)
     private String category;
 
-    private UUID postedBy;
+    private UUID postedBy; // DEPRECIATED?? karena postedBy diambil dari token JWT
     private String imageUrl;
     private String address;
 }
