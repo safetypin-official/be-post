@@ -19,7 +19,7 @@ public class CommentRequest {
     @Size(max = 1000)
     private String caption;
 
-    // Optional: if replying to another comment
+    // parentId can be postId or commentId (depends on the level of comment)
     private UUID parentId;
 
     // userId is not included because it can be taken from SecurityContextHolder
