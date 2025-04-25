@@ -53,7 +53,7 @@ class PostServiceTest {
     @Mock
     private TimestampFeedStrategy timestampFeedStrategy;
     private GeometryFactory geometryFactory;
-    private PostServiceImpl postService;
+    private PostService postService;
     private Post post1, post2, post3;
     private UUID userId1, userId2;
     private Post postWithoutLocation;
@@ -87,7 +87,7 @@ class PostServiceTest {
     @BeforeEach
     void setup() {
         geometryFactory = new GeometryFactory();
-        postService = new PostServiceImpl(postRepository, categoryRepository,
+        postService = new PostService(postRepository, categoryRepository,
                 distanceFeedStrategy, timestampFeedStrategy);
 
         // Create userId
@@ -377,9 +377,7 @@ class PostServiceTest {
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testFindById_NotFound() {
@@ -1074,7 +1072,9 @@ class PostServiceTest {
         // Verify category repository is not called since we're not validating
         // categories
         verifyNoInteractions(categoryRepository);
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testFindPostsByTimestampFeed_WithFilters_Success() throws InvalidCredentialsException {
@@ -1766,7 +1766,7 @@ class PostServiceTest {
         // Verify strategy was called with correct parameters
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
-        ArgumentCaptor<List<PostedByData>> dtoProfiles = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Map<UUID, PostedByData>> dtoProfiles = ArgumentCaptor.forClass(Map.class);
 
         verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
@@ -1817,7 +1817,7 @@ class PostServiceTest {
         // Verify strategy was called with correct parameters
         ArgumentCaptor<List<Post>> postsCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
-        ArgumentCaptor<List<PostedByData>> dtoProfiles = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Map<UUID, PostedByData>> dtoProfiles = ArgumentCaptor.forClass(Map.class);
 
         verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
@@ -1904,12 +1904,12 @@ class PostServiceTest {
         // Verify first post
         PostData firstPost = (PostData) result.getContent().getFirst().get("post");
         assertEquals(post3.getTitle(), firstPost.getTitle());
-        assertEquals(userId, firstPost.getPostedBy().getId());
+        assertEquals(userId, firstPost.getPostedBy().getUserId());
 
         // Verify second post
         PostData secondPost = (PostData) result.getContent().get(1).get("post");
         assertEquals(post1.getTitle(), secondPost.getTitle());
-        assertEquals(userId, secondPost.getPostedBy().getId());
+        assertEquals(userId, secondPost.getPostedBy().getUserId());
 
         verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
     }
@@ -2018,8 +2018,14 @@ class PostServiceTest {
     }
 
     @Test
-    void testFetchProfiles() throws IOException {
-        List<PostedByData> profileList = postService.fetchProfiles();
+    void testFetchPostedByData() throws IOException {
+        Map<UUID, PostedByData> profileList = postService.fetchPostedByData(
+                List.of(
+                        UUID.fromString("c6274749-6601-47aa-b554-96bc1efb6014"),
+                        UUID.fromString("c6274749-6601-47aa-b554-96bc1efb6014"),
+                        UUID.fromString("d7c57574-020a-4aef-a1cb-f8bc99a7bb4c")
+                ));
+        log.info(profileList.toString());
         assertNotNull(profileList);
     }
 
