@@ -21,6 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -91,18 +93,64 @@ public class PostService {
         String imageUrl = postCreateRequest.getImageUrl();
         String address = postCreateRequest.getAddress();
 
+
+        // Get user details from security context
+        UserDetails userDetails = getUserDetails();
+
+        // Validate post data
+        validatePostData(title, content, latitude, longitude, category, postedBy, userDetails);
+
+        // Create and save the post
+        return createAndSavePost(postCreateRequest);
+    }
+
+    private UserDetails getUserDetails() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (UserDetails) authentication.getPrincipal();
+    }
+
+    private void validatePostData(String title, String content, Double latitude, Double longitude,
+                                  String category, UUID postedBy, UserDetails userDetails) {
+        validateTitleAndContent(title, content, userDetails);
+        validateLocation(latitude, longitude);
+        validateCategoryAndUser(category, postedBy);
+    }
+
+    private void validateTitleAndContent(String title, String content, UserDetails userDetails) {
+        int titleLimit = userDetails.getTitleCharacterLimit();
+        int captionLimit = userDetails.getCaptionCharacterLimit();
+        String userType = userDetails.isPremiumUser() ? "premium" : "free";
+
         if (title == null || title.trim().isEmpty()) {
             throw new InvalidPostDataException("Title is required");
         }
+
+        if (title.length() > titleLimit) {
+            throw new InvalidPostDataException("Title exceeds the character limit of " + titleLimit +
+                    " characters for " + userType + " users");
+        }
+
         if (content == null || content.trim().isEmpty()) {
             throw new InvalidPostDataException("Content is required");
         }
+
+        if (content.length() > captionLimit) {
+            throw new InvalidPostDataException("Caption exceeds the character limit of " + captionLimit +
+                    " characters for " + userType + " users");
+        }
+    }
+
+    private void validateLocation(Double latitude, Double longitude) {
         if (latitude == null || longitude == null) {
             throw new InvalidPostDataException("Location coordinates are required");
         }
+    }
+
+    private void validateCategoryAndUser(String category, UUID postedBy) {
         if (category == null || category.trim().isEmpty()) {
             throw new InvalidPostDataException("Category is required");
         }
+
         if (postedBy == null) {
             throw new InvalidPostDataException("User ID (postedBy) is required");
         }
@@ -112,16 +160,17 @@ public class PostService {
         if (categoryObj == null) {
             throw new InvalidPostDataException("Category does not exist: " + category);
         }
+    }
 
-        // Create the post
+    private Post createAndSavePost(PostCreateRequest request) {
         Post post = new Post.Builder()
-                .title(title)
-                .caption(content)
-                .location(latitude, longitude)
-                .category(category)
-                .postedBy(postedBy) // Set the postedBy value
-                .imageUrl(imageUrl)
-                .address(address)
+                .title(request.getTitle())
+                .caption(request.getCaption())
+                .location(request.getLatitude(), request.getLongitude())
+                .category(request.getCategory())
+                .postedBy(request.getPostedBy())
+                .imageUrl(request.getImageUrl())
+                .address(request.getAddress())
                 .build();
 
         try {
@@ -202,7 +251,7 @@ public class PostService {
         // Map to PostData and return page
         return allPosts.map(post -> {
             Map<String, Object> result = new HashMap<>();
-            PostData postData = PostData.fromPostAndUserId(post, postUserId, profileList.get(post.getPostedBy()));
+            PostData postData = PostData.fromPostAndUserId(post, postUserId, (profileList.get(post.getPostedBy())));
             result.put("post", postData);
             return result;
         });
@@ -227,6 +276,6 @@ public class PostService {
         });
 
         log.info("hasil fetch: " + result.getBody() + "  " + result.getStatusCode());
-        return result.getBody();
+        return result.getBody() == null ? new HashMap<>() : result.getBody();
     }
 }

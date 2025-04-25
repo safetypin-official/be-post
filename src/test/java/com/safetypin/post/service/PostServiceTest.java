@@ -398,9 +398,7 @@ class PostServiceTest {
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testFindById_NotFound() {
@@ -473,7 +471,9 @@ class PostServiceTest {
         // Then
         verify(postRepository).findById(postId);
         verify(postRepository).delete(post);
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testDeletePost_UnauthorizedAccess() {
@@ -496,8 +496,6 @@ class PostServiceTest {
         verify(postRepository).findById(postId);
         verify(postRepository, never()).delete(any(Post.class));
     }
-
-    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     // Test for imageUrl in createPost
     @Test
@@ -604,6 +602,8 @@ class PostServiceTest {
         verify(postRepository).findById(postId);
         verify(postRepository, never()).delete(any(Post.class));
     }
+
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testFindPostsByDistanceFeed_WithFilters_Success() throws InvalidCredentialsException {
@@ -1894,12 +1894,12 @@ class PostServiceTest {
         // Verify first post
         PostData firstPost = (PostData) result.getContent().getFirst().get("post");
         assertEquals(post3.getTitle(), firstPost.getTitle());
-        assertEquals(userId, firstPost.getPostedBy().getUserId());
+        assertEquals(userId, firstPost.getPostedById());
 
         // Verify second post
         PostData secondPost = (PostData) result.getContent().get(1).get("post");
         assertEquals(post1.getTitle(), secondPost.getTitle());
-        assertEquals(userId, secondPost.getPostedBy().getUserId());
+        assertEquals(userId, secondPost.getPostedById());
 
         verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
     }
@@ -2585,6 +2585,7 @@ class PostServiceTest {
         // Reset SecurityContextHolder to avoid affecting other tests
         SecurityContextHolder.clearContext();
     }
+
 
 
 

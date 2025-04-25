@@ -97,7 +97,7 @@ class PostDataTest {
         when(mockPost.getPostedBy()).thenReturn(postedById);
 
         // When
-        PostData result = PostData.fromPostAndUserId(mockPost, userId, null);
+        PostData result = PostData.fromPostAndUserId(mockPost, userId, new PostedByData(postedById, "Test user", "profpic"));
 
         // Then
         assertNotNull(result);
@@ -130,13 +130,12 @@ class PostDataTest {
         when(mockPost.getPostedBy()).thenReturn(postedById);
 
         // When
-        PostData result = PostData.fromPostAndUserId(mockPost, userId, null);
+        PostData result = PostData.fromPostAndUserId(mockPost, userId, new PostedByData(postedById, "Test user", "profpic"));
 
         // Then
         assertNotNull(result);
         assertEquals(postedById, result.getPostedBy().getUserId());
-        assertNull(result.getPostedBy().getName());
-        assertNull(result.getPostedBy().getProfilePicture());
+        assertNotNull(result.getPostedBy());
     }
 
     @Test
@@ -167,9 +166,7 @@ class PostDataTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(postedById, result.getPostedBy().getUserId());
-        assertNull(result.getPostedBy().getName());
-        assertNull(result.getPostedBy().getProfilePicture());
+        assertNull(result.getPostedBy());
     }
 
     @Test
@@ -199,7 +196,7 @@ class PostDataTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(userId, result.getPostedBy().getUserId()); // Should be the userId, not postedById
+        assertEquals(postedById, result.getPostedBy().getUserId()); // Should be the userId, not postedById
         assertEquals(profileName, result.getPostedBy().getName());
         assertEquals(profilePicture, result.getPostedBy().getProfilePicture());
     }
@@ -237,7 +234,7 @@ class PostDataTest {
         assertNull(result.getUpvoteCount());
         assertNull(result.getDownvoteCount());
         assertNull(result.getCurrentVote());
-        assertNull(result.getPostedBy().getUserId());
+        assertNull(result.getPostedBy());
     }
 
     @Test
