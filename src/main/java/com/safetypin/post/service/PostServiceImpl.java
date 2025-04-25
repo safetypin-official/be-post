@@ -278,7 +278,7 @@ public class PostServiceImpl implements PostService {
             for (LinkedHashMap<String, String> map : linkedHashMapList) {
                 PostedByData postedByData = PostedByData.builder()
                         .name(map.get("name"))
-                        .id(UUID.fromString(map.get("id")))
+                        .userId(UUID.fromString(map.get("id")))
                         .profilePicture(map.get("profilePicture"))
                         .build();
                 output.add(postedByData);

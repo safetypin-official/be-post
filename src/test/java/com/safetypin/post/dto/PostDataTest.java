@@ -37,7 +37,7 @@ class PostDataTest {
                 String name = "Hoho";
                 String profilePicture = "www.google.com";
                 PostedByData postedBy = PostedByData.builder()
-                                .id(userId)
+                                .userId(userId)
                                 .name(name)
                                 .profilePicture(profilePicture)
                                 .build();
@@ -68,7 +68,7 @@ class PostDataTest {
                 assertEquals(upvoteCount, postData.getUpvoteCount());
                 assertEquals(downvoteCount, postData.getDownvoteCount());
                 assertEquals(currentVote, postData.getCurrentVote());
-                assertEquals(postedBy.getId(), postData.getPostedBy().getId());
+                assertEquals(postedBy.getUserId(), postData.getPostedBy().getUserId());
         }
 
         @Test
@@ -116,7 +116,7 @@ class PostDataTest {
                 assertEquals(upvoteCount, result.getUpvoteCount());
                 assertEquals(downvoteCount, result.getDownvoteCount());
                 assertEquals(currentVote, result.getCurrentVote());
-                assertEquals(postedById, result.getPostedBy().getId());
+                assertEquals(postedById, result.getPostedBy().getUserId());
 
                 // Verify that currentVote was called with the correct userId
                 Mockito.verify(mockPost).currentVote(userId);
@@ -142,7 +142,7 @@ class PostDataTest {
 
                 // Then
                 assertNotNull(result);
-                assertEquals(postedById, result.getPostedBy().getId());
+                assertEquals(postedById, result.getPostedBy().getUserId());
                 assertNull(result.getPostedBy().getName());
                 assertNull(result.getPostedBy().getProfilePicture());
         }
@@ -165,7 +165,7 @@ class PostDataTest {
                 // Create a profile list with a non-matching profile
                 List<PostedByData> profiles = new ArrayList<>();
                 profiles.add(PostedByData.builder()
-                                .id(differentUserId)
+                                .userId(differentUserId)
                                 .name("Different User")
                                 .profilePicture("different-picture.jpg")
                                 .build());
@@ -175,7 +175,7 @@ class PostDataTest {
 
                 // Then
                 assertNotNull(result);
-                assertEquals(postedById, result.getPostedBy().getId());
+                assertEquals(postedById, result.getPostedBy().getUserId());
                 assertNull(result.getPostedBy().getName());
                 assertNull(result.getPostedBy().getProfilePicture());
         }
@@ -198,7 +198,7 @@ class PostDataTest {
                 // Create a profile list with a matching profile
                 List<PostedByData> profiles = new ArrayList<>();
                 profiles.add(PostedByData.builder()
-                                .id(postedById)
+                                .userId(postedById)
                                 .name(profileName)
                                 .profilePicture(profilePicture)
                                 .build());
@@ -208,7 +208,7 @@ class PostDataTest {
 
                 // Then
                 assertNotNull(result);
-                assertEquals(userId, result.getPostedBy().getId()); // Should be the userId, not postedById
+                assertEquals(userId, result.getPostedBy().getUserId()); // Should be the userId, not postedById
                 assertEquals(profileName, result.getPostedBy().getName());
                 assertEquals(profilePicture, result.getPostedBy().getProfilePicture());
         }
@@ -246,7 +246,7 @@ class PostDataTest {
                 assertNull(result.getUpvoteCount());
                 assertNull(result.getDownvoteCount());
                 assertNull(result.getCurrentVote());
-                assertNull(result.getPostedBy().getId());
+                assertNull(result.getPostedBy().getUserId());
         }
 
         @Test
@@ -258,7 +258,7 @@ class PostDataTest {
                 String name = "Hoho";
                 String profilePicture = "www.google.com";
                 PostedByData postedBy = PostedByData.builder()
-                                .id(userId)
+                                .userId(userId)
                                 .name(name)
                                 .profilePicture(profilePicture)
                                 .build();
@@ -322,7 +322,7 @@ class PostDataTest {
                 String name = "Hoho";
                 String profilePicture = "www.google.com";
                 PostedByData postedBy = PostedByData.builder()
-                                .id(userId)
+                                .userId(userId)
                                 .name(name)
                                 .profilePicture(profilePicture)
                                 .build();

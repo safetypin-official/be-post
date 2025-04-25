@@ -39,14 +39,14 @@ public class PostData {
             // iterate profiles
             PostedByData profileResponse = null;
             for (PostedByData profile : profiles) {
-                if (profile.getId().equals(post.getPostedBy())) {
+                if (profile.getUserId().equals(post.getPostedBy())) {
                     profileResponse = profile;
                     break;
                 }
             }
             if (profileResponse != null) {
                 postedByData = PostedByData.builder()
-                        .id(userId)
+                        .userId(userId)
                         .profilePicture(profileResponse.getProfilePicture())
                         .name(profileResponse.getName())
                         .build();

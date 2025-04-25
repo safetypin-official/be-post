@@ -1925,12 +1925,12 @@ class PostServiceTest {
                 // Verify first post
                 PostData firstPost = (PostData) result.getContent().getFirst().get("post");
                 assertEquals(post3.getTitle(), firstPost.getTitle());
-                assertEquals(userId, firstPost.getPostedBy().getId());
+                assertEquals(userId, firstPost.getPostedBy().getUserId());
 
                 // Verify second post
                 PostData secondPost = (PostData) result.getContent().get(1).get("post");
                 assertEquals(post1.getTitle(), secondPost.getTitle());
-                assertEquals(userId, secondPost.getPostedBy().getId());
+                assertEquals(userId, secondPost.getPostedBy().getUserId());
 
                 verify(postRepository).findByPostedByOrderByCreatedAtDesc(userId, pageable);
         }

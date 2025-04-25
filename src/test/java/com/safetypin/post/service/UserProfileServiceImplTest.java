@@ -67,9 +67,9 @@ class UserProfileServiceImplTest {
     void fetchUserProfilesBatch_success() throws JsonProcessingException {
         // Arrange
         // Use fixed UUIDs
-        PostedByData profile1 = PostedByData.builder().id(USER_ID_1).name("User One").profilePicture("pic1.jpg")
+        PostedByData profile1 = PostedByData.builder().userId(USER_ID_1).name("User One").profilePicture("pic1.jpg")
                 .build();
-        PostedByData profile2 = PostedByData.builder().id(USER_ID_2).name("User Two").profilePicture("pic2.jpg")
+        PostedByData profile2 = PostedByData.builder().userId(USER_ID_2).name("User Two").profilePicture("pic2.jpg")
                 .build();
         UserProfileBatchResponse mockResponseDto = new UserProfileBatchResponse(List.of(profile1, profile2));
 
@@ -104,7 +104,7 @@ class UserProfileServiceImplTest {
         try {
             var recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS); // Added timeout
             assertNotNull(recordedRequest); // Ensure request was made
-            assertEquals("/api/users/batch", recordedRequest.getPath());
+            assertEquals("/api/profiles/batch", recordedRequest.getPath());
             assertEquals("POST", recordedRequest.getMethod());
             UserProfileBatchRequest requestBody = objectMapper.readValue(recordedRequest.getBody().readUtf8(),
                     UserProfileBatchRequest.class);
@@ -119,9 +119,9 @@ class UserProfileServiceImplTest {
     void fetchUserProfilesBatch_withDuplicateInputIds_shouldRequestDistinctIds() throws JsonProcessingException {
         // Arrange
         // Use fixed UUIDs
-        PostedByData profile1 = PostedByData.builder().id(USER_ID_1).name("User One").profilePicture("pic1.jpg")
+        PostedByData profile1 = PostedByData.builder().userId(USER_ID_1).name("User One").profilePicture("pic1.jpg")
                 .build();
-        PostedByData profile2 = PostedByData.builder().id(USER_ID_2).name("User Two").profilePicture("pic2.jpg")
+        PostedByData profile2 = PostedByData.builder().userId(USER_ID_2).name("User Two").profilePicture("pic2.jpg")
                 .build();
         UserProfileBatchResponse mockResponseDto = new UserProfileBatchResponse(List.of(profile1, profile2));
 
@@ -156,7 +156,7 @@ class UserProfileServiceImplTest {
         try {
             var recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS); // Added timeout
             assertNotNull(recordedRequest); // Ensure request was made
-            assertEquals("/api/users/batch", recordedRequest.getPath());
+            assertEquals("/api/profiles/batch", recordedRequest.getPath());
             UserProfileBatchRequest requestBody = objectMapper.readValue(recordedRequest.getBody().readUtf8(),
                     UserProfileBatchRequest.class);
             // Use fixed UUIDs for assertion - should only contain distinct IDs
@@ -264,8 +264,9 @@ class UserProfileServiceImplTest {
     void fetchUserProfilesBatch_apiReturnsProfileWithNullId_filtersOut() throws JsonProcessingException {
         // Arrange
         UUID userId1 = UUID.randomUUID();
-        PostedByData profile1 = PostedByData.builder().id(userId1).name("User One").profilePicture("pic1.jpg").build();
-        PostedByData profileNullId = PostedByData.builder().id(null).name("No ID User").profilePicture("null.jpg")
+        PostedByData profile1 = PostedByData.builder().userId(userId1).name("User One").profilePicture("pic1.jpg")
+                .build();
+        PostedByData profileNullId = PostedByData.builder().userId(null).name("No ID User").profilePicture("null.jpg")
                 .build();
         UserProfileBatchResponse mockResponseDto = new UserProfileBatchResponse(List.of(profile1, profileNullId));
 
@@ -368,11 +369,11 @@ class UserProfileServiceImplTest {
     void fetchUserProfilesBatch_apiReturnsDuplicateProfileIds_usesFirstOne() throws JsonProcessingException {
         // Arrange
         // Define two profiles with the SAME ID but different data
-        PostedByData profile1_first = PostedByData.builder().id(USER_ID_1).name("User One First")
+        PostedByData profile1_first = PostedByData.builder().userId(USER_ID_1).name("User One First")
                 .profilePicture("pic1_first.jpg").build();
-        PostedByData profile1_second = PostedByData.builder().id(USER_ID_1).name("User One Second")
+        PostedByData profile1_second = PostedByData.builder().userId(USER_ID_1).name("User One Second")
                 .profilePicture("pic1_second.jpg").build();
-        PostedByData profile2 = PostedByData.builder().id(USER_ID_2).name("User Two").profilePicture("pic2.jpg")
+        PostedByData profile2 = PostedByData.builder().userId(USER_ID_2).name("User Two").profilePicture("pic2.jpg")
                 .build();
 
         // The response contains the duplicate ID and another unique ID
@@ -413,7 +414,7 @@ class UserProfileServiceImplTest {
         try {
             var recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
             assertNotNull(recordedRequest);
-            assertEquals("/api/users/batch", recordedRequest.getPath());
+            assertEquals("/api/profiles/batch", recordedRequest.getPath());
             UserProfileBatchRequest requestBody = objectMapper.readValue(recordedRequest.getBody().readUtf8(),
                     UserProfileBatchRequest.class);
             assertEquals(userIds, requestBody.getUserIds()); // Requested distinct IDs

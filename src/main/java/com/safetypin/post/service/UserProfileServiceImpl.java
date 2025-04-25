@@ -52,7 +52,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         // Remove duplicates
         List<UUID> distinctUserIds = userIds.stream().distinct().toList();
 
-        String uri = authServiceUrl + "/api/users/batch";
+        String uri = authServiceUrl + "/api/profiles/batch";
         UserProfileBatchRequest request = new UserProfileBatchRequest(distinctUserIds);
 
         log.info("Fetching profiles for {} distinct users from {}", distinctUserIds.size(), uri);
@@ -72,15 +72,15 @@ public class UserProfileServiceImpl implements UserProfileService {
                     // Convert list to map for easy lookup
                     return response.getProfiles().stream()
                             .filter(Objects::nonNull) // Ensure profile data is not null
-                            .filter(profile -> profile.getId() != null) // Ensure profile has an ID
+                            .filter(profile -> profile.getUserId() != null) // Ensure profile has an ID
                             .collect(Collectors.toMap(
-                                    PostedByData::getId,
+                                    PostedByData::getUserId,
                                     Function.identity(),
                                     (existing, replacement) -> { // Handle potential duplicates from API (though
                                                                  // unlikely with distinct IDs)
                                         log.warn(
                                                 "Duplicate profile ID {} received from batch endpoint. Using the first one.",
-                                                existing.getId());
+                                                existing.getUserId());
                                         return existing;
                                     }));
                 })
