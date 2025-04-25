@@ -1,18 +1,12 @@
 package com.safetypin.post.service;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue; // Added for containsKey
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit; // Added for takeRequest timeout
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.UserProfileBatchRequest;
+import com.safetypin.post.dto.UserProfileBatchResponse;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,28 +16,28 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safetypin.post.dto.PostedByData;
-import com.safetypin.post.dto.UserProfileBatchRequest;
-import com.safetypin.post.dto.UserProfileBatchResponse;
-
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserProfileServiceImplTest {
 
-    private static MockWebServer mockWebServer;
-    private UserProfileService userProfileService;
-    private ObjectMapper objectMapper = new ObjectMapper();
-
     // Define fixed UUIDs for testing
     private static final UUID USER_ID_1 = UUID.fromString("8ddb4096-94bc-495d-9687-99c21aa21846");
     private static final UUID USER_ID_2 = UUID.fromString("0db2ec66-bf9b-4fec-93b4-10886986b0fe");
+    private static MockWebServer mockWebServer;
+    private UserProfileService userProfileService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeAll
     static void setUp() throws IOException {

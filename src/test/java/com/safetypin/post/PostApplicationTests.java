@@ -10,6 +10,6 @@ class PostApplicationTests {
     void testMainDoesNotThrowException() {
         // Calling the main method should load the context without throwing an
         // exception.
-        assertDoesNotThrow(() -> PostApplication.main(new String[] {}));
+        assertDoesNotThrow(() -> PostApplication.main(new String[]{}));
     }
 }

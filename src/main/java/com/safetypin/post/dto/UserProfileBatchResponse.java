@@ -1,10 +1,10 @@
 package com.safetypin.post.dto;
 
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * Response DTO containing a list of user profiles from the batch endpoint.

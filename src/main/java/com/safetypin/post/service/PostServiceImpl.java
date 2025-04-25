@@ -1,30 +1,6 @@
 package com.safetypin.post.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import com.safetypin.post.dto.AuthResponse;
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostData;
-import com.safetypin.post.dto.PostedByData;
-import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostException;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -36,24 +12,35 @@ import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.service.strategy.DistanceFeedStrategy;
 import com.safetypin.post.service.strategy.FeedStrategy;
 import com.safetypin.post.service.strategy.TimestampFeedStrategy;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
 
 @Slf4j
 @Service
 public class PostServiceImpl implements PostService {
 
+    // @Value("${be-auth}")
+    private static final String API_ENDPOINT = "https://safetypin.ppl.cs.ui.ac.id";
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
-    // @Value("${be-auth}")
-    private static final String API_ENDPOINT = "https://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-            DistanceFeedStrategy distanceFeedStrategy,
-            TimestampFeedStrategy timestampFeedStrategy) {
+                           DistanceFeedStrategy distanceFeedStrategy,
+                           TimestampFeedStrategy timestampFeedStrategy) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.distanceFeedStrategy = distanceFeedStrategy;
@@ -118,7 +105,7 @@ public class PostServiceImpl implements PostService {
     }
 
     private void validatePostData(String title, String content, Double latitude, Double longitude,
-            String category, UUID postedBy, UserDetails userDetails) {
+                                  String category, UUID postedBy, UserDetails userDetails) {
         validateTitleAndContent(title, content, userDetails);
         validateLocation(latitude, longitude);
         validateCategoryAndUser(category, postedBy);

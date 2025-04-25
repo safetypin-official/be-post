@@ -1,10 +1,10 @@
 package com.safetypin.post.dto;
 
-import java.util.UUID;
-
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor

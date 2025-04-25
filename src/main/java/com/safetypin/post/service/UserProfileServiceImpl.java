@@ -1,26 +1,20 @@
 package com.safetypin.post.service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.UserProfileBatchRequest;
+import com.safetypin.post.dto.UserProfileBatchResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.safetypin.post.dto.PostedByData;
-import com.safetypin.post.dto.UserProfileBatchRequest;
-import com.safetypin.post.dto.UserProfileBatchResponse;
-
-import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -77,7 +71,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                                     PostedByData::getUserId,
                                     Function.identity(),
                                     (existing, replacement) -> { // Handle potential duplicates from API (though
-                                                                 // unlikely with distinct IDs)
+                                        // unlikely with distinct IDs)
                                         log.warn(
                                                 "Duplicate profile ID {} received from batch endpoint. Using the first one.",
                                                 existing.getUserId());

@@ -1,18 +1,13 @@
 package com.safetypin.post.dto;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.RequiredTypeException;
 import io.jsonwebtoken.impl.DefaultClaims;
+import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class UserDetailsTest {
 

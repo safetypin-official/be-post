@@ -47,7 +47,7 @@ public class Post extends BasePost {
 
     // Add constructor that accepts latitude and longitude as separate parameters
     public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude,
-            Double longitude) {
+                Double longitude) {
         this.setCaption(caption);
         this.setTitle(title);
         this.setCategory(category);
