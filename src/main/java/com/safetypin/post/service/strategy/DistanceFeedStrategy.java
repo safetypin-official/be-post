@@ -28,7 +28,7 @@ public class DistanceFeedStrategy extends AbstractFeedStrategy {
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
 
-                    PostData postData = PostData.fromPostAndUserId(post, queryDTO.getUserId(), profileList.get(post.getPostedBy()));
+                    PostData postData = (profileList == null) ? null : PostData.fromPostAndUserId(post, queryDTO.getUserId(), profileList.get(post.getPostedBy()));
                     result.put("post", postData);
 
                     // Calculate distance from user

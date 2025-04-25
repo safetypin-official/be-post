@@ -21,7 +21,7 @@ public class TimestampFeedStrategy extends AbstractFeedStrategy {
                 .filter(post -> matchesDateRange(post, queryDTO.getDateFrom(), queryDTO.getDateTo()))
                 .map(post -> {
                     Map<String, Object> result = new HashMap<>();
-                    PostData postData = PostData.fromPostAndUserId(post, queryDTO.getUserId(), profileList.get(post.getPostedBy()));
+                    PostData postData = (profileList == null) ? null : PostData.fromPostAndUserId(post, queryDTO.getUserId(), profileList.get(post.getPostedBy()));
                     result.put("post", postData);
                     return result;
                 })
