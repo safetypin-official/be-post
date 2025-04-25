@@ -1,13 +1,18 @@
 package com.safetypin.post.dto;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.RequiredTypeException;
-import io.jsonwebtoken.impl.DefaultClaims;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.RequiredTypeException;
+import io.jsonwebtoken.impl.DefaultClaims;
 
 class UserDetailsTest {
 
@@ -18,10 +23,10 @@ class UserDetailsTest {
     void testGettersAndSetters() {
         // Arrange
         UserDetails userDetails = new UserDetails(
-                "ADMIN", true, USER_ID_1, "John Doe");
+                "PREMIUM_USER", true, USER_ID_1, "John Doe");
 
         // Act & Assert
-        assertEquals("ADMIN", userDetails.getRole());
+        assertEquals("PREMIUM_USER", userDetails.getRole());
         assertTrue(userDetails.isVerified());
         assertEquals(USER_ID_1, userDetails.getUserId());
         assertEquals("John Doe", userDetails.getName());
@@ -77,7 +82,7 @@ class UserDetailsTest {
         // Arrange
         Claims claims = new DefaultClaims();
         claims.put("role", "USER");
-        claims.put("isVerified", "not-a-boolean");  // Wrong type
+        claims.put("isVerified", "not-a-boolean"); // Wrong type
         claims.put("userId", UUID.randomUUID().toString());
         claims.put("name", "John Doe");
 
@@ -91,7 +96,7 @@ class UserDetailsTest {
         Claims claims = new DefaultClaims();
         claims.put("role", "USER");
         claims.put("isVerified", true);
-        claims.put("userId", "not-a-uuid");  // Invalid UUID
+        claims.put("userId", "not-a-uuid"); // Invalid UUID
         claims.put("name", "John Doe");
 
         // Act & Assert
@@ -103,9 +108,9 @@ class UserDetailsTest {
         // Arrange
         UUID sharedId = UUID.randomUUID();
         UserDetails userDetails1 = new UserDetails(
-                "ADMIN", true, sharedId, "John Doe");
+                "PREMIUM_USER", true, sharedId, "John Doe");
         UserDetails userDetails2 = new UserDetails(
-                "ADMIN", true, sharedId, "John Doe");
+                "PREMIUM_USER", true, sharedId, "John Doe");
         UserDetails userDetails3 = new UserDetails(
                 "USER", true, sharedId, "John Doe");
 
@@ -114,5 +119,222 @@ class UserDetailsTest {
         assertEquals(userDetails1.hashCode(), userDetails2.hashCode());
         assertNotEquals(userDetails1, userDetails3);
         assertNotEquals(userDetails1.hashCode(), userDetails3.hashCode());
+    }
+
+    // Tests for isPremiumUser() method
+    @Test
+    void testIsPremiumUser_WithPremiumUserRole() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "PREMIUM_USER", true, USER_ID_1, "Premium User");
+
+        // Act & Assert
+        assertTrue(userDetails.isPremiumUser());
+    }
+
+    @Test
+    void testIsPremiumUser_WithModeratorRole() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "MODERATOR", true, USER_ID_1, "Moderator User");
+
+        // Act & Assert
+        assertTrue(userDetails.isPremiumUser());
+    }
+
+    @Test
+    void testIsPremiumUser_WithRegularUserRole() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "USER", true, USER_ID_1, "Regular User");
+
+        // Act & Assert
+        assertFalse(userDetails.isPremiumUser());
+    }
+
+    @Test
+    void testIsPremiumUser_WithNullRole() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                null, true, USER_ID_1, "User with null role");
+
+        // Act & Assert
+        assertFalse(userDetails.isPremiumUser());
+    }
+
+    // Tests for Title Character Limits
+
+    // For REGISTERED_USER (Free Users)
+    @Test
+    void testGetTitleCharacterLimit_ForRegularUser() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "USER", true, USER_ID_1, "Regular User");
+
+        // Act
+        int limit = userDetails.getTitleCharacterLimit();
+
+        // Assert
+        assertEquals(UserDetails.REGISTERED_USER_TITLE_LIMIT, limit);
+        assertEquals(70, limit);
+    }
+
+    // For PREMIUM_USER
+    @Test
+    void testGetTitleCharacterLimit_ForPremiumUser() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "PREMIUM_USER", true, USER_ID_1, "Premium User");
+
+        // Act
+        int limit = userDetails.getTitleCharacterLimit();
+
+        // Assert
+        assertEquals(UserDetails.PREMIUM_USER_TITLE_LIMIT, limit);
+        assertEquals(140, limit);
+    }
+
+    @Test
+    void testGetTitleCharacterLimit_ForModerator() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "MODERATOR", true, USER_ID_1, "Moderator User");
+
+        // Act
+        int limit = userDetails.getTitleCharacterLimit();
+
+        // Assert
+        assertEquals(UserDetails.PREMIUM_USER_TITLE_LIMIT, limit);
+        assertEquals(140, limit);
+    }
+
+    // Tests for Caption Character Limits
+
+    // For REGISTERED_USER (Free Users)
+    @Test
+    void testGetCaptionCharacterLimit_ForRegularUser() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "USER", true, USER_ID_1, "Regular User");
+
+        // Act
+        int limit = userDetails.getCaptionCharacterLimit();
+
+        // Assert
+        assertEquals(UserDetails.REGISTERED_USER_CAPTION_LIMIT, limit);
+        assertEquals(200, limit);
+    }
+
+    // For PREMIUM_USER
+    @Test
+    void testGetCaptionCharacterLimit_ForPremiumUser() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "PREMIUM_USER", true, USER_ID_1, "Premium User");
+
+        // Act
+        int limit = userDetails.getCaptionCharacterLimit();
+
+        // Assert
+        assertEquals(UserDetails.PREMIUM_USER_CAPTION_LIMIT, limit);
+        assertEquals(800, limit);
+    }
+
+    @Test
+    void testGetCaptionCharacterLimit_ForModerator() {
+        // Arrange
+        UserDetails userDetails = new UserDetails(
+                "MODERATOR", true, USER_ID_1, "Moderator User");
+
+        // Act
+        int limit = userDetails.getCaptionCharacterLimit();
+
+        // Assert
+        assertEquals(UserDetails.PREMIUM_USER_CAPTION_LIMIT, limit);
+        assertEquals(800, limit);
+    }
+
+    // Boundary test cases for character limits
+    @Test
+    void testConstantValues_EnsureCorrectLimits() {
+        // Assert - verify the constant values are set correctly
+        assertEquals(70, UserDetails.REGISTERED_USER_TITLE_LIMIT);
+        assertEquals(140, UserDetails.PREMIUM_USER_TITLE_LIMIT);
+        assertEquals(200, UserDetails.REGISTERED_USER_CAPTION_LIMIT);
+        assertEquals(800, UserDetails.PREMIUM_USER_CAPTION_LIMIT);
+    }
+
+    // Additional tests for creating properly bounded posts
+    @Test
+    void testTitleBoundaryConditions() {
+        // Test exactly at the registered user limit
+        UserDetails registeredUser = new UserDetails("USER", true, USER_ID_1, "Regular User");
+        assertEquals(70, registeredUser.getTitleCharacterLimit());
+
+        // Test exactly at the premium user limit
+        UserDetails premiumUser = new UserDetails("PREMIUM_USER", true, USER_ID_1, "Premium User");
+        assertEquals(140, premiumUser.getTitleCharacterLimit());
+
+        // Test difference between limits
+        assertEquals(70, premiumUser.getTitleCharacterLimit() - registeredUser.getTitleCharacterLimit());
+    }
+
+    @Test
+    void testCaptionBoundaryConditions() {
+        // Test exactly at the registered user limit
+        UserDetails registeredUser = new UserDetails("USER", true, USER_ID_1, "Regular User");
+        assertEquals(200, registeredUser.getCaptionCharacterLimit());
+
+        // Test exactly at the premium user limit
+        UserDetails premiumUser = new UserDetails("PREMIUM_USER", true, USER_ID_1, "Premium User");
+        assertEquals(800, premiumUser.getCaptionCharacterLimit());
+
+        // Test difference between limits
+        assertEquals(600, premiumUser.getCaptionCharacterLimit() - registeredUser.getCaptionCharacterLimit());
+    }
+
+    @Test
+    void testIsPremiumUserMethodInfluencesLimits() {
+        // Create user details with a role that will return false for isPremiumUser
+        UserDetails regularUser = new UserDetails("USER", true, USER_ID_1, "Regular User");
+        assertFalse(regularUser.isPremiumUser());
+        assertEquals(UserDetails.REGISTERED_USER_TITLE_LIMIT, regularUser.getTitleCharacterLimit());
+        assertEquals(UserDetails.REGISTERED_USER_CAPTION_LIMIT, regularUser.getCaptionCharacterLimit());
+
+        // Create user details with a role that will return true for isPremiumUser
+        UserDetails premiumUser = new UserDetails("PREMIUM_USER", true, USER_ID_1, "Premium User");
+        assertTrue(premiumUser.isPremiumUser());
+        assertEquals(UserDetails.PREMIUM_USER_TITLE_LIMIT, premiumUser.getTitleCharacterLimit());
+        assertEquals(UserDetails.PREMIUM_USER_CAPTION_LIMIT, premiumUser.getCaptionCharacterLimit());
+
+        // Verify that the moderator also gets premium limits
+        UserDetails moderator = new UserDetails("MODERATOR", true, USER_ID_1, "Moderator User");
+        assertTrue(moderator.isPremiumUser());
+        assertEquals(UserDetails.PREMIUM_USER_TITLE_LIMIT, moderator.getTitleCharacterLimit());
+        assertEquals(UserDetails.PREMIUM_USER_CAPTION_LIMIT, moderator.getCaptionCharacterLimit());
+    }
+
+    @Test
+    void testCustomRoleCharacterLimits() {
+        // A role that doesn't match any predefined premium roles should get registered
+        // user limits
+        UserDetails customRoleUser = new UserDetails("CUSTOM_ROLE", true, USER_ID_1, "Custom Role User");
+        assertFalse(customRoleUser.isPremiumUser());
+        assertEquals(UserDetails.REGISTERED_USER_TITLE_LIMIT, customRoleUser.getTitleCharacterLimit());
+        assertEquals(UserDetails.REGISTERED_USER_CAPTION_LIMIT, customRoleUser.getCaptionCharacterLimit());
+    }
+
+    @Test
+    void testCaseSensitivityInRoles() {
+        // Tests that role matching is case sensitive
+        UserDetails mixedCaseUser = new UserDetails("premium_user", true, USER_ID_1, "Mixed Case User");
+        assertFalse(mixedCaseUser.isPremiumUser());
+        assertEquals(UserDetails.REGISTERED_USER_TITLE_LIMIT, mixedCaseUser.getTitleCharacterLimit());
+        assertEquals(UserDetails.REGISTERED_USER_CAPTION_LIMIT, mixedCaseUser.getCaptionCharacterLimit());
+
+        UserDetails correctCaseUser = new UserDetails("PREMIUM_USER", true, USER_ID_1, "Correct Case User");
+        assertTrue(correctCaseUser.isPremiumUser());
+        assertEquals(UserDetails.PREMIUM_USER_TITLE_LIMIT, correctCaseUser.getTitleCharacterLimit());
+        assertEquals(UserDetails.PREMIUM_USER_CAPTION_LIMIT, correctCaseUser.getCaptionCharacterLimit());
     }
 }

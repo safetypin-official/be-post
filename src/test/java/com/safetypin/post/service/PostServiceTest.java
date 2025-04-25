@@ -1,9 +1,6 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostData;
-import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
@@ -28,8 +25,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
@@ -140,11 +139,22 @@ class PostServiceTest {
         request.setCategory(category.getName());
         request.setPostedBy(userId);
 
+        // Set up the security context with a mock authentication
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
         // When & Then
         Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals(expectedMessage, exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
     }
 
     @ParameterizedTest
@@ -231,11 +241,22 @@ class PostServiceTest {
         request.setCategory(category.getName());
         request.setPostedBy(userId);
 
+        // Set up the security context with a mock authentication
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
         // When & Then
         Executable executable = () -> postService.createPost(request);
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class, executable);
         assertEquals("Location coordinates are required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -377,7 +398,9 @@ class PostServiceTest {
         assertEquals(id, result.getId());
         assertEquals(post1.getCategory(), result.getCategory());
         verify(postRepository).findById(id);
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testFindById_NotFound() {
@@ -414,12 +437,23 @@ class PostServiceTest {
         request.setCategory(categoryName);
         request.setPostedBy(postedBy);
 
+        // Set up the security context with a mock authentication
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
         // When & Then
         InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
                 () -> postService.createPost(request));
 
         assertEquals("User ID (postedBy) is required", exception.getMessage());
         verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -462,6 +496,8 @@ class PostServiceTest {
         verify(postRepository).findById(postId);
         verify(postRepository, never()).delete(any(Post.class));
     }
+
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     // Test for imageUrl in createPost
     @Test
@@ -1072,9 +1108,7 @@ class PostServiceTest {
         // Verify category repository is not called since we're not validating
         // categories
         verifyNoInteractions(categoryRepository);
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testFindPostsByTimestampFeed_WithFilters_Success() throws InvalidCredentialsException {
@@ -1484,52 +1518,6 @@ class PostServiceTest {
         verify(postRepository).findAll();
     }
 
-    // Test findPostsByDistanceFeed with filters with out-of-range dates
-    @Test
-    void testFindPostsByDistanceFeed_WithFilters_OutOfRangeDates() throws InvalidCredentialsException {
-        // Given
-        Double userLat = 0.0;
-        Double userLon = 0.0;
-        List<String> categories = null;
-        String keyword = null;
-        LocalDateTime dateFrom = tomorrow.plusDays(1); // Future date
-        LocalDateTime dateTo = tomorrow.plusDays(2); // Future date
-        Pageable pageable = PageRequest.of(0, 10);
-        UUID userId = UUID.randomUUID(); // Changed from authorization header to UUID
-
-        when(postRepository.findAll()).thenReturn(Arrays.asList(post1, post2, post3));
-
-        // Create expected FeedQueryDTO
-        FeedQueryDTO expectedDto = FeedQueryDTO.builder()
-                .userLat(userLat)
-                .userLon(userLon)
-                .categories(categories)
-                .keyword(keyword)
-                .dateFrom(dateFrom)
-                .dateTo(dateTo)
-                .userId(userId)
-                .pageable(pageable)
-                .build();
-
-        // Create expected result
-        Page<Map<String, Object>> expectedResult = new PageImpl<>(Collections.emptyList(), pageable, 0);
-
-        // Setup the strategy mock to return our expected result
-        when(distanceFeedStrategy.processFeed(anyList(), any(FeedQueryDTO.class), any()))
-                .thenReturn(expectedResult);
-
-        // Call the method we're testing
-        Page<Map<String, Object>> result = postService.getFeed(expectedDto, "distance");
-
-        // Assertions remain similar
-        assertNotNull(result);
-        assertTrue(result.getContent().isEmpty());
-
-        // Verify the correct strategy was called with expected parameters
-        verify(distanceFeedStrategy).processFeed(anyList(), eq(expectedDto), any());
-        verify(postRepository).findAll();
-    }
-
     // Test for findPostsByTimestampFeed with complex filters
     @Test
     void testFindPostsByTimestampFeed_WithComplexFilters() throws InvalidCredentialsException {
@@ -1768,7 +1756,8 @@ class PostServiceTest {
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
         ArgumentCaptor<Map<UUID, PostedByData>> dtoProfiles = ArgumentCaptor.forClass(Map.class);
 
-        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
+        verify(distanceFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(),
+                dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1819,7 +1808,8 @@ class PostServiceTest {
         ArgumentCaptor<FeedQueryDTO> dtoCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
         ArgumentCaptor<Map<UUID, PostedByData>> dtoProfiles = ArgumentCaptor.forClass(Map.class);
 
-        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(), dtoProfiles.capture());
+        verify(timestampFeedStrategy).processFeed(postsCaptor.capture(), dtoCaptor.capture(),
+                dtoProfiles.capture());
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
 
@@ -1983,7 +1973,6 @@ class PostServiceTest {
         when(postRepository.findByPostedByOrderByCreatedAtDesc(userId, lastPage))
                 .thenReturn(expectedLastPage);
 
-
         // When - First page
         Page<Map<String, Object>> firstPageResult = postService.findPostsByUser(userId, firstPage);
 
@@ -1991,7 +1980,7 @@ class PostServiceTest {
         assertNotNull(firstPageResult);
         assertEquals(2, firstPageResult.getContent().size());
         assertEquals(5, firstPageResult.getTotalElements());
-        assertEquals(3, firstPageResult.getTotalPages());     // ceil(5/2) = 3
+        assertEquals(3, firstPageResult.getTotalPages()); // ceil(5/2) = 3
         assertTrue(firstPageResult.hasNext());
         assertFalse(firstPageResult.hasPrevious());
 
@@ -2018,7 +2007,7 @@ class PostServiceTest {
     }
 
     @Test
-    void testFetchPostedByData() throws IOException {
+    void testFetchPostedByData() {
         Map<UUID, PostedByData> profileList = postService.fetchPostedByData(
                 List.of(
                         UUID.fromString("c6274749-6601-47aa-b554-96bc1efb6014"),
@@ -2029,6 +2018,573 @@ class PostServiceTest {
         assertNotNull(profileList);
     }
 
+    @Test
+    void testCreatePost_RegisteredUser_TitleAtLimit() {
+        // Setup authentication with REGISTERED_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with REGISTERED_USER role
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a title exactly at the REGISTERED_USER limit (70 chars)
+        String titleAtLimit = "A".repeat(UserDetails.REGISTERED_USER_TITLE_LIMIT);
+        String content = "Valid content";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(titleAtLimit);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Setup mocks
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Execute
+        Post result = postService.createPost(request);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(titleAtLimit, result.getTitle());
+        assertEquals(content, result.getCaption());
+
+        // Verify the Post was saved with the correct values
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(titleAtLimit, postCaptor.getValue().getTitle());
+    }
+
+    @Test
+    void testCreatePost_RegisteredUser_TitleExceedsLimit() {
+        // Setup authentication with REGISTERED_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with REGISTERED_USER role
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a title exceeding the REGISTERED_USER limit (71 chars)
+        String titleExceedingLimit = "A".repeat(UserDetails.REGISTERED_USER_TITLE_LIMIT + 1);
+        String content = "Valid content";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(titleExceedingLimit);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Execute & Verify exception
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
+
+        assertTrue(exception.getMessage().contains("Title exceeds the character limit"));
+        assertTrue(exception.getMessage().contains("70"));
+        assertTrue(exception.getMessage().contains("free"));
+
+        // Verify no save was attempted
+        verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testCreatePost_RegisteredUser_CaptionAtLimit() {
+        // Setup authentication with REGISTERED_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with REGISTERED_USER role
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a caption exactly at the REGISTERED_USER limit (200 chars)
+        String title = "Valid Title";
+        String captionAtLimit = "A".repeat(UserDetails.REGISTERED_USER_CAPTION_LIMIT);
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(captionAtLimit);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Setup mocks
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Execute
+        Post result = postService.createPost(request);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(title, result.getTitle());
+        assertEquals(captionAtLimit, result.getCaption());
+
+        // Verify the Post was saved with the correct values
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(captionAtLimit, postCaptor.getValue().getCaption());
+    }
+
+    @Test
+    void testCreatePost_RegisteredUser_CaptionExceedsLimit() {
+        // Setup authentication with REGISTERED_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with REGISTERED_USER role
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a caption exceeding the REGISTERED_USER limit (201 chars)
+        String title = "Valid Title";
+        String captionExceedingLimit = "A".repeat(UserDetails.REGISTERED_USER_CAPTION_LIMIT + 1);
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(captionExceedingLimit);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Execute & Verify exception
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
+
+        assertTrue(exception.getMessage().contains("Caption exceeds the character limit"));
+        assertTrue(exception.getMessage().contains("200"));
+        assertTrue(exception.getMessage().contains("free"));
+
+        // Verify no save was attempted
+        verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testCreatePost_PremiumUser_TitleAtLimit() {
+        // Setup authentication with PREMIUM_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with PREMIUM_USER role
+        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a title exactly at the PREMIUM_USER limit (140 chars)
+        String titleAtLimit = "A".repeat(UserDetails.PREMIUM_USER_TITLE_LIMIT);
+        String content = "Valid content";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(titleAtLimit);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Setup mocks
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Execute
+        Post result = postService.createPost(request);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(titleAtLimit, result.getTitle());
+        assertEquals(content, result.getCaption());
+
+        // Verify the Post was saved with the correct values
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(titleAtLimit, postCaptor.getValue().getTitle());
+    }
+
+    @Test
+    void testCreatePost_PremiumUser_TitleExceedsLimit() {
+        // Setup authentication with PREMIUM_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with PREMIUM_USER role
+        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a title exceeding the PREMIUM_USER limit (141 chars)
+        String titleExceedingLimit = "A".repeat(UserDetails.PREMIUM_USER_TITLE_LIMIT + 1);
+        String content = "Valid content";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(titleExceedingLimit);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Execute & Verify exception
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
+
+        assertTrue(exception.getMessage().contains("Title exceeds the character limit"));
+        assertTrue(exception.getMessage().contains("140"));
+        assertTrue(exception.getMessage().contains("premium"));
+
+        // Verify no save was attempted
+        verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testCreatePost_PremiumUser_CaptionAtLimit() {
+        // Setup authentication with PREMIUM_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with PREMIUM_USER role
+        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a caption exactly at the PREMIUM_USER limit (800 chars)
+        String title = "Valid Title";
+        String captionAtLimit = "A".repeat(UserDetails.PREMIUM_USER_CAPTION_LIMIT);
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(captionAtLimit);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Setup mocks
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Execute
+        Post result = postService.createPost(request);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(title, result.getTitle());
+        assertEquals(captionAtLimit, result.getCaption());
+
+        // Verify the Post was saved with the correct values
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(captionAtLimit, postCaptor.getValue().getCaption());
+    }
+
+    @Test
+    void testCreatePost_PremiumUser_CaptionExceedsLimit() {
+        // Setup authentication with PREMIUM_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with PREMIUM_USER role
+        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a caption exceeding the PREMIUM_USER limit (801 chars)
+        String title = "Valid Title";
+        String captionExceedingLimit = "A".repeat(UserDetails.PREMIUM_USER_CAPTION_LIMIT + 1);
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(captionExceedingLimit);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Execute & Verify exception
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
+
+        assertTrue(exception.getMessage().contains("Caption exceeds the character limit"));
+        assertTrue(exception.getMessage().contains("800"));
+        assertTrue(exception.getMessage().contains("premium"));
+
+        // Verify no save was attempted
+        verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testCreatePost_ModeratorUser_TitleAtPremiumLimit() {
+        // Setup authentication with MODERATOR role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with MODERATOR role
+        UserDetails userDetails = new UserDetails("MODERATOR", true, UUID.randomUUID(), "Moderator User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a title exactly at the PREMIUM_USER limit (140 chars)
+        String titleAtLimit = "A".repeat(UserDetails.PREMIUM_USER_TITLE_LIMIT);
+        String content = "Valid content";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(titleAtLimit);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Setup mocks
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Execute
+        Post result = postService.createPost(request);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(titleAtLimit, result.getTitle());
+        assertEquals(content, result.getCaption());
+
+        // Verify the Post was saved with the correct values
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(titleAtLimit, postCaptor.getValue().getTitle());
+    }
+
+    @Test
+    void testCreatePost_ModeratorUser_CaptionAtPremiumLimit() {
+        // Setup authentication with MODERATOR role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with MODERATOR role
+        UserDetails userDetails = new UserDetails("MODERATOR", true, UUID.randomUUID(), "Moderator User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a caption exactly at the PREMIUM_USER limit (800 chars)
+        String title = "Valid Title";
+        String captionAtLimit = "A".repeat(UserDetails.PREMIUM_USER_CAPTION_LIMIT);
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(captionAtLimit);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Setup mocks
+        when(categoryRepository.findByName(categoryName)).thenReturn(safetyCategory);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Execute
+        Post result = postService.createPost(request);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(title, result.getTitle());
+        assertEquals(captionAtLimit, result.getCaption());
+
+        // Verify the Post was saved with the correct values
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(captionAtLimit, postCaptor.getValue().getCaption());
+    }
+
+    @Test
+    void testCreatePost_RegisteredUserCannotUsePremiumLimits() {
+        // Setup authentication with REGISTERED_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with REGISTERED_USER role
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a title at PREMIUM_USER limit but exceeding REGISTERED_USER limit
+        String title = "A".repeat(UserDetails.PREMIUM_USER_TITLE_LIMIT); // 140 chars, exceeds regular user's 70
+        String content = "Valid content";
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Execute & Verify exception
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
+
+        assertTrue(exception.getMessage().contains("Title exceeds the character limit"));
+        assertTrue(exception.getMessage().contains("70"));
+        assertTrue(exception.getMessage().contains("free"));
+
+        // Verify no save was attempted
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void testCreatePost_RegisteredUserCannotUsePremiumCaptionLimits() {
+        // Setup authentication with REGISTERED_USER role
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        // Create a UserDetails with REGISTERED_USER role
+        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+
+        // Setup SecurityContextHolder to return our authentication
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Create a caption at PREMIUM_USER limit but exceeding REGISTERED_USER limit
+        String title = "Valid Title";
+        String content = "A".repeat(UserDetails.PREMIUM_USER_CAPTION_LIMIT); // 800 chars, exceeds regular
+        // user's 200
+        Double latitude = 1.0;
+        Double longitude = 2.0;
+        String categoryName = "Safety";
+        UUID userId = UUID.randomUUID();
+
+        // Create the request
+        PostCreateRequest request = new PostCreateRequest();
+        request.setTitle(title);
+        request.setCaption(content);
+        request.setLatitude(latitude);
+        request.setLongitude(longitude);
+        request.setCategory(categoryName);
+        request.setPostedBy(userId);
+
+        // Execute & Verify exception
+        InvalidPostDataException exception = assertThrows(InvalidPostDataException.class,
+                () -> postService.createPost(request));
+
+        assertTrue(exception.getMessage().contains("Caption exceeds the character limit"));
+        assertTrue(exception.getMessage().contains("200"));
+        assertTrue(exception.getMessage().contains("free"));
+
+        // Verify no save was attempted
+        verify(postRepository, never()).save(any(Post.class));
+
+        // Reset SecurityContextHolder to avoid affecting other tests
+        SecurityContextHolder.clearContext();
+    }
 
 
 

@@ -5,7 +5,10 @@ import com.safetypin.post.model.VoteType;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.UUID;
+
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data

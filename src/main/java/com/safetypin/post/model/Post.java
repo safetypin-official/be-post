@@ -36,16 +36,18 @@ public class Post extends BasePost {
     private String category;
 
     @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Vote> votes;
+    private transient List<Vote> votes;
 
     private String imageUrl;
 
     private String address;
 
-    // Additional fields as needed
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private transient List<CommentOnPost> comments;
 
     // Add constructor that accepts latitude and longitude as separate parameters
-    public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude, Double longitude) {
+    public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude,
+            Double longitude) {
         this.setCaption(caption);
         this.setTitle(title);
         this.setCategory(category);
@@ -133,7 +135,8 @@ public class Post extends BasePost {
     }
 
     public VoteType currentVote(UUID userId) {
-        if (votes == null) return VoteType.NONE;
+        if (votes == null)
+            return VoteType.NONE;
         return votes.stream()
                 .filter(v -> v.getId().getUserId().equals(userId))
                 .map(v -> (v.isUpvote()) ? VoteType.UPVOTE : VoteType.DOWNVOTE)
@@ -158,8 +161,10 @@ public class Post extends BasePost {
         private String address;
 
         public Builder() {
-            /* This constructor is intentionally empty as it is used by the Builder pattern.
-             * No initialization is needed here since all fields are set via the builder methods.
+            /*
+             * This constructor is intentionally empty as it is used by the Builder pattern.
+             * No initialization is needed here since all fields are set via the builder
+             * methods.
              */
         }
 

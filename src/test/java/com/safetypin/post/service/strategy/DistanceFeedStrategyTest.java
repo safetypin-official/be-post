@@ -173,7 +173,7 @@ class DistanceFeedStrategyTest {
 
         // Assert
         assertEquals(1, result.getTotalElements());
-        assertEquals("Medium Distance Post", ((PostData) result.getContent().get(0).get("post")).getTitle());
+        assertEquals("Medium Distance Post", ((PostData) result.getContent().getFirst().get("post")).getTitle());
     }
 
     @Test
@@ -192,7 +192,7 @@ class DistanceFeedStrategyTest {
 
         // Assert
         assertEquals(1, result.getTotalElements());
-        assertEquals("Far Away Post", ((PostData) result.getContent().get(0).get("post")).getTitle());
+        assertEquals("Far Away Post", ((PostData) result.getContent().getFirst().get("post")).getTitle());
     }
 
     @Test
@@ -249,7 +249,7 @@ class DistanceFeedStrategyTest {
 
         // Assert
         assertEquals(1, result.getTotalElements());
-        assertEquals("Nearby Post", ((PostData) result.getContent().get(0).get("post")).getTitle());
+        assertEquals("Nearby Post", ((PostData) result.getContent().getFirst().get("post")).getTitle());
     }
 
     @Test
