@@ -103,12 +103,12 @@ public class PostController {
             Page<Post> postsPage = postService.findAllPaginated(pageable);
 
             // fetch profiles
-            List<PostedByData> profileList = null;
-            profileList = postService.fetchProfiles();
+            Map<UUID, PostedByData> profileList = postService.fetchPostedByData(postsPage.getContent().stream().map(
+                    Post::getPostedBy).toList()
+            );
 
-            List<PostedByData> finalProfileList = profileList;
             List<PostData> formattedPosts = postsPage.getContent().stream()
-                    .map(post -> PostData.fromPostAndUserId(post, userId, finalProfileList))
+                    .map(post -> PostData.fromPostAndUserId(post, userId, profileList.get(post.getPostedBy())))
                     .toList();
 
             Map<String, Object> paginationData = createPaginationData(
@@ -264,9 +264,11 @@ public class PostController {
             Post post = postService.findById(id);
 
             // fetch profiles
-            List<PostedByData> profileList = postService.fetchProfiles();
+            Map<UUID, PostedByData> profileList = postService.fetchPostedByData(
+                    List.of(post.getPostedBy())
+            );
 
-            PostData postData = PostData.fromPostAndUserId(post, userId, profileList);
+            PostData postData = PostData.fromPostAndUserId(post, userId, profileList.get(post.getPostedBy()));
             return createSuccessResponse(postData);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }

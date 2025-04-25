@@ -7,7 +7,8 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public interface FeedStrategy {
-    Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, List<PostedByData> profileList);
+    Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, Map<UUID, PostedByData> profileList);
 }
