@@ -1,16 +1,12 @@
 package com.safetypin.post.security;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.UUID;
-
+import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.model.Role;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -20,14 +16,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.safetypin.post.dto.UserDetails;
-import com.safetypin.post.model.Role;
+import java.io.IOException;
+import java.util.UUID;
 
-import io.jsonwebtoken.Claims;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class JWTFilterTest {
 
@@ -58,7 +51,7 @@ class JWTFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + testToken);
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
-        when(claims.get("role", Role.class)).thenReturn(Role.REGISTERED_USER);
+        when(claims.get("role", String.class)).thenReturn(Role.REGISTERED_USER.name());
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
         when(claims.get("name", String.class)).thenReturn("John Doe");
@@ -147,7 +140,7 @@ class JWTFilterTest {
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
         // Missing required claim
-        when(claims.get("role", Role.class)).thenReturn(Role.MODERATOR);
+        when(claims.get("role", String.class)).thenReturn(Role.MODERATOR.name());
         when(claims.get("isVerified", Boolean.class)).thenReturn(null); // This will cause NullPointerException
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
         when(claims.get("name", String.class)).thenReturn("Moderator User");
@@ -168,7 +161,7 @@ class JWTFilterTest {
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
         // Invalid UUID format
-        when(claims.get("role", Role.class)).thenReturn(Role.REGISTERED_USER);
+        when(claims.get("role", String.class)).thenReturn(Role.REGISTERED_USER.name());
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn("not-a-valid-uuid");
         when(claims.get("name", String.class)).thenReturn("John Doe");
@@ -188,7 +181,7 @@ class JWTFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + testToken);
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
-        when(claims.get("role", Role.class)).thenReturn(Role.MODERATOR);
+        when(claims.get("role", String.class)).thenReturn(Role.MODERATOR.name());
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
         when(claims.get("name", String.class)).thenReturn("Moderator User");
