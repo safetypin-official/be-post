@@ -1,13 +1,14 @@
 package com.safetypin.post.dto;
 
+import java.util.UUID;
+
 import com.safetypin.post.model.Role;
+
 import io.jsonwebtoken.Claims;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -33,7 +34,7 @@ public class UserDetails {
     }
 
     public boolean isPremiumUser() {
-        return role == Role.PREMIUM_USER || role == Role.MODERATOR;
+        return role != null && (role == Role.PREMIUM_USER || role == Role.MODERATOR);
     }
 
     public int getTitleCharacterLimit() {

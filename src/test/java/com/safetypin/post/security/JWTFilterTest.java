@@ -1,12 +1,16 @@
 package com.safetypin.post.security;
 
-import com.safetypin.post.dto.UserDetails;
-import com.safetypin.post.model.Role;
-import io.jsonwebtoken.Claims;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -16,11 +20,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.io.IOException;
-import java.util.UUID;
+import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.model.Role;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 class JWTFilterTest {
 
@@ -74,7 +81,6 @@ class JWTFilterTest {
         assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_REGISTERED_USER")));
     }
 
-
     @Test
     void doFilterInternal_MissingAuthHeader_Unauthorized() throws ServletException, IOException {
         // Arrange
@@ -122,7 +128,8 @@ class JWTFilterTest {
         // Arrange
         when(request.getHeader("Authorization")).thenReturn("Bearer " + testToken);
         when(jwtUtil.verifyAndGetClaims(testToken))
-                .thenThrow(new com.safetypin.post.exception.InvalidCredentialsException("Invalid JWT token: Test exception"));
+                .thenThrow(new com.safetypin.post.exception.InvalidCredentialsException(
+                        "Invalid JWT token: Test exception"));
 
         // Act
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -140,10 +147,10 @@ class JWTFilterTest {
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
         // Missing required claim
-        when(claims.get("role", String.class)).thenReturn("ADMIN");
+        when(claims.get("role", Role.class)).thenReturn(Role.MODERATOR);
         when(claims.get("isVerified", Boolean.class)).thenReturn(null); // This will cause NullPointerException
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
-        when(claims.get("name", String.class)).thenReturn("Admin User");
+        when(claims.get("name", String.class)).thenReturn("Moderator User");
 
         // Act
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -184,7 +191,7 @@ class JWTFilterTest {
         when(claims.get("role", Role.class)).thenReturn(Role.MODERATOR);
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
-        when(claims.get("name", String.class)).thenReturn("Admin User");
+        when(claims.get("name", String.class)).thenReturn("Moderator User");
 
         // Act
         jwtFilter.doFilterInternal(request, response, filterChain);
