@@ -9,6 +9,7 @@ import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.CommentOnComment;
 import com.safetypin.post.model.CommentOnPost;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.model.Role;
 import com.safetypin.post.service.CommentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ class CommentControllerTest {
         userId = UUID.randomUUID();
         postId = UUID.randomUUID();
         commentId = UUID.randomUUID();
-        userDetails = new UserDetails("USER", true, userId, "Test User");
+        userDetails = new UserDetails(Role.REGISTERED_USER, true, userId, "Test User");
 
         // Setup comment request
         UUID parentId = UUID.randomUUID();

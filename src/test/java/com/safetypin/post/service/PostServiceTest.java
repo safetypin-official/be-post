@@ -4,6 +4,7 @@ import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.*;
 import com.safetypin.post.model.Category;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.model.Role;
 import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.service.strategy.DistanceFeedStrategy;
@@ -142,7 +143,7 @@ class PostServiceTest {
         // Set up the security context with a mock authentication
         Authentication authentication = mock(Authentication.class);
         SecurityContext securityContext = mock(SecurityContext.class);
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
@@ -244,7 +245,7 @@ class PostServiceTest {
         // Set up the security context with a mock authentication
         Authentication authentication = mock(Authentication.class);
         SecurityContext securityContext = mock(SecurityContext.class);
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
@@ -438,7 +439,7 @@ class PostServiceTest {
         // Set up the security context with a mock authentication
         Authentication authentication = mock(Authentication.class);
         SecurityContext securityContext = mock(SecurityContext.class);
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         SecurityContextHolder.setContext(securityContext);
@@ -471,9 +472,7 @@ class PostServiceTest {
         // Then
         verify(postRepository).findById(postId);
         verify(postRepository).delete(post);
-    }    private final LocalDateTime now = LocalDateTime.now(),
-            yesterday = now.minusDays(1),
-            tomorrow = now.plusDays(1);
+    }
 
     @Test
     void testDeletePost_UnauthorizedAccess() {
@@ -584,7 +583,9 @@ class PostServiceTest {
 
         verify(categoryRepository).findByName(categoryName);
         verify(postRepository).save(any(Post.class));
-    }
+    }    private final LocalDateTime now = LocalDateTime.now(),
+            yesterday = now.minusDays(1),
+            tomorrow = now.plusDays(1);
 
     @Test
     void testDeletePost_PostNotFound() {
@@ -602,8 +603,6 @@ class PostServiceTest {
         verify(postRepository).findById(postId);
         verify(postRepository, never()).delete(any(Post.class));
     }
-
-    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testFindPostsByDistanceFeed_WithFilters_Success() throws InvalidCredentialsException {
@@ -775,6 +774,8 @@ class PostServiceTest {
         verify(categoryRepository).findByName("Safety");
         verify(postRepository).findAll();
     }
+
+    // POSITIVE TEST CASES FOR SEARCH POSTS
 
     @Test
     void testFindPostsByDistanceFeed_WithFilters_NullTitle_NoKeywordInCaption() throws InvalidCredentialsException {
@@ -2025,7 +2026,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with REGISTERED_USER role
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2074,7 +2075,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with REGISTERED_USER role
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2120,7 +2121,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with REGISTERED_USER role
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2169,7 +2170,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with REGISTERED_USER role
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2215,7 +2216,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with PREMIUM_USER role
-        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+        UserDetails userDetails = new UserDetails(Role.PREMIUM_USER, true, UUID.randomUUID(), "Premium User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2264,7 +2265,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with PREMIUM_USER role
-        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+        UserDetails userDetails = new UserDetails(Role.PREMIUM_USER, true, UUID.randomUUID(), "Premium User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2310,7 +2311,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with PREMIUM_USER role
-        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+        UserDetails userDetails = new UserDetails(Role.PREMIUM_USER, true, UUID.randomUUID(), "Premium User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2359,7 +2360,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with PREMIUM_USER role
-        UserDetails userDetails = new UserDetails("PREMIUM_USER", true, UUID.randomUUID(), "Premium User");
+        UserDetails userDetails = new UserDetails(Role.PREMIUM_USER, true, UUID.randomUUID(), "Premium User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2405,7 +2406,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with MODERATOR role
-        UserDetails userDetails = new UserDetails("MODERATOR", true, UUID.randomUUID(), "Moderator User");
+        UserDetails userDetails = new UserDetails(Role.MODERATOR, true, UUID.randomUUID(), "Moderator User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2454,7 +2455,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with MODERATOR role
-        UserDetails userDetails = new UserDetails("MODERATOR", true, UUID.randomUUID(), "Moderator User");
+        UserDetails userDetails = new UserDetails(Role.MODERATOR, true, UUID.randomUUID(), "Moderator User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2503,7 +2504,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with REGISTERED_USER role
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -2546,7 +2547,7 @@ class PostServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
 
         // Create a UserDetails with REGISTERED_USER role
-        UserDetails userDetails = new UserDetails("USER", true, UUID.randomUUID(), "Regular User");
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Regular User");
 
         // Setup SecurityContextHolder to return our authentication
         when(securityContext.getAuthentication()).thenReturn(authentication);

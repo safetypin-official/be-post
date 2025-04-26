@@ -1,6 +1,7 @@
 package com.safetypin.post.security;
 
 import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.model.Role;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -50,7 +51,7 @@ class JWTFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + testToken);
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
-        when(claims.get("role", String.class)).thenReturn("USER");
+        when(claims.get("role", Role.class)).thenReturn(Role.REGISTERED_USER);
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
         when(claims.get("name", String.class)).thenReturn("John Doe");
@@ -65,12 +66,12 @@ class JWTFilterTest {
         assertNotNull(authentication);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        assertEquals("USER", userDetails.getRole());
+        assertEquals(Role.REGISTERED_USER, userDetails.getRole());
         assertTrue(userDetails.isVerified());
         assertEquals(testUserId, userDetails.getUserId());
         assertEquals("John Doe", userDetails.getName());
 
-        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_USER")));
+        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_REGISTERED_USER")));
     }
 
 
@@ -160,7 +161,7 @@ class JWTFilterTest {
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
         // Invalid UUID format
-        when(claims.get("role", String.class)).thenReturn("USER");
+        when(claims.get("role", Role.class)).thenReturn(Role.REGISTERED_USER);
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn("not-a-valid-uuid");
         when(claims.get("name", String.class)).thenReturn("John Doe");
@@ -180,7 +181,7 @@ class JWTFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + testToken);
         when(jwtUtil.verifyAndGetClaims(testToken)).thenReturn(claims);
 
-        when(claims.get("role", String.class)).thenReturn("ADMIN");
+        when(claims.get("role", Role.class)).thenReturn(Role.MODERATOR);
         when(claims.get("isVerified", Boolean.class)).thenReturn(true);
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
         when(claims.get("name", String.class)).thenReturn("Admin User");
@@ -195,7 +196,7 @@ class JWTFilterTest {
         assertNotNull(authentication);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        assertEquals("ADMIN", userDetails.getRole());
-        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        assertEquals(Role.MODERATOR, userDetails.getRole());
+        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MODERATOR")));
     }
 }
