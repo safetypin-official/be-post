@@ -1,14 +1,13 @@
 package com.safetypin.post.dto;
 
-import java.util.UUID;
-
 import com.safetypin.post.model.Role;
-
 import io.jsonwebtoken.Claims;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -18,6 +17,8 @@ public class UserDetails {
     public static final int PREMIUM_USER_TITLE_LIMIT = 140;
     public static final int REGISTERED_USER_CAPTION_LIMIT = 200;
     public static final int PREMIUM_USER_CAPTION_LIMIT = 800;
+    public static final int REGISTERED_USER_POST_PER_DAY_LIMIT = 3;
+    public static final int PREMIUM_USER_POST_PER_DAY_LIMIT = 10;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -27,7 +28,7 @@ public class UserDetails {
 
     public static UserDetails fromClaims(Claims claims) {
         return new UserDetails(
-                claims.get("role", Role.class),
+                Role.valueOf(claims.get("role", String.class)),
                 claims.get("isVerified", Boolean.class),
                 UUID.fromString(claims.get("userId", String.class)),
                 claims.get("name", String.class));
@@ -43,5 +44,9 @@ public class UserDetails {
 
     public int getCaptionCharacterLimit() {
         return isPremiumUser() ? PREMIUM_USER_CAPTION_LIMIT : REGISTERED_USER_CAPTION_LIMIT;
+    }
+
+    public int getPostPerDayLimit() {
+        return isPremiumUser() ? PREMIUM_USER_POST_PER_DAY_LIMIT : REGISTERED_USER_POST_PER_DAY_LIMIT;
     }
 }
