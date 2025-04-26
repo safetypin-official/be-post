@@ -282,7 +282,7 @@ class AbstractFeedStrategyTest {
     // Concrete implementation for testing
     private static class TestFeedStrategy extends AbstractFeedStrategy {
         @Override
-        public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, List<PostedByData> profileList) {
+        public Page<Map<String, Object>> processFeed(List<Post> posts, FeedQueryDTO queryDTO, Map<UUID, PostedByData> profileList) {
             // Simple implementation for testing
             List<Map<String, Object>> results = new ArrayList<>();
             return paginateResults(results, queryDTO.getPageable());

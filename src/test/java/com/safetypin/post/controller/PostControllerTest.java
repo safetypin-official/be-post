@@ -56,6 +56,8 @@ class PostControllerTest {
     private Pageable pageable;
     private MethodArgumentTypeMismatchException typeMismatchException;
 
+    private PostedByData postedByData;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -86,6 +88,8 @@ class PostControllerTest {
 
         // Setup Exception for exception handler test
         typeMismatchException = mock(MethodArgumentTypeMismatchException.class);
+
+        postedByData = new PostedByData(testUserId, "Test User", "http://example.com/profile.jpg");
     }
 
     // ------------------- Find All Posts Tests -------------------
@@ -155,8 +159,7 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_withFilters() {
         // Arrange
-        List<PostedByData> profileList = postService.fetchProfiles();
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
         Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -219,8 +222,7 @@ class PostControllerTest {
     @Test
     void getPostsFeedByDistance_withNullDates() {
         // Arrange
-        List<PostedByData> profileList = postService.fetchProfiles();
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
         Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -255,8 +257,7 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_success() {
         // Arrange
-        List<PostedByData> profileList = postService.fetchProfiles();
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
         Map<String, Object> postMap = Map.of("post", postData);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -293,8 +294,7 @@ class PostControllerTest {
     @Test
     void getPostsFeedByTimestamp_withNullDates() {
         // Arrange
-        List<PostedByData> profileList = postService.fetchProfiles();
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
         Map<String, Object> postMap = Map.of("post", postData);
         List<Map<String, Object>> posts = Collections.singletonList(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
@@ -331,8 +331,7 @@ class PostControllerTest {
     @Test
     void getPostBySpecificUser_success() {
         // Arrange
-        List<PostedByData> profileList = postService.fetchProfiles();
-        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, profileList);
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
         Map<String, Object> postMap = Map.of("post", postData);
         List<Map<String, Object>> posts = List.of(postMap);
         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());

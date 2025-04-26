@@ -5,6 +5,8 @@ import com.safetypin.post.model.VoteType;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.UUID;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +25,7 @@ public class PostData {
     private Long upvoteCount;
     private Long downvoteCount;
     private VoteType currentVote;
+    private UUID postedById;
     private PostedByData postedBy;
 
     /**
@@ -32,26 +35,7 @@ public class PostData {
      * @param userId The ID of the user viewing the post
      * @return A PostData instance
      */
-    public static PostData fromPostAndUserId(Post post, UUID userId, List<PostedByData> profiles) {
-
-        PostedByData postedByData = new PostedByData(post.getPostedBy(), null, null);
-        if (profiles != null && !profiles.isEmpty()) {
-            // iterate profiles
-            PostedByData profileResponse = null;
-            for (PostedByData profile : profiles) {
-                if (profile.getId().equals(post.getPostedBy())) {
-                    profileResponse = profile;
-                    break;
-                }
-            }
-            if (profileResponse != null) {
-                postedByData = PostedByData.builder()
-                        .id(userId)
-                        .profilePicture(profileResponse.getProfilePicture())
-                        .name(profileResponse.getName())
-                        .build();
-            }
-        }
+    public static PostData fromPostAndUserId(Post post, UUID userId, PostedByData postedByData) {
 
         return PostData.builder()
                 .id(post.getId())
@@ -64,6 +48,7 @@ public class PostData {
                 .upvoteCount(post.getUpvoteCount())
                 .downvoteCount(post.getDownvoteCount())
                 .currentVote(post.currentVote(userId))
+                .postedById(post.getPostedBy())
                 .postedBy(postedByData)
                 .build();
     }
