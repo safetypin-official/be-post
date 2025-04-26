@@ -34,6 +34,7 @@ import com.safetypin.post.repository.CategoryRepository;
 import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.service.strategy.DistanceFeedStrategy;
 import com.safetypin.post.service.strategy.FeedStrategy;
+import com.safetypin.post.service.strategy.FollowingFeedStrategy;
 import com.safetypin.post.service.strategy.TimestampFeedStrategy;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,17 +47,24 @@ public class PostService {
     private final CategoryRepository categoryRepository;
     private final DistanceFeedStrategy distanceFeedStrategy;
     private final TimestampFeedStrategy timestampFeedStrategy;
+    private final FollowingFeedStrategy followingFeedStrategy;
+    private final RestTemplate restTemplate;
+
     @Value("${be-auth}")
     private String apiEndpoint = "http://safetypin.ppl.cs.ui.ac.id";
 
     @Autowired
     public PostService(PostRepository postRepository, CategoryRepository categoryRepository,
             DistanceFeedStrategy distanceFeedStrategy,
-            TimestampFeedStrategy timestampFeedStrategy) {
+            TimestampFeedStrategy timestampFeedStrategy,
+            FollowingFeedStrategy followingFeedStrategy,
+            RestTemplate restTemplate) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.distanceFeedStrategy = distanceFeedStrategy;
         this.timestampFeedStrategy = timestampFeedStrategy;
+        this.followingFeedStrategy = followingFeedStrategy;
+        this.restTemplate = restTemplate;
     }
     // find all (debugging purposes)
 
@@ -190,26 +198,38 @@ public class PostService {
             throw new IllegalArgumentException("Feed type is required");
         }
 
+        FeedStrategy strategy;
+        List<Post> allPosts = null; // Will be fetched only if needed by the strategy
+        Map<UUID, PostedByData> profileList = null; // Will be fetched only if needed by the strategy
+
         // Choose strategy based on feed type
-        FeedStrategy strategy = switch (feedType.toLowerCase()) {
-            case "distance" -> distanceFeedStrategy;
-            case "timestamp" -> timestampFeedStrategy;
-            default -> throw new IllegalArgumentException("Invalid feed type: " + feedType);
-        };
-
-        // Get all posts
-        List<Post> allPosts = postRepository.findAll();
-
-        // collect createdBy UUID from allPosts
-        List<UUID> createdByList = allPosts.stream()
-                .map(Post::getPostedBy)
-                .distinct()
-                .toList();
-
-        // fetch profiles
-        Map<UUID, PostedByData> profileList = fetchPostedByData(createdByList);
+        switch (feedType.toLowerCase()) {
+            case "distance":
+                strategy = distanceFeedStrategy;
+                allPosts = postRepository.findAll(); // Distance needs all posts
+                // Fetch profiles for all posts
+                List<UUID> createdByListDistance = allPosts.stream().map(Post::getPostedBy).distinct().toList();
+                profileList = fetchPostedByData(createdByListDistance);
+                break;
+            case "timestamp":
+                strategy = timestampFeedStrategy;
+                allPosts = postRepository.findAll(); // Timestamp currently processes all posts
+                // Fetch profiles for all posts
+                List<UUID> createdByListTimestamp = allPosts.stream().map(Post::getPostedBy).distinct().toList();
+                profileList = fetchPostedByData(createdByListTimestamp);
+                break;
+            case "following": // Added case
+                strategy = followingFeedStrategy;
+                // Following strategy fetches its own data, no need to fetch allPosts or
+                // profileList here
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid feed type: " + feedType);
+        }
 
         // Apply strategy to posts
+        // Pass null for allPosts and profileList if the strategy doesn't need them
+        // (like FollowingFeedStrategy)
         return strategy.processFeed(allPosts, queryDTO, profileList);
     }
 
@@ -249,8 +269,10 @@ public class PostService {
     }
 
     public Map<UUID, PostedByData> fetchPostedByData(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
         // fetch profiles
-        RestTemplate restTemplate = new RestTemplate();
         String uri = apiEndpoint + "/api/profiles/batch"; // or any other uri
         HttpEntity<List<UUID>> entity = new HttpEntity<>(userIds, null);
         try {
@@ -258,11 +280,11 @@ public class PostService {
                     new ParameterizedTypeReference<Map<UUID, PostedByData>>() {
                     });
 
-            log.info("hasil fetch: " + result.getBody() + "  " + result.getStatusCode());
+            log.info("Fetched {} profiles successfully.", result.getBody() != null ? result.getBody().size() : 0);
             return result.getBody() == null ? new HashMap<>() : result.getBody();
         } catch (ResourceAccessException e) {
             log.error("Network error fetching profiles for user IDs {}: {}", userIds, e.getMessage());
-            // Return empty map on network error to allow tests relying on mocks to proceed
+            // Return empty map on network error
             return new HashMap<>();
         } catch (Exception e) {
             log.error("Error fetching profiles for user IDs {}: {}", userIds, e.getMessage(), e);
