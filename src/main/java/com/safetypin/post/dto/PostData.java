@@ -1,15 +1,13 @@
 package com.safetypin.post.dto;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import com.safetypin.post.model.Post;
 import com.safetypin.post.model.VoteType;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.UUID;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Data
 @Builder
