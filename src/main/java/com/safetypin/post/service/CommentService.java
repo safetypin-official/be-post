@@ -1,5 +1,6 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.dto.CommentDTO;
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.model.CommentOnComment;
 import com.safetypin.post.model.CommentOnPost;
@@ -15,9 +16,9 @@ public interface CommentService {
 
     CommentOnComment createCommentOnComment(UUID userId, CommentRequest req);
 
-    Page<CommentOnPost> getCommentOnPost(UUID postId, Pageable pageable);
+    Page<CommentDTO> getCommentOnPost(UUID postId, Pageable pageable);
 
-    Page<CommentOnComment> getCommentOnComment(UUID commentId, Pageable pageable);
+    Page<CommentDTO> getCommentOnComment(UUID commentId, Pageable pageable);
 
     void deleteComment(UUID commentId, UUID userId, boolean isCommentOnComment);
 }

@@ -1,5 +1,6 @@
 package com.safetypin.post.controller;
 
+import com.safetypin.post.dto.CommentDTO;
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.dto.PostResponse;
 import com.safetypin.post.dto.UserDetails;
@@ -47,7 +48,7 @@ public class CommentController {
             Pageable pageable = PageRequest.of(page, size);
 
             // Create the comment
-            Page<CommentOnPost> comments = commentService.getCommentOnPost(postId, pageable);
+            Page<CommentDTO> comments = commentService.getCommentOnPost(postId, pageable);
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(comments);
@@ -72,7 +73,7 @@ public class CommentController {
             Pageable pageable = PageRequest.of(page, size);
 
             // Create the comment
-            Page<CommentOnComment> comments = commentService.getCommentOnComment(commentId, pageable);
+            Page<CommentDTO> comments = commentService.getCommentOnComment(commentId, pageable);
 
             // Create response with pagination data
             Map<String, Object> paginationData = createPaginationData(comments);

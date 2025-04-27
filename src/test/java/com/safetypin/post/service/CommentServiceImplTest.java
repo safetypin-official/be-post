@@ -1,5 +1,6 @@
 package com.safetypin.post.service;
 
+import com.safetypin.post.dto.CommentDTO;
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.*;
 class CommentServiceImplTest {
 
     private PostRepository postRepository;
+    private PostService postService;
     private CommentOnPostRepository commentOnPostRepository;
     private CommentOnCommentRepository commentOnCommentRepository;
     private CommentServiceImpl commentService;
@@ -36,7 +38,7 @@ class CommentServiceImplTest {
         postRepository = mock(PostRepository.class);
         commentOnPostRepository = mock(CommentOnPostRepository.class);
         commentOnCommentRepository = mock(CommentOnCommentRepository.class);
-        commentService = new CommentServiceImpl(postRepository, commentOnPostRepository, commentOnCommentRepository);
+        commentService = new CommentServiceImpl(postRepository, postService, commentOnPostRepository, commentOnCommentRepository);
     }
 
     @Test
@@ -295,7 +297,7 @@ class CommentServiceImplTest {
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
         when(commentOnPostRepository.findByParentId(postId)).thenReturn(List.of(comment1, comment2));
 
-        Page<CommentOnPost> result = commentService.getCommentOnPost(postId, pageable);
+        Page<CommentDTO> result = commentService.getCommentOnPost(postId, pageable);
 
         assertEquals(2, result.getContent().size());
         assertEquals("First Comment", result.getContent().getFirst().getCaption());
@@ -340,7 +342,7 @@ class CommentServiceImplTest {
         when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(parentComment));
         when(commentOnCommentRepository.findByParentId(commentId)).thenReturn(List.of(reply1, reply2));
 
-        Page<CommentOnComment> result = commentService.getCommentOnComment(commentId, pageable);
+        Page<CommentDTO> result = commentService.getCommentOnComment(commentId, pageable);
 
         assertEquals(2, result.getContent().size());
         assertEquals("Reply 1", result.getContent().getFirst().getCaption());
@@ -374,7 +376,7 @@ class CommentServiceImplTest {
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
         when(commentOnPostRepository.findByParentId(postId)).thenReturn(List.of());
 
-        Page<CommentOnPost> result = commentService.getCommentOnPost(postId, pageable);
+        Page<CommentDTO> result = commentService.getCommentOnPost(postId, pageable);
 
         assertEquals(0, result.getContent().size());
     }
@@ -393,7 +395,7 @@ class CommentServiceImplTest {
         when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(parentComment));
         when(commentOnCommentRepository.findByParentId(commentId)).thenReturn(List.of());
 
-        Page<CommentOnComment> result = commentService.getCommentOnComment(commentId, pageable);
+        Page<CommentDTO> result = commentService.getCommentOnComment(commentId, pageable);
 
         assertEquals(0, result.getContent().size());
     }
