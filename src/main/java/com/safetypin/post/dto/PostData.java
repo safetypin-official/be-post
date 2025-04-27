@@ -26,6 +26,7 @@ public class PostData {
     private PostedByData postedBy;
     private String imageUrl;
     private String address;
+    private Long commentCount;
 
     /**
      * Creates a PostData object from a Post entity
@@ -51,6 +52,7 @@ public class PostData {
                 .postedBy(postedByData)
                 .imageUrl(post.getImageUrl())
                 .address(post.getAddress())
+                .commentCount(post.getCommentCount())
                 .build();
     }
 }

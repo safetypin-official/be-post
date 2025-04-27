@@ -31,4 +31,9 @@ public class CommentOnPost extends BasePost {
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());
     }
+
+
+    public long getChildCount() {
+        return comments == null ? 0 : comments.size();
+    }
 }
