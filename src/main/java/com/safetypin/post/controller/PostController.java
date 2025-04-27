@@ -108,7 +108,7 @@ public class PostController {
     @GetMapping("/all")
     public ResponseEntity<PostResponse> findAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "30") int size) {
         return executeWithExceptionHandling(() -> {
             // Get user details from security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

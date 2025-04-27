@@ -25,6 +25,8 @@ public class PostData {
     private VoteType currentVote;
     private UUID postedById;
     private PostedByData postedBy;
+    private String imageUrl;
+    private String address;
 
     /**
      * Creates a PostData object from a Post entity
@@ -48,6 +50,8 @@ public class PostData {
                 .currentVote(post.currentVote(userId))
                 .postedById(post.getPostedBy())
                 .postedBy(postedByData)
+                .imageUrl(post.getImageUrl())
+                .address(post.getAddress())
                 .build();
     }
 }

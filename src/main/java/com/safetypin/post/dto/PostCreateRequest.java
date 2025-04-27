@@ -30,5 +30,7 @@ public class PostCreateRequest {
 
     private UUID postedBy; // DEPRECIATED?? karena postedBy diambil dari token JWT
     private String imageUrl;
+
+    @JsonProperty(value = "Address", required = true)
     private String address;
 }
