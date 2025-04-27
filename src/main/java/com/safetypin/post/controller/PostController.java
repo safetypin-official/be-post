@@ -120,8 +120,7 @@ public class PostController {
 
             // fetch profiles
             Map<UUID, PostedByData> profileList = postService.fetchPostedByData(postsPage.getContent().stream().map(
-                    Post::getPostedBy).toList()
-            );
+                    Post::getPostedBy).toList());
 
             List<PostData> formattedPosts = postsPage.getContent().stream()
                     .map(post -> PostData.fromPostAndUserId(post, userId, profileList.get(post.getPostedBy())))
@@ -218,6 +217,45 @@ public class PostController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @GetMapping("/feed/following") // New endpoint
+    public ResponseEntity<PostResponse> getPostsFeedByFollowing(
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return executeWithExceptionHandling(() -> {
+            // Get user details from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UUID userId = userDetails.getUserId();
+
+            // Create request DTO (No lat/lon needed for following feed)
+            FeedRequestDTO requestDTO = FeedRequestDTO.builder()
+                    .categories(categories)
+                    .keyword(keyword)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .page(page)
+                    .size(size)
+                    // lat and lon are not set here
+                    .build();
+
+            // Convert to FeedQueryDTO
+            FeedQueryDTO queryDTO = FeedQueryDTO.fromFeedRequestAndUserId(requestDTO, userId);
+
+            // Get posts using strategy pattern
+            Page<Map<String, Object>> posts = postService.getFeed(queryDTO, "following"); // Use "following" type
+
+            // Create response with pagination data
+            Map<String, Object> paginationData = createPaginationData(posts);
+
+            return createSuccessResponse(paginationData);
+        }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @GetMapping("/user")
     public ResponseEntity<PostResponse> getPostBySpecificUser(
             @RequestParam UUID postUserId,
@@ -280,8 +318,7 @@ public class PostController {
 
             // fetch profiles
             Map<UUID, PostedByData> profileList = postService.fetchPostedByData(
-                    List.of(post.getPostedBy())
-            );
+                    List.of(post.getPostedBy()));
 
             PostData postData = PostData.fromPostAndUserId(post, userId, profileList.get(post.getPostedBy()));
             return createSuccessResponse(postData);

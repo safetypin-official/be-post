@@ -1,11 +1,26 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.*;
-import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.exception.PostNotFoundException;
-import com.safetypin.post.exception.UnauthorizedAccessException;
-import com.safetypin.post.model.Post;
-import com.safetypin.post.service.PostService;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -23,18 +38,17 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostCreateRequest;
+import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
+import com.safetypin.post.model.Post;
+import com.safetypin.post.service.PostService;
 
 class PostControllerTest {
 
@@ -324,6 +338,72 @@ class PostControllerTest {
         assertNull(capturedQuery.getDateFrom());
         assertNull(capturedQuery.getDateTo());
         assertEquals(testUserId, capturedQuery.getUserId());
+    }
+
+    // ------------------- Get Posts Feed By Following Tests -------------------
+
+    @Test
+    void getPostsFeedByFollowing_success() {
+        // Arrange
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
+        Map<String, Object> postMap = Map.of("post", postData); // Following feed doesn't include distance
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
+        Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        List<String> categories = List.of("INFO");
+        LocalDate from = LocalDate.now().minusDays(5);
+        LocalDate to = LocalDate.now();
+
+        // Capture the QueryDTO that will be created
+        ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+
+        when(postService.getFeed(queryCaptor.capture(), eq("following")))
+                .thenReturn(postsPage);
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByFollowing(
+                categories, "follow", from, to, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+
+        // Verify the captured QueryDTO has the correct values
+        FeedQueryDTO capturedQuery = queryCaptor.getValue();
+        assertNull(capturedQuery.getUserLat()); // Should be null for following feed
+        assertNull(capturedQuery.getUserLon()); // Should be null for following feed
+        assertEquals(categories, capturedQuery.getCategories());
+        assertEquals("follow", capturedQuery.getKeyword());
+        assertEquals(LocalDateTime.of(from, LocalTime.MIN), capturedQuery.getDateFrom());
+        assertEquals(LocalDateTime.of(to, LocalTime.MAX), capturedQuery.getDateTo());
+        assertEquals(testUserId, capturedQuery.getUserId());
+        assertEquals(0, capturedQuery.getPageable().getPageNumber());
+        assertEquals(10, capturedQuery.getPageable().getPageSize());
+
+        verify(postService).getFeed(any(FeedQueryDTO.class), eq("following"));
+    }
+
+    @Test
+    void getPostsFeedByFollowing_serviceThrowsException() {
+        // Arrange
+        List<String> categories = List.of("INFO");
+        LocalDate from = LocalDate.now().minusDays(5);
+        LocalDate to = LocalDate.now();
+
+        when(postService.getFeed(any(FeedQueryDTO.class), eq("following")))
+                .thenThrow(new RuntimeException("Following feed error"));
+
+        // Act
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByFollowing(
+                categories, "follow", from, to, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertNotNull(response.getBody().getMessage());
+        assertTrue(response.getBody().getMessage().contains("Following feed error"));
+
+        verify(postService).getFeed(any(FeedQueryDTO.class), eq("following"));
     }
 
     // ------------------- Get Posts By Specific User Tests -------------------
