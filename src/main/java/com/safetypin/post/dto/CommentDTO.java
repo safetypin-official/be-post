@@ -1,6 +1,8 @@
 package com.safetypin.post.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safetypin.post.model.BasePost;
+import com.safetypin.post.model.CommentOnPost;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,11 +14,14 @@ import java.util.UUID;
 @Getter
 @Setter
 public class CommentDTO {
+    private final UUID id;
+    private final String caption;
     private final LocalDateTime createdAt;
     private final UUID postedById;
     private final PostedByData postedBy;
-    UUID id;
-    String caption;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final Long commentCount;
 
     public CommentDTO(BasePost comment, PostedByData postedBy) {
         this.id = comment.getId();
@@ -24,5 +29,10 @@ public class CommentDTO {
         this.createdAt = comment.getCreatedAt();
         this.postedById = comment.getPostedBy();
         this.postedBy = postedBy;
+        if (comment instanceof CommentOnPost) {
+            this.commentCount = ((CommentOnPost) comment).getChildCount();
+        } else {
+            this.commentCount = null;
+        }
     }
 }

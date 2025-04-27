@@ -36,18 +36,18 @@ public class Post extends BasePost {
     private String category;
 
     @OneToMany(mappedBy = "id.post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private transient List<Vote> votes;
+    private List<Vote> votes;
 
     private String imageUrl;
 
     private String address;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
-    private transient List<CommentOnPost> comments;
+    private List<CommentOnPost> comments;
 
     // Add constructor that accepts latitude and longitude as separate parameters
     public Post(String caption, String title, String category, LocalDateTime createdAt, Double latitude,
-            Double longitude) {
+                Double longitude) {
         this.setCaption(caption);
         this.setTitle(title);
         this.setCategory(category);
@@ -142,6 +142,10 @@ public class Post extends BasePost {
                 .map(v -> (v.isUpvote()) ? VoteType.UPVOTE : VoteType.DOWNVOTE)
                 .findFirst()
                 .orElse(VoteType.NONE);
+    }
+
+    public Long getCommentCount() {
+        return comments == null ? 0L : comments.size();
     }
 
     /**
