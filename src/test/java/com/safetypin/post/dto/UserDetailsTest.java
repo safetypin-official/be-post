@@ -45,7 +45,7 @@ class UserDetailsTest {
         // Arrange
         UUID testUserId = UUID.randomUUID();
         Claims claims = new DefaultClaims();
-        claims.put("role", Role.REGISTERED_USER);
+        claims.put("role", Role.REGISTERED_USER.name());
         claims.put("isVerified", true);
         claims.put("userId", testUserId.toString());
         claims.put("name", "John Doe");
@@ -64,7 +64,7 @@ class UserDetailsTest {
     void testFromClaimsWithMissingValues() {
         // Arrange
         Claims claims = new DefaultClaims();
-        claims.put("role", Role.REGISTERED_USER);
+        claims.put("role", Role.REGISTERED_USER.name());
         // Omit isVerified
         claims.put("userId", UUID.randomUUID().toString());
         claims.put("name", "John Doe");
@@ -77,7 +77,7 @@ class UserDetailsTest {
     void testFromClaimsWithWrongTypes() {
         // Arrange
         Claims claims = new DefaultClaims();
-        claims.put("role", Role.REGISTERED_USER);
+        claims.put("role", Role.REGISTERED_USER.name());
         claims.put("isVerified", "not-a-boolean"); // Wrong type
         claims.put("userId", UUID.randomUUID().toString());
         claims.put("name", "John Doe");
@@ -90,7 +90,7 @@ class UserDetailsTest {
     void testFromClaimsWithInvalidUserId() {
         // Arrange
         Claims claims = new DefaultClaims();
-        claims.put("role", Role.REGISTERED_USER);
+        claims.put("role", Role.REGISTERED_USER.name());
         claims.put("isVerified", true);
         claims.put("userId", "not-a-uuid"); // Invalid UUID
         claims.put("name", "John Doe");

@@ -4,6 +4,8 @@ import com.safetypin.post.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -17,4 +19,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     List<Post> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     Page<Post> findByPostedByOrderByCreatedAtDesc(UUID postedBy, Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.postedBy = :userId AND CAST(p.createdAt AS date) = CURRENT_DATE")
+    int countPostsByUserToday(@Param("userId") UUID userId);
 }
