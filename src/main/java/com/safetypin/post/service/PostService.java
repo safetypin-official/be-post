@@ -1,10 +1,19 @@
 package com.safetypin.post.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import com.safetypin.post.dto.*;
+import com.safetypin.post.exception.InvalidPostDataException;
+import com.safetypin.post.exception.PostException;
+import com.safetypin.post.exception.PostNotFoundException;
+import com.safetypin.post.exception.UnauthorizedAccessException;
+import com.safetypin.post.model.Category;
+import com.safetypin.post.model.Post;
+import com.safetypin.post.repository.CategoryRepository;
+import com.safetypin.post.repository.PostRepository;
+import com.safetypin.post.service.strategy.DistanceFeedStrategy;
+import com.safetypin.post.service.strategy.FeedStrategy;
+import com.safetypin.post.service.strategy.FollowingFeedStrategy;
+import com.safetypin.post.service.strategy.TimestampFeedStrategy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -19,25 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostCreateRequest;
-import com.safetypin.post.dto.PostData;
-import com.safetypin.post.dto.PostedByData;
-import com.safetypin.post.dto.UserDetails;
-import com.safetypin.post.exception.InvalidPostDataException;
-import com.safetypin.post.exception.PostException;
-import com.safetypin.post.exception.PostNotFoundException;
-import com.safetypin.post.exception.UnauthorizedAccessException;
-import com.safetypin.post.model.Category;
-import com.safetypin.post.model.Post;
-import com.safetypin.post.repository.CategoryRepository;
-import com.safetypin.post.repository.PostRepository;
-import com.safetypin.post.service.strategy.DistanceFeedStrategy;
-import com.safetypin.post.service.strategy.FeedStrategy;
-import com.safetypin.post.service.strategy.FollowingFeedStrategy;
-import com.safetypin.post.service.strategy.TimestampFeedStrategy;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -55,10 +49,10 @@ public class PostService {
 
     @Autowired
     public PostService(PostRepository postRepository, CategoryRepository categoryRepository,
-            DistanceFeedStrategy distanceFeedStrategy,
-            TimestampFeedStrategy timestampFeedStrategy,
-            FollowingFeedStrategy followingFeedStrategy,
-            RestTemplate restTemplate) {
+                       DistanceFeedStrategy distanceFeedStrategy,
+                       TimestampFeedStrategy timestampFeedStrategy,
+                       FollowingFeedStrategy followingFeedStrategy,
+                       RestTemplate restTemplate) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.distanceFeedStrategy = distanceFeedStrategy;
@@ -110,7 +104,7 @@ public class PostService {
     }
 
     private void validatePostData(String title, String content, Double latitude, Double longitude,
-            String category, UUID postedBy, UserDetails userDetails) {
+                                  String category, UUID postedBy, UserDetails userDetails) {
         validateTitleAndContent(title, content, userDetails);
         validateLocation(latitude, longitude);
         validateCategoryAndUser(category, postedBy);

@@ -1,7 +1,6 @@
 package com.safetypin.post.dto;
 
-import com.safetypin.post.model.CommentOnComment;
-import com.safetypin.post.model.CommentOnPost;
+import com.safetypin.post.model.BasePost;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,19 +18,11 @@ public class CommentDTO {
     UUID id;
     String caption;
 
-    public CommentDTO(CommentOnPost commentOnPost, PostedByData postedBy) {
-        this.id = commentOnPost.getId();
-        this.caption = commentOnPost.getCaption();
-        this.createdAt = commentOnPost.getCreatedAt();
-        this.postedById = commentOnPost.getPostedBy();
-        this.postedBy = postedBy;
-    }
-
-    public CommentDTO(CommentOnComment commentOnComment, PostedByData postedBy) {
-        this.id = commentOnComment.getId();
-        this.caption = commentOnComment.getCaption();
-        this.createdAt = commentOnComment.getCreatedAt();
-        this.postedById = commentOnComment.getPostedBy();
+    public CommentDTO(BasePost comment, PostedByData postedBy) {
+        this.id = comment.getId();
+        this.caption = comment.getCaption();
+        this.createdAt = comment.getCreatedAt();
+        this.postedById = comment.getPostedBy();
         this.postedBy = postedBy;
     }
 }

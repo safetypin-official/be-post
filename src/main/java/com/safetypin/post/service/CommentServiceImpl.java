@@ -38,27 +38,9 @@ public class CommentServiceImpl implements CommentService {
         }
 
         // find comments
-        List<CommentOnPost> comments = commentOnPostRepository.findByParentId(postId);
+        List<BasePost> comments = new ArrayList<>(commentOnPostRepository.findByParentId(postId));
 
-        // get UUID createdBy
-        List<UUID> createdByList = comments.stream().map(CommentOnPost::getPostedBy).distinct().toList();
-
-        // fetch batch
-        Map<UUID, PostedByData> profileList = postService.fetchPostedByData(createdByList);
-
-        // sort by timestamp & convert to DTO
-        List<CommentDTO> sortedComments = comments.stream()
-                .sorted(Comparator.comparing(BasePost::getCreatedAt))
-                .map(comment -> new CommentDTO(comment, profileList.get(comment.getPostedBy())))
-                .toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
-
-        List<CommentDTO> pageContent = start >= sortedComments.size() ? Collections.emptyList()
-                : sortedComments.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, sortedComments.size());
+        return organizeComments(comments, pageable);
     }
 
     // fetch comment on comment
@@ -67,10 +49,14 @@ public class CommentServiceImpl implements CommentService {
             throw new IllegalArgumentException("CommentId is not found");
         }
 
-        List<CommentOnComment> comments = commentOnCommentRepository.findByParentId(commentId);
+        List<BasePost> comments = new ArrayList<>(commentOnCommentRepository.findByParentId(commentId));
 
+        return organizeComments(comments, pageable);
+    }
+
+    private Page<CommentDTO> organizeComments(List<BasePost> comments, Pageable pageable) {
         // get UUID createdBy
-        List<UUID> createdByList = comments.stream().map(CommentOnComment::getPostedBy).distinct().toList();
+        List<UUID> createdByList = comments.stream().map(BasePost::getPostedBy).distinct().toList();
 
         // fetch batch
         Map<UUID, PostedByData> profileList = postService.fetchPostedByData(createdByList);
@@ -81,6 +67,7 @@ public class CommentServiceImpl implements CommentService {
                 .map(comment -> new CommentDTO(comment, profileList.get(comment.getPostedBy())))
                 .toList();
 
+        // page it
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
 

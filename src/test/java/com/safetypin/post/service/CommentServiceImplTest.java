@@ -36,6 +36,7 @@ class CommentServiceImplTest {
     @BeforeEach
     void setUp() {
         postRepository = mock(PostRepository.class);
+        postService = mock(PostService.class);
         commentOnPostRepository = mock(CommentOnPostRepository.class);
         commentOnCommentRepository = mock(CommentOnCommentRepository.class);
         commentService = new CommentServiceImpl(postRepository, postService, commentOnPostRepository, commentOnCommentRepository);
