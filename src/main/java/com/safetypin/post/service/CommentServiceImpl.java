@@ -1,10 +1,8 @@
 package com.safetypin.post.service;
 
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-
+import com.safetypin.post.dto.CommentDTO;
 import com.safetypin.post.dto.CommentRequest;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.BasePost;
@@ -14,64 +12,66 @@ import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+
 
 @Slf4j
 @Service
 @AllArgsConstructor
 public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
+    private final PostService postService;
     private final CommentOnPostRepository commentOnPostRepository;
     private final CommentOnCommentRepository commentOnCommentRepository;
 
     // fetch comment on post
-    public Page<CommentOnPost> getCommentOnPost(UUID postId, Pageable pageable) {
+    public Page<CommentDTO> getCommentOnPost(UUID postId, Pageable pageable) {
         if (postRepository.findById(postId).isEmpty()) {
             throw new IllegalArgumentException("PostId is not found");
         }
 
-        List<CommentOnPost> comments = commentOnPostRepository.findByParentId(postId);
+        // find comments
+        List<BasePost> comments = new ArrayList<>(commentOnPostRepository.findByParentId(postId));
 
-        // sort by timestamp
-        List<CommentOnPost> sortedComments = comments.stream()
-                .sorted(Comparator.comparing(BasePost::getCreatedAt))
-                .toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
-
-        List<CommentOnPost> pageContent = start >= sortedComments.size() ? Collections.emptyList()
-                : sortedComments.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, sortedComments.size());
+        return organizeComments(comments, pageable);
     }
 
     // fetch comment on comment
-    public Page<CommentOnComment> getCommentOnComment(UUID commentId, Pageable pageable) {
+    public Page<CommentDTO> getCommentOnComment(UUID commentId, Pageable pageable) {
         if (commentOnPostRepository.findById(commentId).isEmpty()) {
             throw new IllegalArgumentException("CommentId is not found");
         }
 
-        List<CommentOnComment> comments = commentOnCommentRepository.findByParentId(commentId);
+        List<BasePost> comments = new ArrayList<>(commentOnCommentRepository.findByParentId(commentId));
 
-        // sort by timestamp
-        List<CommentOnComment> sortedComments = comments.stream()
+        return organizeComments(comments, pageable);
+    }
+
+    private Page<CommentDTO> organizeComments(List<BasePost> comments, Pageable pageable) {
+        // get UUID createdBy
+        List<UUID> createdByList = comments.stream().map(BasePost::getPostedBy).distinct().toList();
+
+        // fetch batch
+        Map<UUID, PostedByData> profileList = postService.fetchPostedByData(createdByList);
+
+        // sort by timestamp & convert to DTO
+        List<CommentDTO> sortedComments = comments.stream()
                 .sorted(Comparator.comparing(BasePost::getCreatedAt))
+                .map(comment -> new CommentDTO(comment, profileList.get(comment.getPostedBy())))
                 .toList();
 
+        // page it
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
 
-        List<CommentOnComment> pageContent = start >= sortedComments.size() ? Collections.emptyList()
+        List<CommentDTO> pageContent = start >= sortedComments.size() ? Collections.emptyList()
                 : sortedComments.subList(start, end);
 
         return new PageImpl<>(pageContent, pageable, sortedComments.size());

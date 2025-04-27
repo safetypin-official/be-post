@@ -1,13 +1,11 @@
 package com.safetypin.post.service.strategy;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import com.safetypin.post.dto.FeedQueryDTO;
+import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.model.Post;
+import com.safetypin.post.repository.PostRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -18,13 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import com.safetypin.post.dto.FeedQueryDTO;
-import com.safetypin.post.dto.PostData;
-import com.safetypin.post.dto.PostedByData;
-import com.safetypin.post.model.Post;
-import com.safetypin.post.repository.PostRepository;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -77,7 +69,7 @@ public class FollowingFeedStrategy extends AbstractFeedStrategy {
 
     @Override
     public Page<Map<String, Object>> processFeed(List<Post> allPostsIgnored, FeedQueryDTO queryDTO,
-            Map<UUID, PostedByData> profileListIgnored) {
+                                                 Map<UUID, PostedByData> profileListIgnored) {
         // 1. Fetch the users the current user is following
         Map<UUID, PostedByData> followingUsersMap = fetchFollowingUsers(queryDTO.getUserId());
         List<UUID> followingUserIds = new ArrayList<>(followingUsersMap.keySet());

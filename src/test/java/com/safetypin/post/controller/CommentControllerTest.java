@@ -1,8 +1,6 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.CommentRequest;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
@@ -59,6 +57,9 @@ class CommentControllerTest {
     private UserDetails userDetails;
     private CommentOnPost commentOnPost;
     private CommentOnComment commentOnComment;
+    private CommentDTO commentOnPostDTO;
+    private CommentDTO commentOnCommentDTO;
+    private PostedByData postedByData;
     private UUID postId;
     private UUID commentId;
 
@@ -91,6 +92,7 @@ class CommentControllerTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+
         commentOnComment = CommentOnComment.builder()
                 .id(UUID.randomUUID())
                 .parent(commentOnPost)
@@ -98,6 +100,11 @@ class CommentControllerTest {
                 .postedBy(userId)
                 .createdAt(LocalDateTime.now())
                 .build();
+
+        postedByData = new PostedByData(userId, "Kimi", "Kimi.jpg");
+
+
+        commentOnPostDTO = new CommentDTO(commentOnPost, postedByData);
     }
 
     // Helper method to mock security context
@@ -494,7 +501,7 @@ class CommentControllerTest {
     @Test
     void testGetCommentOnPost_success() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<CommentOnPost> mockPage = new PageImpl<>(Collections.singletonList(commentOnPost));
+        Page<CommentDTO> mockPage = new PageImpl<>(Collections.singletonList(commentOnPostDTO));
 
         SecurityContextHolder.setContext(securityContext);
 
@@ -511,7 +518,7 @@ class CommentControllerTest {
     @Test
     void testGetCommentOnComment_success() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<CommentOnComment> mockPage = new PageImpl<>(Collections.singletonList(commentOnComment));
+        Page<CommentDTO> mockPage = new PageImpl<>(Collections.singletonList(commentOnCommentDTO));
 
         SecurityContextHolder.setContext(securityContext);
 
