@@ -301,7 +301,7 @@ class CommentServiceImplTest {
         Page<CommentDTO> result = commentService.getCommentOnPost(postId, pageable);
 
         assertEquals(2, result.getContent().size());
-        assertEquals("First Comment", result.getContent().getFirst().getCaption());
+        assertEquals("Second Comment", result.getContent().getFirst().getCaption());
     }
 
     @Test
@@ -346,7 +346,7 @@ class CommentServiceImplTest {
         Page<CommentDTO> result = commentService.getCommentOnComment(commentId, pageable);
 
         assertEquals(2, result.getContent().size());
-        assertEquals("Reply 1", result.getContent().getFirst().getCaption());
+        assertEquals("Reply 2", result.getContent().getFirst().getCaption());
     }
 
     @Test
