@@ -22,9 +22,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import com.safetypin.post.dto.ApiResponse;
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostData;
 import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.UserFollowResponse;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
 
@@ -64,27 +66,34 @@ public class FollowingFeedStrategy extends AbstractFeedStrategy {
             // Create the HTTP entity with headers
             HttpEntity<?> entity = new HttpEntity<>(headers);
 
+            // Create a generic type to match the API response wrapper structure
+            ParameterizedTypeReference<ApiResponse<List<UserFollowResponse>>> responseType = new ParameterizedTypeReference<ApiResponse<List<UserFollowResponse>>>() {
+            };
+
             // Make the request with headers
-            ResponseEntity<List<PostedByData>> response = restTemplate.exchange(
+            ResponseEntity<ApiResponse<List<UserFollowResponse>>> response = restTemplate.exchange(
                     uri,
                     HttpMethod.GET,
                     entity,
-                    new ParameterizedTypeReference<List<PostedByData>>() {
-                    });
+                    responseType);
 
-            List<PostedByData> responseBody = response.getBody();
-            if (responseBody != null) {
-                // Convert List<PostedByData> to Map<UUID, PostedByData> using explicit lambda
-                // expressions
+            ApiResponse<List<UserFollowResponse>> apiResponse = response.getBody();
+            if (apiResponse != null && apiResponse.getData() != null) {
+                // Convert List<UserFollowResponse> to Map<UUID, PostedByData>
                 Map<UUID, PostedByData> result = new HashMap<>();
-                for (PostedByData data : responseBody) {
-                    if (data != null && data.getUserId() != null) {
-                        result.put(data.getUserId(), data);
+                for (UserFollowResponse user : apiResponse.getData()) {
+                    if (user != null && user.getUserId() != null) {
+                        // Map UserFollowResponse fields to PostedByData fields
+                        PostedByData postedByData = new PostedByData(
+                                user.getUserId(),
+                                user.getName(),
+                                user.getProfilePicture());
+                        result.put(user.getUserId(), postedByData);
                     }
                 }
                 return result;
             } else {
-                log.warn("Received null body when fetching following users for userId: {}", userId);
+                log.warn("Received null body or null data when fetching following users for userId: {}", userId);
                 return Collections.emptyMap();
             }
         } catch (ResourceAccessException e) {

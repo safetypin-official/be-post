@@ -42,9 +42,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import com.safetypin.post.dto.ApiResponse;
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostData;
 import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.UserFollowResponse;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
 
@@ -73,6 +75,8 @@ class FollowingFeedStrategyTest {
         private UUID followedUserId2;
         private PostedByData followedUser1Data;
         private PostedByData followedUser2Data;
+        private UserFollowResponse followedUser1Response;
+        private UserFollowResponse followedUser2Response;
         private Post post1;
         private Post post2;
         private Post post3; // Post by a non-followed user or filtered out
@@ -81,7 +85,7 @@ class FollowingFeedStrategyTest {
         private String apiEndpoint = "http://test-endpoint";
 
         // Define the specific ParameterizedTypeReference for mocking
-        private static final ParameterizedTypeReference<List<PostedByData>> LIST_POSTEDBYDATA_TYPE_REF = new ParameterizedTypeReference<List<PostedByData>>() {
+        private static final ParameterizedTypeReference<ApiResponse<List<UserFollowResponse>>> API_RESPONSE_TYPE_REF = new ParameterizedTypeReference<ApiResponse<List<UserFollowResponse>>>() {
         };
 
         @BeforeEach
@@ -95,7 +99,11 @@ class FollowingFeedStrategyTest {
                 when(securityContext.getAuthentication()).thenReturn(authentication);
                 SecurityContextHolder.setContext(securityContext);
 
-                // Use correct field names from PostedByData
+                // Create both UserFollowResponse and PostedByData objects for test data
+                // preparation
+                followedUser1Response = new UserFollowResponse(followedUserId1, "followedUser1Name", "pic1", true);
+                followedUser2Response = new UserFollowResponse(followedUserId2, "followedUser2Name", "pic2", true);
+
                 followedUser1Data = new PostedByData(followedUserId1, "followedUser1Name", "pic1");
                 followedUser2Data = new PostedByData(followedUserId2, "followedUser2Name", "pic2");
 
@@ -144,9 +152,14 @@ class FollowingFeedStrategyTest {
                 ReflectionTestUtils.setField(followingFeedStrategy, "apiEndpoint", apiEndpoint);
         }
 
-        private ResponseEntity<List<PostedByData>> createFollowingResponse(List<PostedByData> body) {
-                // Use HttpStatus.OK directly for non-null body
-                return new ResponseEntity<>(body, HttpStatus.OK);
+        private ResponseEntity<ApiResponse<List<UserFollowResponse>>> createFollowingResponse(
+                        List<UserFollowResponse> body) {
+                ApiResponse<List<UserFollowResponse>> apiResponse = ApiResponse.<List<UserFollowResponse>>builder()
+                                .status("success")
+                                .data(body)
+                                .message("Following list retrieved successfully")
+                                .build();
+                return new ResponseEntity<>(apiResponse, HttpStatus.OK);
         }
 
         private HttpEntity<?> createAuthEntity() {
@@ -158,12 +171,13 @@ class FollowingFeedStrategyTest {
         @Test
         void processFeed_Success_ReturnsPaginatedPosts() {
                 // Arrange
-                List<PostedByData> followingList = Arrays.asList(followedUser1Data, followedUser2Data);
-                ResponseEntity<List<PostedByData>> responseEntity = createFollowingResponse(followingList);
+                List<UserFollowResponse> followingList = Arrays.asList(followedUser1Response, followedUser2Response);
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = createFollowingResponse(
+                                followingList);
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 List<UUID> expectedFollowedIds = new ArrayList<>(Arrays.asList(followedUserId1, followedUserId2));
@@ -180,7 +194,7 @@ class FollowingFeedStrategyTest {
 
                 // Assert
                 assertNotNull(result);
-                assertEquals(2, result.getTotalElements()); // Failing assertion
+                assertEquals(2, result.getTotalElements());
                 assertEquals(1, result.getTotalPages());
                 assertEquals(2, result.getContent().size());
 
@@ -192,7 +206,7 @@ class FollowingFeedStrategyTest {
                                 ((PostData) result.getContent().get(1).get("post")).getPostedBy().getName());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 // Use argThat for verification as well
                 verify(postRepository)
                                 .findByPostedByIn(argThat(list -> new HashSet<>(list)
@@ -213,12 +227,13 @@ class FollowingFeedStrategyTest {
                                 .pageable(PageRequest.of(0, 1))
                                 .build();
 
-                List<PostedByData> followingList = Arrays.asList(followedUser1Data, followedUser2Data);
-                ResponseEntity<List<PostedByData>> responseEntity = createFollowingResponse(followingList);
+                List<UserFollowResponse> followingList = Arrays.asList(followedUser1Response, followedUser2Response);
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = createFollowingResponse(
+                                followingList);
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 List<UUID> followedIds = new ArrayList<>(Arrays.asList(followedUserId1, followedUserId2));
@@ -244,7 +259,7 @@ class FollowingFeedStrategyTest {
                                 ((PostData) result.getContent().get(0).get("post")).getPostedBy().getName());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 // Use argThat for verification
                 verify(postRepository)
                                 .findByPostedByIn(argThat(
@@ -254,11 +269,12 @@ class FollowingFeedStrategyTest {
         @Test
         void processFeed_UserNotFollowingAnyone() {
                 // Arrange
-                ResponseEntity<List<PostedByData>> responseEntity = createFollowingResponse(Collections.emptyList());
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = createFollowingResponse(
+                                Collections.emptyList());
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 // Act
@@ -270,21 +286,27 @@ class FollowingFeedStrategyTest {
                 assertEquals(0, result.getTotalElements());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 verify(postRepository, never()).findByPostedByIn(anyList());
         }
 
         @Test
         void processFeed_FetchFollowing_ReturnsNullBody() {
                 // Arrange
-                // Pass null directly to ResponseEntity constructor for null body case
-                // Provide empty headers to satisfy constructor requirements
-                ResponseEntity<List<PostedByData>> responseEntity = new ResponseEntity<>(null,
-                                new org.springframework.util.LinkedMultiValueMap<>(), HttpStatus.OK);
+                // Create ApiResponse with null data
+                ApiResponse<List<UserFollowResponse>> nullDataResponse = ApiResponse.<List<UserFollowResponse>>builder()
+                                .status("success")
+                                .data(null)
+                                .message("No data found")
+                                .build();
+
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = new ResponseEntity<>(
+                                nullDataResponse, HttpStatus.OK);
+
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 // Act
@@ -296,7 +318,7 @@ class FollowingFeedStrategyTest {
                 assertEquals(0, result.getTotalElements());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 verify(postRepository, never()).findByPostedByIn(anyList());
         }
 
@@ -304,13 +326,15 @@ class FollowingFeedStrategyTest {
         void processFeed_FetchFollowing_ReturnsDataWithNullUserId() {
                 // Arrange
                 // Simulate a case where the API returns data but some entries are malformed
-                PostedByData malformedData = new PostedByData(null, "malformedUserName", "pic_malformed");
-                List<PostedByData> followingList = Arrays.asList(followedUser1Data, malformedData);
-                ResponseEntity<List<PostedByData>> responseEntity = createFollowingResponse(followingList);
+                UserFollowResponse malformedResponse = new UserFollowResponse(null, "malformedUserName",
+                                "pic_malformed", true);
+                List<UserFollowResponse> followingList = Arrays.asList(followedUser1Response, malformedResponse);
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = createFollowingResponse(
+                                followingList);
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 // Only followedUserId1 should be queried in the repo
@@ -332,7 +356,7 @@ class FollowingFeedStrategyTest {
                                 ((PostData) result.getContent().get(0).get("post")).getPostedBy().getName());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 // Verification for singleton list
                 verify(postRepository).findByPostedByIn(eq(validFollowedIds));
         }
@@ -342,7 +366,7 @@ class FollowingFeedStrategyTest {
                 // Arrange
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenThrow(new ResourceAccessException("Network error"));
 
                 // Act
@@ -354,7 +378,7 @@ class FollowingFeedStrategyTest {
                 assertEquals(0, result.getTotalElements());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 verify(postRepository, never()).findByPostedByIn(anyList());
         }
 
@@ -363,7 +387,7 @@ class FollowingFeedStrategyTest {
                 // Arrange
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenThrow(new RuntimeException("Some other error"));
 
                 // Act
@@ -375,23 +399,23 @@ class FollowingFeedStrategyTest {
                 assertEquals(0, result.getTotalElements());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 verify(postRepository, never()).findByPostedByIn(anyList());
         }
 
         @Test
         void processFeed_NoPostsFoundForFollowedUsers() {
                 // Arrange
-                List<PostedByData> followingList = Arrays.asList(followedUser1Data, followedUser2Data);
-                ResponseEntity<List<PostedByData>> responseEntity = createFollowingResponse(followingList);
+                List<UserFollowResponse> followingList = Arrays.asList(followedUser1Response, followedUser2Response);
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = createFollowingResponse(
+                                followingList);
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 List<UUID> expectedFollowedIds = new ArrayList<>(Arrays.asList(followedUserId1, followedUserId2));
-                // REMOVED: Collections.sort(expectedFollowedIds);
 
                 // Use argThat with HashSet comparison
                 when(postRepository
@@ -408,7 +432,7 @@ class FollowingFeedStrategyTest {
                 assertEquals(0, result.getTotalElements());
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 // Use argThat for verification
                 verify(postRepository)
                                 .findByPostedByIn(argThat(list -> new HashSet<>(list)
@@ -428,12 +452,13 @@ class FollowingFeedStrategyTest {
                                 .pageable(pageable)
                                 .build();
 
-                List<PostedByData> followingList = Arrays.asList(followedUser1Data, followedUser2Data);
-                ResponseEntity<List<PostedByData>> responseEntity = createFollowingResponse(followingList);
+                List<UserFollowResponse> followingList = Arrays.asList(followedUser1Response, followedUser2Response);
+                ResponseEntity<ApiResponse<List<UserFollowResponse>>> responseEntity = createFollowingResponse(
+                                followingList);
                 String expectedUri = apiEndpoint + "/api/follow/following/" + userId;
 
                 when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF)))
+                                eq(API_RESPONSE_TYPE_REF)))
                                 .thenReturn(responseEntity);
 
                 List<UUID> followedIds = new ArrayList<>(Arrays.asList(followedUserId1, followedUserId2));
@@ -442,7 +467,7 @@ class FollowingFeedStrategyTest {
                 // Use argThat with HashSet comparison
                 when(postRepository.findByPostedByIn(
                                 argThat(list -> new HashSet<>(list).equals(new HashSet<>(followedIds)))))
-                                .thenReturn(posts); // Use sorted list
+                                .thenReturn(posts);
 
                 // Act
                 Page<Map<String, Object>> result = followingFeedStrategy.processFeed(null, queryDTO, null);
@@ -453,7 +478,7 @@ class FollowingFeedStrategyTest {
                 assertEquals(0, result.getTotalElements()); // 0 because filtering removed all posts
 
                 verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.GET), any(HttpEntity.class),
-                                eq(LIST_POSTEDBYDATA_TYPE_REF));
+                                eq(API_RESPONSE_TYPE_REF));
                 // Use argThat for verification
                 verify(postRepository)
                                 .findByPostedByIn(argThat(
