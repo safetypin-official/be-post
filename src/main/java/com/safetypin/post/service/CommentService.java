@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.CommentDTO;
+import com.safetypin.post.dto.CommentDTOWithPostId;
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.model.CommentOnComment;
 import com.safetypin.post.model.CommentOnPost;
@@ -12,6 +13,8 @@ import java.util.UUID;
 
 @Service
 public interface CommentService {
+    Page<CommentDTOWithPostId> getCommentsByPostedBy(UUID postedBy, Pageable pageable);
+
     CommentOnPost createCommentOnPost(UUID userId, CommentRequest req);
 
     CommentOnComment createCommentOnComment(UUID userId, CommentRequest req);
