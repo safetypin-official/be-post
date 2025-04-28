@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.CommentDTO;
+import com.safetypin.post.dto.CommentDTOWithPostId;
 import com.safetypin.post.dto.CommentRequest;
 import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.exception.PostNotFoundException;
@@ -30,6 +31,54 @@ public class CommentServiceImpl implements CommentService {
     private final PostService postService;
     private final CommentOnPostRepository commentOnPostRepository;
     private final CommentOnCommentRepository commentOnCommentRepository;
+
+    // fetch all comments by postedBy
+    public Page<CommentDTOWithPostId> getCommentsByPostedBy(UUID postedBy, Pageable pageable) {
+        // fetch commentOnPOst & commentOnComment
+        List<CommentOnPost> commentOnPosts = commentOnPostRepository.findCommentsByPostedBy(postedBy);
+        List<CommentOnComment> commentOnComments = commentOnCommentRepository.findCommentsByPostedBy(postedBy);
+
+
+        // fetch UUID createdBy
+        List<UUID> createdByList = new ArrayList<>(commentOnPosts.stream().map(BasePost::getPostedBy).distinct().toList());
+        List<UUID> createdByList2 = commentOnComments.stream().map(BasePost::getPostedBy).distinct().toList();
+        createdByList.addAll(createdByList2);
+
+        // fetch batch
+        Map<UUID, PostedByData> profileList = postService.fetchPostedByData(createdByList);
+
+        // convert to DTO
+        List<CommentDTOWithPostId> commentOnPostsDTO = commentOnPosts.stream().map(commentOnPost ->
+                new CommentDTOWithPostId(
+                        new CommentDTO(commentOnPost, profileList.get(commentOnPost.getPostedBy())),
+                        commentOnPost.getParent().getId()
+                )).toList();
+        List<CommentDTOWithPostId> commentOnCommentsDTO = commentOnComments.stream().map(commentOnComment ->
+                new CommentDTOWithPostId(
+                        new CommentDTO(commentOnComment, profileList.get(commentOnComment.getPostedBy())),
+                        commentOnComment.getParent().getParent().getId()
+                )).toList();
+
+        // merge
+        List<CommentDTOWithPostId> comments = new ArrayList<>();
+        comments.addAll(commentOnPostsDTO);
+        comments.addAll(commentOnCommentsDTO);
+
+        // sort by createdAt
+        List<CommentDTOWithPostId> sortedComments = comments.stream()
+                .sorted(Comparator.comparing(c -> c.getComment().getCreatedAt()))
+                .toList().reversed();
+
+        // page it
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedComments.size());
+
+        List<CommentDTOWithPostId> pageContent = start >= sortedComments.size() ? Collections.emptyList()
+                : sortedComments.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, sortedComments.size());
+    }
+
 
     // fetch comment on post
     public Page<CommentDTO> getCommentOnPost(UUID postId, Pageable pageable) {
@@ -65,7 +114,8 @@ public class CommentServiceImpl implements CommentService {
         List<CommentDTO> sortedComments = comments.stream()
                 .sorted(Comparator.comparing(BasePost::getCreatedAt))
                 .map(comment -> new CommentDTO(comment, profileList.get(comment.getPostedBy())))
-                .toList();
+                .toList()
+                .reversed();
 
         // page it
         int start = (int) pageable.getOffset();

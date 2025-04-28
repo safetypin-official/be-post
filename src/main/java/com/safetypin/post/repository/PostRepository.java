@@ -20,4 +20,5 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     @Query("SELECT COUNT(p) FROM Post p WHERE p.postedBy = :userId AND CAST(p.createdAt AS date) = CURRENT_DATE")
     int countPostsByUserToday(@Param("userId") UUID userId);
+
 }
