@@ -28,12 +28,11 @@ import java.util.function.Supplier;
 
 @Slf4j
 @RestController
-@RequestMapping("/comment")
+@RequestMapping("/post/comment")
 @AllArgsConstructor
 public class CommentController {
 
     private final CommentService commentService;
-
 
     // fetch comments on post
     @GetMapping("/onpost/{postId}")
@@ -194,7 +193,6 @@ public class CommentController {
                     .body(response);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 
     // Generic exception handler for controller methods
     private ResponseEntity<PostResponse> executeWithExceptionHandling(

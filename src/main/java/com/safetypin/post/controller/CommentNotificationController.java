@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping("/comment-notifications") // Updated mapping
+@RequestMapping("/post/comment-notifications") // Updated mapping
 @AllArgsConstructor
 public class CommentNotificationController { // Renamed controller
 
