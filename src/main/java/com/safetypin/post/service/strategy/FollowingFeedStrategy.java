@@ -1,22 +1,34 @@
 package com.safetypin.post.service.strategy;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostData;
 import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.PostRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -37,7 +49,26 @@ public class FollowingFeedStrategy extends AbstractFeedStrategy {
     private Map<UUID, PostedByData> fetchFollowingUsers(UUID userId) {
         String uri = apiEndpoint + "/api/follow/following/" + userId;
         try {
-            ResponseEntity<List<PostedByData>> response = restTemplate.exchange(uri, HttpMethod.GET, null,
+            // Get the JWT token from the SecurityContext
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String jwt = (String) authentication.getCredentials();
+
+            // Create headers with Authorization
+            HttpHeaders headers = new HttpHeaders();
+            if (jwt != null && !jwt.isEmpty()) {
+                headers.set("Authorization", "Bearer " + jwt);
+            } else {
+                log.warn("No JWT token found in security context when fetching following users for userId: {}", userId);
+            }
+
+            // Create the HTTP entity with headers
+            HttpEntity<?> entity = new HttpEntity<>(headers);
+
+            // Make the request with headers
+            ResponseEntity<List<PostedByData>> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    entity,
                     new ParameterizedTypeReference<List<PostedByData>>() {
                     });
 
@@ -69,7 +100,7 @@ public class FollowingFeedStrategy extends AbstractFeedStrategy {
 
     @Override
     public Page<Map<String, Object>> processFeed(List<Post> allPostsIgnored, FeedQueryDTO queryDTO,
-                                                 Map<UUID, PostedByData> profileListIgnored) {
+            Map<UUID, PostedByData> profileListIgnored) {
         // 1. Fetch the users the current user is following
         Map<UUID, PostedByData> followingUsersMap = fetchFollowingUsers(queryDTO.getUserId());
         List<UUID> followingUserIds = new ArrayList<>(followingUsersMap.keySet());
