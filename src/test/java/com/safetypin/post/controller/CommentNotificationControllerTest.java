@@ -92,7 +92,7 @@ class CommentNotificationControllerTest {
         when(notificationService.getNotifications(testUserId)).thenReturn(notifications);
 
         // Act & Assert
-        mockMvc.perform(get("/post/comment-notifications")
+        mockMvc.perform(get("/posts/comment-notifications")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -112,7 +112,7 @@ class CommentNotificationControllerTest {
         when(notificationService.getNotifications(testUserId)).thenThrow(new RuntimeException(errorMessage));
 
         // Act & Assert
-        mockMvc.perform(get("/post/comment-notifications")
+        mockMvc.perform(get("/posts/comment-notifications")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -131,7 +131,7 @@ class CommentNotificationControllerTest {
                 Collections.emptyList());
 
         // Act & Assert
-        mockMvc.perform(get("/post/comment-notifications")
+        mockMvc.perform(get("/posts/comment-notifications")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -174,7 +174,7 @@ class CommentNotificationControllerTest {
         verify(notificationService, never()).getNotifications(any());
 
         // A more integrated test with MockMvc and Spring Security would look like:
-        // mockMvc.perform(get("/post/comment-notifications"))
+        // mockMvc.perform(get("/posts/comment-notifications"))
         // .andExpect(status().isUnauthorized()); // Or isForbidden()
     }
 }
