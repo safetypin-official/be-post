@@ -44,7 +44,7 @@ public class NotificationServiceImpl implements NotificationService {
         private final RestTemplate restTemplate;
         private final PostRepository postRepository;
 
-        @Value("${be-auth.base-url}") // Use a base URL property
+        @Value("${be-auth}") // Use a base URL property
         private String authServiceBaseUrl;
 
         private static final String PROFILE_BATCH_PATH = "/api/profiles/batch";
