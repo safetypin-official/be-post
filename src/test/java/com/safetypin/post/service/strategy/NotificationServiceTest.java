@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,6 +43,7 @@ import com.safetypin.post.model.NotificationType;
 import com.safetypin.post.model.Post;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
+import com.safetypin.post.repository.PostRepository;
 import com.safetypin.post.service.NotificationServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +55,8 @@ class NotificationServiceImplTest {
         private CommentOnCommentRepository commentOnCommentRepository;
         @Mock
         private RestTemplate restTemplate;
+        @Mock
+        private PostRepository postRepository;
 
         @InjectMocks
         private NotificationServiceImpl notificationService;
@@ -166,6 +170,18 @@ class NotificationServiceImplTest {
                                 any(LocalDateTime.class)))
                                 .thenReturn(List.of(siblingReply)); // Actor1's reply is found
 
+                // Mock comment and post content retrieval
+                when(commentOnPostRepository.findById(any(UUID.class)))
+                                .thenReturn(java.util.Optional.of(commentOnUserPost));
+                when(commentOnCommentRepository.findById(any(UUID.class)))
+                                .thenReturn(java.util.Optional.of(siblingReply));
+                when(postRepository.findById(any(UUID.class))).thenReturn(java.util.Optional.of(post));
+
+                // Set up post title for testing
+                post.setTitle("Test Post Title");
+                commentOnUserPost.setCaption("Test Comment Content");
+                siblingReply.setCaption("Test Reply Content");
+
                 // Mock Auth Service response for actor1 and actor2
                 Map<UUID, PostedByData> userInfoMap = new HashMap<>();
                 userInfoMap.put(actor1Id, new PostedByData(actor1Id, "Actor One", "pic1.jpg"));
@@ -248,6 +264,14 @@ class NotificationServiceImplTest {
                 userInfoMap.put(actor2Id, new PostedByData(actor2Id, "Actor Two", "pic2.jpg"));
                 mockAuthServiceResponse(userInfoMap);
 
+                // Mock comment and post content retrieval
+                when(commentOnPostRepository.findById(any(UUID.class))).thenReturn(java.util.Optional.of(comment1));
+                when(postRepository.findById(any(UUID.class))).thenReturn(java.util.Optional.of(post));
+
+                // Set up post title and comment content for testing
+                post.setTitle("Test Post Title");
+                comment1.setCaption("Test Comment Content");
+
                 // Act
                 List<NotificationDto> notifications = notificationService.getNotifications(testUserId);
 
@@ -285,6 +309,15 @@ class NotificationServiceImplTest {
                 userInfoMap.put(actor1Id, new PostedByData(actor1Id, "Actor One", "pic1.jpg"));
                 userInfoMap.put(actor2Id, new PostedByData(actor2Id, "Actor Two", "pic2.jpg"));
                 mockAuthServiceResponse(userInfoMap);
+
+                // Mock comment and post content retrieval
+                lenient().when(commentOnCommentRepository.findById(any(UUID.class)))
+                                .thenReturn(java.util.Optional.of(reply1));
+                lenient().when(postRepository.findById(any(UUID.class))).thenReturn(java.util.Optional.of(post));
+
+                // Set up post title and comment content for testing
+                post.setTitle("Test Post Title");
+                reply1.setCaption("Test Reply Content");
 
                 // Act
                 List<NotificationDto> notifications = notificationService.getNotifications(testUserId);
@@ -390,6 +423,15 @@ class NotificationServiceImplTest {
                 // Mock Auth Service failure
                 mockAuthServiceFailure(new ResourceAccessException("Network error"));
 
+                // Mock comment and post content retrieval
+                when(commentOnPostRepository.findById(any(UUID.class)))
+                                .thenReturn(java.util.Optional.of(commentOnUserPost));
+                when(postRepository.findById(any(UUID.class))).thenReturn(java.util.Optional.of(post));
+
+                // Set up post title and comment content for testing
+                post.setTitle("Test Post Title");
+                commentOnUserPost.setCaption("Test Comment Content");
+
                 // Act
                 List<NotificationDto> notifications = notificationService.getNotifications(testUserId);
 
@@ -422,6 +464,15 @@ class NotificationServiceImplTest {
 
                 // Mock Auth Service failure
                 mockAuthServiceFailure(new RuntimeException("Unexpected error"));
+
+                // Add mock for PostRepository and CommentOnPostRepository
+                when(commentOnPostRepository.findById(any(UUID.class)))
+                                .thenReturn(java.util.Optional.of(commentOnUserPost));
+                when(postRepository.findById(any(UUID.class))).thenReturn(java.util.Optional.of(post));
+
+                // Set up post title and comment content for testing
+                post.setTitle("Test Post Title");
+                commentOnUserPost.setCaption("Test Comment Content");
 
                 // Act
                 List<NotificationDto> notifications = notificationService.getNotifications(testUserId);

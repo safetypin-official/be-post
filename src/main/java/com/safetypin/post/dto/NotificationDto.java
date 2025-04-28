@@ -24,4 +24,6 @@ public class NotificationDto {
     private UUID commentId; // ID of the parent comment (for replies or sibling replies)
     private UUID replyId; // ID of the specific reply (for NEW_REPLY* or NEW_SIBLING_REPLY)
     private LocalDateTime createdAt; // Keep original timestamp for sorting
+    private String commentContent; // The content of the comment
+    private String postTitle; // The title of the post
 }

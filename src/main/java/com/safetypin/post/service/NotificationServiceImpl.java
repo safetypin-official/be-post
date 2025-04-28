@@ -29,6 +29,7 @@ import com.safetypin.post.model.CommentOnPost;
 import com.safetypin.post.model.NotificationType;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
+import com.safetypin.post.repository.PostRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class NotificationServiceImpl implements NotificationService {
         private final CommentOnPostRepository commentOnPostRepository;
         private final CommentOnCommentRepository commentOnCommentRepository;
         private final RestTemplate restTemplate;
+        private final PostRepository postRepository;
 
         @Value("${be-auth.base-url}") // Use a base URL property
         private String authServiceBaseUrl;
@@ -125,24 +127,69 @@ public class NotificationServiceImpl implements NotificationService {
                                 .toList();
         }
 
+        // Main method that creates a notification DTO
         private NotificationDto createNotificationDto(NotificationType type, UUID actorId, PostedByData actorInfo,
                         LocalDateTime createdAt, UUID postId, UUID commentId, UUID replyId) {
                 String actorName = actorInfo != null ? actorInfo.getName() : "Unknown User";
-                String actorProfilePic = actorInfo != null ? actorInfo.getProfilePicture() : null; // Assuming
-                                                                                                   // PostedByData has
-                                                                                                   // getProfilePicture()
+                String actorProfilePic = actorInfo != null ? actorInfo.getProfilePicture() : null;
+
+                // Get comment content and post title
+                String commentContent = getCommentContent(type, commentId, replyId);
+                String postTitle = getPostTitle(type, postId, replyId);
 
                 return NotificationDto.builder()
                                 .type(type)
                                 .actorUserId(actorId)
                                 .actorName(actorName)
                                 .actorProfilePictureUrl(actorProfilePic)
-                                .timeAgo(calculateDaysAgo(createdAt)) // Use days ago calculation
+                                .timeAgo(calculateDaysAgo(createdAt))
                                 .postId(postId)
                                 .commentId(commentId)
                                 .replyId(replyId)
-                                .createdAt(createdAt) // Keep original timestamp for sorting
+                                .createdAt(createdAt)
+                                .commentContent(commentContent)
+                                .postTitle(postTitle)
                                 .build();
+        }
+
+        // Get the comment content based on notification type
+        private String getCommentContent(NotificationType type, UUID commentId, UUID replyId) {
+                if (type == NotificationType.NEW_COMMENT_ON_POST && commentId != null) {
+                        // Get comment content from CommentOnPost
+                        var commentOptional = commentOnPostRepository.findById(commentId);
+                        if (commentOptional.isPresent()) {
+                                return commentOptional.get().getCaption();
+                        }
+                } else if ((type == NotificationType.NEW_REPLY_TO_COMMENT || type == NotificationType.NEW_SIBLING_REPLY)
+                                && replyId != null) {
+                        // Get reply content from CommentOnComment
+                        var replyOptional = commentOnCommentRepository.findById(replyId);
+                        if (replyOptional.isPresent()) {
+                                return replyOptional.get().getCaption();
+                        }
+                }
+                return null;
+        }
+
+        // Get the post title based on notification type
+        private String getPostTitle(NotificationType type, UUID postId, UUID replyId) {
+                if (type == NotificationType.NEW_COMMENT_ON_POST && postId != null) {
+                        var postOptional = postRepository.findById(postId);
+                        if (postOptional.isPresent()) {
+                                return postOptional.get().getTitle();
+                        }
+                } else if ((type == NotificationType.NEW_REPLY_TO_COMMENT || type == NotificationType.NEW_SIBLING_REPLY)
+                                && replyId != null) {
+                        var replyOptional = commentOnCommentRepository.findById(replyId);
+                        if (replyOptional.isPresent()) {
+                                CommentOnComment reply = replyOptional.get();
+                                CommentOnPost parentComment = reply.getParent();
+                                if (parentComment != null && parentComment.getParent() != null) {
+                                        return parentComment.getParent().getTitle();
+                                }
+                        }
+                }
+                return null;
         }
 
         // Updated method to fetch user details using POST /api/profiles/batch
