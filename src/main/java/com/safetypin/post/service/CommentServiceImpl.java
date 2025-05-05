@@ -1,9 +1,6 @@
 package com.safetypin.post.service;
 
-import com.safetypin.post.dto.CommentDTO;
-import com.safetypin.post.dto.CommentDTOWithPostId;
-import com.safetypin.post.dto.CommentRequest;
-import com.safetypin.post.dto.PostedByData;
+import com.safetypin.post.dto.*;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.BasePost;
@@ -51,12 +48,14 @@ public class CommentServiceImpl implements CommentService {
         List<CommentDTOWithPostId> commentOnPostsDTO = commentOnPosts.stream().map(commentOnPost ->
                 new CommentDTOWithPostId(
                         new CommentDTO(commentOnPost, profileList.get(commentOnPost.getPostedBy())),
-                        commentOnPost.getParent().getId()
+                        commentOnPost.getParent().getId(),
+                        CommentType.COMMENT_ON_POST
                 )).toList();
         List<CommentDTOWithPostId> commentOnCommentsDTO = commentOnComments.stream().map(commentOnComment ->
                 new CommentDTOWithPostId(
                         new CommentDTO(commentOnComment, profileList.get(commentOnComment.getPostedBy())),
-                        commentOnComment.getParent().getParent().getId()
+                        commentOnComment.getParent().getParent().getId(),
+                        CommentType.COMMENT_ON_COMMENT
                 )).toList();
 
         // merge
@@ -89,7 +88,7 @@ public class CommentServiceImpl implements CommentService {
         // find comments
         List<BasePost> comments = new ArrayList<>(commentOnPostRepository.findByParentId(postId));
 
-        return organizeComments(comments, pageable);
+        return organizeComments(comments, pageable, true);
     }
 
     // fetch comment on comment
@@ -100,10 +99,10 @@ public class CommentServiceImpl implements CommentService {
 
         List<BasePost> comments = new ArrayList<>(commentOnCommentRepository.findByParentId(commentId));
 
-        return organizeComments(comments, pageable);
+        return organizeComments(comments, pageable, false);
     }
 
-    private Page<CommentDTO> organizeComments(List<BasePost> comments, Pageable pageable) {
+    private Page<CommentDTO> organizeComments(List<BasePost> comments, Pageable pageable, boolean sortNewToOld) {
         // get UUID createdBy
         List<UUID> createdByList = comments.stream().map(BasePost::getPostedBy).distinct().toList();
 
@@ -114,8 +113,11 @@ public class CommentServiceImpl implements CommentService {
         List<CommentDTO> sortedComments = comments.stream()
                 .sorted(Comparator.comparing(BasePost::getCreatedAt))
                 .map(comment -> new CommentDTO(comment, profileList.get(comment.getPostedBy())))
-                .toList()
-                .reversed();
+                .toList();
+
+        if (sortNewToOld) {
+            sortedComments = sortedComments.reversed();
+        }
 
         // page it
         int start = (int) pageable.getOffset();

@@ -346,7 +346,7 @@ class CommentServiceImplTest {
         Page<CommentDTO> result = commentService.getCommentOnComment(commentId, pageable);
 
         assertEquals(2, result.getContent().size());
-        assertEquals("Reply 2", result.getContent().getFirst().getCaption());
+        assertEquals("Reply 1", result.getContent().getFirst().getCaption());
     }
 
     @Test
