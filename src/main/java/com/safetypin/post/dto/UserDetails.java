@@ -12,13 +12,18 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 public class UserDetails {
+
     // Character limit constants for different user roles
+
     public static final int REGISTERED_USER_TITLE_LIMIT = 70;
     public static final int PREMIUM_USER_TITLE_LIMIT = 140;
+
     public static final int REGISTERED_USER_CAPTION_LIMIT = 200;
     public static final int PREMIUM_USER_CAPTION_LIMIT = 800;
+
     public static final int REGISTERED_USER_POST_PER_DAY_LIMIT = 3;
     public static final int PREMIUM_USER_POST_PER_DAY_LIMIT = 10;
+
 
     @Enumerated(EnumType.STRING)
     private Role role;

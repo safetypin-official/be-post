@@ -15,9 +15,9 @@ import java.util.UUID;
 public interface CommentService {
     Page<CommentDTOWithPostId> getCommentsByPostedBy(UUID postedBy, Pageable pageable);
 
-    CommentOnPost createCommentOnPost(UUID userId, CommentRequest req);
+    CommentOnPost createCommentOnPost(CommentRequest req);
 
-    CommentOnComment createCommentOnComment(UUID userId, CommentRequest req);
+    CommentOnComment createCommentOnComment(CommentRequest req);
 
     Page<CommentDTO> getCommentOnPost(UUID postId, Pageable pageable);
 

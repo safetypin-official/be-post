@@ -1,22 +1,10 @@
 package com.safetypin.post.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
+import com.safetypin.post.dto.NotificationDto;
+import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.model.NotificationType;
+import com.safetypin.post.model.Role;
+import com.safetypin.post.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,34 +19,32 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safetypin.post.dto.NotificationDto;
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.dto.UserDetails;
-import com.safetypin.post.model.NotificationType;
-import com.safetypin.post.model.Role;
-import com.safetypin.post.service.NotificationService;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class CommentNotificationControllerTest {
 
     @Mock
     private NotificationService notificationService;
-
     @InjectMocks
     private CommentNotificationController commentNotificationController;
-
     private MockMvc mockMvc;
-    private ObjectMapper objectMapper = new ObjectMapper();
     private UUID testUserId;
-    private UserDetails testUserDetails;
-    private String testUserName = "testuser";
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(commentNotificationController).build();
         testUserId = UUID.randomUUID();
-        testUserDetails = new UserDetails(Role.REGISTERED_USER, true, testUserId, testUserName);
+        String testUserName = "testuser";
+        UserDetails testUserDetails = new UserDetails(Role.REGISTERED_USER, true, testUserId, testUserName);
 
         // Mock SecurityContext
         Authentication authentication = new UsernamePasswordAuthenticationToken(testUserDetails, null,
@@ -86,14 +72,12 @@ class CommentNotificationControllerTest {
                 .createdAt(LocalDateTime.now())
                 .build();
         List<NotificationDto> notifications = List.of(notification);
-        PostResponse expectedResponse = new PostResponse(true, "Comment notifications retrieved successfully",
-                notifications);
 
         when(notificationService.getNotifications(testUserId)).thenReturn(notifications);
 
         // Act & Assert
         mockMvc.perform(get("/posts/comment-notifications")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
@@ -113,7 +97,7 @@ class CommentNotificationControllerTest {
 
         // Act & Assert
         mockMvc.perform(get("/posts/comment-notifications")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(false))
@@ -127,12 +111,10 @@ class CommentNotificationControllerTest {
     void getCommentNotifications_NoNotificationsFound() throws Exception {
         // Arrange
         when(notificationService.getNotifications(testUserId)).thenReturn(Collections.emptyList());
-        PostResponse expectedResponse = new PostResponse(true, "Comment notifications retrieved successfully",
-                Collections.emptyList());
 
         // Act & Assert
         mockMvc.perform(get("/posts/comment-notifications")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
@@ -144,7 +126,7 @@ class CommentNotificationControllerTest {
     }
 
     @Test
-    void getCommentNotifications_Unauthenticated() throws Exception {
+    void getCommentNotifications_Unauthenticated() {
         // Arrange - Clear security context for this test
         SecurityContextHolder.clearContext();
 

@@ -2,11 +2,13 @@ package com.safetypin.post.service;
 
 import com.safetypin.post.dto.CommentDTO;
 import com.safetypin.post.dto.CommentRequest;
+import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.CommentOnComment;
 import com.safetypin.post.model.CommentOnPost;
 import com.safetypin.post.model.Post;
+import com.safetypin.post.model.Role;
 import com.safetypin.post.repository.CommentOnCommentRepository;
 import com.safetypin.post.repository.CommentOnPostRepository;
 import com.safetypin.post.repository.PostRepository;
@@ -15,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +45,15 @@ class CommentServiceImplTest {
         commentOnPostRepository = mock(CommentOnPostRepository.class);
         commentOnCommentRepository = mock(CommentOnCommentRepository.class);
         commentService = new CommentServiceImpl(postRepository, postService, commentOnPostRepository, commentOnCommentRepository);
+
+        // Mock SecurityContextHolder
+        SecurityContext securityContext = mock(SecurityContext.class);
+        Authentication authentication = mock(Authentication.class);
+        UserDetails userDetails = new UserDetails(Role.REGISTERED_USER, true, UUID.randomUUID(), "Test User");
+
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
@@ -70,7 +84,7 @@ class CommentServiceImplTest {
 
         when(commentOnPostRepository.save(any(CommentOnPost.class))).thenReturn(mockComment);
 
-        CommentOnPost savedComment = commentService.createCommentOnPost(userId, req);
+        CommentOnPost savedComment = commentService.createCommentOnPost(req);
 
         assertNotNull(savedComment);
         assertEquals(req.getCaption(), savedComment.getCaption());
@@ -88,7 +102,7 @@ class CommentServiceImplTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
-        assertThrows(PostNotFoundException.class, () -> commentService.createCommentOnPost(userId, req));
+        assertThrows(PostNotFoundException.class, () -> commentService.createCommentOnPost(req));
         verify(commentOnPostRepository, never()).save(any());
     }
 
@@ -116,7 +130,7 @@ class CommentServiceImplTest {
 
         when(commentOnCommentRepository.save(any(CommentOnComment.class))).thenReturn(expectedReply);
 
-        CommentOnComment savedReply = commentService.createCommentOnComment(userId, req);
+        CommentOnComment savedReply = commentService.createCommentOnComment(req);
 
         assertNotNull(savedReply);
         assertEquals(req.getCaption(), savedReply.getCaption());
@@ -135,7 +149,7 @@ class CommentServiceImplTest {
 
         when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.empty());
 
-        assertThrows(PostNotFoundException.class, () -> commentService.createCommentOnComment(userId, req));
+        assertThrows(PostNotFoundException.class, () -> commentService.createCommentOnComment(req));
         verify(commentOnCommentRepository, never()).save(any());
     }
 
@@ -360,7 +374,6 @@ class CommentServiceImplTest {
                 commentService.getCommentOnComment(commentId, pageable));
     }
 
-
     // tests for when page offset is greater than comment counts
     @Test
     void getCommentOnPost_shouldReturnEmptyPage_whenOffsetIsGreaterThanCommentCount() {
@@ -399,6 +412,54 @@ class CommentServiceImplTest {
         Page<CommentDTO> result = commentService.getCommentOnComment(commentId, pageable);
 
         assertEquals(0, result.getContent().size());
+    }
+
+    @Test
+    void testCreateCommentOnPost_NoSecurityContext() {
+        // Clear security context
+        SecurityContextHolder.clearContext();
+
+        UUID postId = UUID.randomUUID();
+        CommentRequest req = new CommentRequest();
+        req.setCaption("Nice post!");
+        req.setParentId(postId);
+
+        Post mockPost = Post.builder()
+                .id(postId)
+                .caption("Original Post")
+                .title("Post Title")
+                .category("General")
+                .createdAt(LocalDateTime.now())
+                .latitude(0.0)
+                .longitude(0.0)
+                .build();
+
+        when(postRepository.findById(postId)).thenReturn(Optional.of(mockPost));
+
+        // Should throw IllegalStateException when security context is not available
+        assertThrows(NullPointerException.class, () -> commentService.createCommentOnPost(req));
+        verify(commentOnPostRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateCommentOnComment_NoSecurityContext() {
+        // Clear security context
+        SecurityContextHolder.clearContext();
+
+        UUID commentId = UUID.randomUUID();
+        CommentRequest req = new CommentRequest();
+        req.setCaption("Nice comment!");
+        req.setParentId(commentId);
+
+        CommentOnPost parentComment = CommentOnPost.builder()
+                .id(commentId)
+                .caption("Parent comment")
+                .build();
+
+        when(commentOnPostRepository.findById(commentId)).thenReturn(Optional.of(parentComment));
+
+        assertThrows(NullPointerException.class, () -> commentService.createCommentOnComment(req));
+        verify(commentOnCommentRepository, never()).save(any());
     }
 
 }
