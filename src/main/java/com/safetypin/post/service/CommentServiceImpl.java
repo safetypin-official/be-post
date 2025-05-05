@@ -221,14 +221,14 @@ public class CommentServiceImpl implements CommentService {
     private void validateCommentRequest(CommentRequest req, UserDetails userDetails) {
         String caption = req.getCaption();
         if (caption == null || caption.trim().isEmpty()) {
-            throw new InvalidPostDataException("Title is required");
+            throw new InvalidPostDataException("Caption is required");
         }
 
         int commentLimit = userDetails.getCaptionCharacterLimit();
         String userType = userDetails.isPremiumUser() ? "premium" : "free";
 
         if (caption.length() > commentLimit) {
-            throw new InvalidPostDataException("Title exceeds the character limit of " + commentLimit +
+            throw new InvalidPostDataException("Caption exceeds the character limit of " + commentLimit +
                     " characters for " + userType + " users");
         }
     }
