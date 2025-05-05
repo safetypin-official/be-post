@@ -14,4 +14,6 @@ import java.util.UUID;
 public class CommentDTOWithPostId {
     CommentDTO comment;
     UUID postId;
+    CommentType type;
 }
+
