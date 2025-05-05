@@ -1,6 +1,7 @@
 package com.safetypin.post.service;
 
 import com.safetypin.post.dto.*;
+import com.safetypin.post.exception.InvalidPostDataException;
 import com.safetypin.post.exception.PostNotFoundException;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.BasePost;
@@ -15,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -130,9 +133,12 @@ public class CommentServiceImpl implements CommentService {
     }
 
     // create comment on post
-    public CommentOnPost createCommentOnPost(UUID userId, CommentRequest req) {
+    public CommentOnPost createCommentOnPost(CommentRequest req) {
         Post post = postRepository.findById(req.getParentId())
                 .orElseThrow(() -> new PostNotFoundException("Post not found"));
+
+        UserDetails userDetails = getUserDetails();
+        UUID userId = userDetails.getUserId();
 
         CommentOnPost comment = CommentOnPost.builder()
                 .parent(post)
@@ -140,19 +146,25 @@ public class CommentServiceImpl implements CommentService {
                 .caption(req.getCaption())
                 .build();
 
+        validateCommentRequest(req, userDetails);
+
         return commentOnPostRepository.save(comment);
     }
 
     // create comment on comment
-    public CommentOnComment createCommentOnComment(UUID userId, CommentRequest req) {
+    public CommentOnComment createCommentOnComment(CommentRequest req) {
         CommentOnPost commentOnPost = commentOnPostRepository.findById(req.getParentId())
                 .orElseThrow(() -> new PostNotFoundException("Comment on post not found"));
+
+        UserDetails userDetails = getUserDetails();
+        UUID userId = userDetails.getUserId();
 
         CommentOnComment comment = CommentOnComment.builder()
                 .parent(commentOnPost)
                 .postedBy(userId)
                 .caption(req.getCaption())
                 .build();
+        validateCommentRequest(req, userDetails);
 
         return commentOnCommentRepository.save(comment);
     }
@@ -199,5 +211,25 @@ public class CommentServiceImpl implements CommentService {
         // Delete the child comment
         commentOnCommentRepository.delete(childComment);
         log.info("Deleted child comment with ID: {}", commentId);
+    }
+
+    private UserDetails getUserDetails() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (UserDetails) authentication.getPrincipal();
+    }
+
+    private void validateCommentRequest(CommentRequest req, UserDetails userDetails) {
+        String caption = req.getCaption();
+        if (caption == null || caption.trim().isEmpty()) {
+            throw new InvalidPostDataException("Title is required");
+        }
+
+        int commentLimit = userDetails.getCaptionCharacterLimit();
+        String userType = userDetails.isPremiumUser() ? "premium" : "free";
+
+        if (caption.length() > commentLimit) {
+            throw new InvalidPostDataException("Title exceeds the character limit of " + commentLimit +
+                    " characters for " + userType + " users");
+        }
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -106,13 +107,18 @@ public class CommentController {
     public ResponseEntity<PostResponse> createCommentOnPost(@RequestBody CommentRequest req) {
 
         return executeWithExceptionHandling(() -> {
+            SecurityContext context = SecurityContextHolder.getContext();
+            if (context == null || context.getAuthentication() == null) {
+                return ResponseEntity
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new PostResponse(false, "Error processing request: Security context not available", null));
+            }
+
             // Get user details from security context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            UUID userId = userDetails.getUserId();
+            Authentication authentication = context.getAuthentication();
 
             // Create the comment
-            CommentOnPost comment = commentService.createCommentOnPost(userId, req);
+            CommentOnPost comment = commentService.createCommentOnPost(req);
 
             // Return success response
             PostResponse response = new PostResponse(
@@ -133,11 +139,9 @@ public class CommentController {
         return executeWithExceptionHandling(() -> {
             // Get user details from security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            UUID userId = userDetails.getUserId();
 
             // Create the comment
-            CommentOnComment comment = commentService.createCommentOnComment(userId, req);
+            CommentOnComment comment = commentService.createCommentOnComment(req);
 
             // Return success response
             PostResponse response = new PostResponse(

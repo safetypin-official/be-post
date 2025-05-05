@@ -34,7 +34,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -109,8 +108,8 @@ class CommentControllerTest {
 
     // Helper method to mock security context
     private void mockSecurityContext() {
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getPrincipal()).thenReturn(userDetails);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
     }
 
@@ -126,7 +125,7 @@ class CommentControllerTest {
     void createCommentOnPost_Success() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnPost(eq(userId), any(CommentRequest.class))).thenReturn(commentOnPost);
+        when(commentService.createCommentOnPost(any(CommentRequest.class))).thenReturn(commentOnPost);
 
         // Execute
         ResponseEntity<PostResponse> response = commentController.createCommentOnPost(validCommentRequest);
@@ -137,14 +136,14 @@ class CommentControllerTest {
         assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Comment created successfully", response.getBody().getMessage());
         assertEquals(commentOnPost, response.getBody().getData());
-        verify(commentService).createCommentOnPost(userId, validCommentRequest);
+        verify(commentService).createCommentOnPost(validCommentRequest);
     }
 
     @Test
     void createCommentOnPost_PostNotFound() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnPost(eq(userId), any(CommentRequest.class)))
+        when(commentService.createCommentOnPost(any(CommentRequest.class)))
                 .thenThrow(new PostNotFoundException("Post not found"));
 
         // Execute
@@ -156,14 +155,14 @@ class CommentControllerTest {
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Post not found", response.getBody().getMessage());
         assertNull(response.getBody().getData());
-        verify(commentService).createCommentOnPost(userId, validCommentRequest);
+        verify(commentService).createCommentOnPost(validCommentRequest);
     }
 
     @Test
     void createCommentOnPost_InvalidData() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnPost(eq(userId), any(CommentRequest.class)))
+        when(commentService.createCommentOnPost(any(CommentRequest.class)))
                 .thenThrow(new InvalidPostDataException("Invalid comment data"));
 
         // Execute
@@ -175,14 +174,14 @@ class CommentControllerTest {
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Invalid comment data", response.getBody().getMessage());
         assertNull(response.getBody().getData());
-        verify(commentService).createCommentOnPost(userId, validCommentRequest);
+        verify(commentService).createCommentOnPost(validCommentRequest);
     }
 
     @Test
     void createCommentOnPost_UnexpectedException() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnPost(eq(userId), any(CommentRequest.class)))
+        when(commentService.createCommentOnPost(any(CommentRequest.class)))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
         // Execute
@@ -194,7 +193,7 @@ class CommentControllerTest {
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Unexpected error"));
         assertNull(response.getBody().getData());
-        verify(commentService).createCommentOnPost(userId, validCommentRequest);
+        verify(commentService).createCommentOnPost(validCommentRequest);
     }
 
     // -------------------- createCommentOnComment Tests --------------------
@@ -203,7 +202,7 @@ class CommentControllerTest {
     void createCommentOnComment_Success() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnComment(eq(userId), any(CommentRequest.class))).thenReturn(commentOnComment);
+        when(commentService.createCommentOnComment(any(CommentRequest.class))).thenReturn(commentOnComment);
 
         // Execute
         ResponseEntity<PostResponse> response = commentController.createCommentOnComment(validCommentRequest);
@@ -214,14 +213,14 @@ class CommentControllerTest {
         assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Comment created successfully", response.getBody().getMessage());
         assertEquals(commentOnComment, response.getBody().getData());
-        verify(commentService).createCommentOnComment(userId, validCommentRequest);
+        verify(commentService).createCommentOnComment(validCommentRequest);
     }
 
     @Test
     void createCommentOnComment_CommentNotFound() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnComment(eq(userId), any(CommentRequest.class)))
+        when(commentService.createCommentOnComment(any(CommentRequest.class)))
                 .thenThrow(new PostNotFoundException("Parent comment not found"));
 
         // Execute
@@ -233,14 +232,14 @@ class CommentControllerTest {
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Parent comment not found", response.getBody().getMessage());
         assertNull(response.getBody().getData());
-        verify(commentService).createCommentOnComment(userId, validCommentRequest);
+        verify(commentService).createCommentOnComment(validCommentRequest);
     }
 
     @Test
     void createCommentOnComment_InvalidData() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnComment(eq(userId), any(CommentRequest.class)))
+        when(commentService.createCommentOnComment(any(CommentRequest.class)))
                 .thenThrow(new InvalidPostDataException("Invalid reply data"));
 
         // Execute
@@ -252,14 +251,14 @@ class CommentControllerTest {
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertEquals("Invalid reply data", response.getBody().getMessage());
         assertNull(response.getBody().getData());
-        verify(commentService).createCommentOnComment(userId, validCommentRequest);
+        verify(commentService).createCommentOnComment(validCommentRequest);
     }
 
     @Test
     void createCommentOnComment_UnexpectedException() {
         // Setup
         mockSecurityContext();
-        when(commentService.createCommentOnComment(eq(userId), any(CommentRequest.class)))
+        when(commentService.createCommentOnComment(any(CommentRequest.class)))
                 .thenThrow(new RuntimeException("Database connection failed"));
 
         // Execute
@@ -271,7 +270,7 @@ class CommentControllerTest {
         assertFalse(Objects.requireNonNull(response.getBody()).isSuccess());
         assertTrue(response.getBody().getMessage().contains("Database connection failed"));
         assertNull(response.getBody().getData());
-        verify(commentService).createCommentOnComment(userId, validCommentRequest);
+        verify(commentService).createCommentOnComment(validCommentRequest);
     }
 
     // -------------------- deleteCommentOnPost Tests --------------------
@@ -448,7 +447,7 @@ class CommentControllerTest {
     void createErrorResponse_ReturnsCorrectResponse() {
         // Setup - mock the service to throw an exception
         mockSecurityContext();
-        when(commentService.createCommentOnPost(any(), any())).thenThrow(new NullPointerException("Test exception"));
+        when(commentService.createCommentOnPost(any())).thenThrow(new NullPointerException("Test exception"));
 
         // Execute - this should cause the controller's exception handling to create an
         // error response
@@ -485,8 +484,7 @@ class CommentControllerTest {
             // Setup
             mockedStatic.when(SecurityContextHolder::getContext).thenReturn(securityContext);
             when(securityContext.getAuthentication()).thenReturn(authentication);
-            when(authentication.getPrincipal()).thenReturn(userDetails);
-            when(commentService.createCommentOnPost(eq(userId), any(CommentRequest.class))).thenReturn(commentOnPost);
+            when(commentService.createCommentOnPost(any(CommentRequest.class))).thenReturn(commentOnPost);
 
             // Execute
             ResponseEntity<PostResponse> response = commentController.createCommentOnPost(validCommentRequest);
