@@ -2,6 +2,7 @@ package com.safetypin.post.service.strategy;
 
 import com.safetypin.post.dto.FeedQueryDTO;
 import com.safetypin.post.dto.PostData;
+import com.safetypin.post.dto.PostedByData;
 import com.safetypin.post.model.Post;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -325,5 +326,197 @@ class DistanceFeedStrategyTest {
 
         // Assert
         assertEquals(3, result.getTotalElements());
+    }
+
+    @Test
+    void processFeed_withSmallRadius_returnsOnlyNearbyPosts() {
+        // Arrange - use a small radius that only includes the nearest post
+        double smallRadius = 5.0; // Small enough to only include post1
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .radius(smallRadius)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // Act
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+
+        // Assert
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Nearby Post", ((PostData) result.getContent().getFirst().get("post")).getTitle());
+    }
+
+    @Test
+    void processFeed_withMediumRadius_returnsNearbyAndMediumPosts() {
+        // Arrange - use a medium radius that includes the first two posts
+        double mediumRadius = 20.0; // Enough to include post1 and post2, but not post3
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .radius(mediumRadius)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // Act
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+
+        // Assert
+        assertEquals(2, result.getTotalElements());
+        List<Map<String, Object>> content = result.getContent();
+        
+        // Check that we have both the nearby and medium posts (sorted by distance)
+        assertEquals("Nearby Post", ((PostData) content.get(0).get("post")).getTitle());
+        assertEquals("Medium Distance Post", ((PostData) content.get(1).get("post")).getTitle());
+    }
+
+    @Test
+    void processFeed_withLargeRadius_returnsAllPosts() {
+        // Arrange - use a large radius that includes all posts
+        double largeRadius = 200.0; // Enough to include all posts
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .radius(largeRadius)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // Act
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+
+        // Assert
+        assertEquals(3, result.getTotalElements());
+    }
+
+    @Test
+    void processFeed_withNullRadius_usesDefaultRadius() {
+        // Arrange - don't specify a radius, should use default of 10.0
+        // At default radius of 10.0, only post1 should be included
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .radius(null) // Null radius
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // Act
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+
+        // Assert
+        assertEquals(3, result.getTotalElements());
+        assertEquals("Nearby Post", ((PostData) result.getContent().getFirst().get("post")).getTitle());
+    }
+
+    @Test
+    void processFeed_withZeroRadius_returnsNoPosts() {
+        // Arrange - use a radius of 0, which should include no posts
+        double zeroRadius = 0.0;
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .radius(zeroRadius)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // Act
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+
+        // Assert
+        assertEquals(0, result.getTotalElements());
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void processFeed_withNegativeRadius_treatsAsZeroRadius() {
+        // Arrange - use a negative radius (invalid value)
+        double negativeRadius = -5.0;
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .radius(negativeRadius)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+
+        // Act
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+
+        // Assert
+        // Negative radius should be treated as radius 0, meaning no posts are returned
+        assertEquals(0, result.getTotalElements());
+        assertTrue(result.isEmpty(), "No posts should be returned with negative radius");
+    }
+
+    @Test
+    void processFeed_withNullProfileList_handlesGracefully() {
+        // Arrange
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+        
+        // Act - explicitly pass null for profileList
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, null);
+        
+        // Assert
+        assertFalse(result.isEmpty());
+        
+        // Verify all returned posts have null postedBy data
+        for (Map<String, Object> postMap : result.getContent()) {
+            PostData postData = (PostData) postMap.get("post");
+            assertNull(postData.getPostedBy(), "PostedBy data should be null when profileList is null");
+        }
+    }
+
+    @Test
+    void processFeed_withNonNullProfileList_includesProfileData() {
+        // Arrange
+        UUID poster1Id = posts.get(0).getPostedBy();
+        UUID poster2Id = posts.get(1).getPostedBy();
+        UUID poster3Id = posts.get(2).getPostedBy();
+        
+        Map<UUID, PostedByData> profileMap = new HashMap<>();
+        profileMap.put(poster1Id, new PostedByData(poster1Id, "User One", "avatar1.jpg"));
+        profileMap.put(poster2Id, new PostedByData(poster2Id, "User Two", "avatar2.jpg"));
+        profileMap.put(poster3Id, new PostedByData(poster3Id, "User Three", "avatar3.jpg"));
+        
+        FeedQueryDTO queryDTO = FeedQueryDTO.builder()
+                .userId(testUserId)
+                .userLat(userLat)
+                .userLon(userLon)
+                .pageable(PageRequest.of(0, 10))
+                .build();
+        
+        // Act - pass non-null profileList
+        Page<Map<String, Object>> result = strategy.processFeed(posts, queryDTO, profileMap);
+        
+        // Assert
+        assertFalse(result.isEmpty());
+        
+        // Verify returned posts have correct postedBy data
+        for (Map<String, Object> postMap : result.getContent()) {
+            PostData postData = (PostData) postMap.get("post");
+            assertNotNull(postData, "PostData should not be null");
+            assertNotNull(postData.getPostedBy(), "PostedBy data should not be null");
+            
+            UUID postedById = postData.getPostedBy().getUserId();
+            assertTrue(profileMap.containsKey(postedById), "Profile data should match the post author");
+            assertEquals(profileMap.get(postedById).getName(), 
+                         postData.getPostedBy().getName(), 
+                         "Username should match from profile map");
+        }
     }
 }
