@@ -211,33 +211,6 @@ class PostControllerTest {
         assertEquals(10, capturedQuery.getPageable().getPageSize());
     }
 
-//     @Test
-//     void getPostsFeedByDistance_defaultRadius() {
-//         // Arrange
-//         PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
-//         Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
-//         List<Map<String, Object>> posts = Collections.singletonList(postMap);
-//         Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
-
-//         // Capture the QueryDTO that will be created
-//         ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
-
-//         when(postService.getFeed(queryCaptor.capture(), eq("distance")))
-//                 .thenReturn(postsPage);
-
-//         // Act - don't provide a radius parameter (should use default)
-//         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-//                 40.7128, -74.0060, null, null, null, null, null, 0, 10);
-
-//         // Assert
-//         assertEquals(HttpStatus.OK, response.getStatusCode());
-//         assertTrue(response.getBody().isSuccess());
-
-//         // Verify the default radius (10.0) is used
-//         FeedQueryDTO capturedQuery = queryCaptor.getValue();
-//         assertEquals(10.0, capturedQuery.getRadius());
-//     }
-
     @Test
     void getPostsFeedByDistance_customRadius() {
         // Arrange
