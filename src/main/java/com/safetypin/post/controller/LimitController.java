@@ -77,13 +77,6 @@ public class LimitController {
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private PostResponse makeResponse(Object data) {
-        return new PostResponse(
-                true,
-                "Request successfully processed",
-                data);
-    }
-
     // Generic exception handler for controller methods
     private ResponseEntity<PostResponse> executeWithExceptionHandling(
             Supplier<ResponseEntity<PostResponse>> action,
