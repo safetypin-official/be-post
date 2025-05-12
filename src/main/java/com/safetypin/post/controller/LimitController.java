@@ -35,13 +35,7 @@ public class LimitController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-
-            // Return success response
-            PostResponse response = makeResponse(userDetails.getTitleCharacterLimit());
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(response);
+            return createSuccessResponse(userDetails.getTitleCharacterLimit());
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
