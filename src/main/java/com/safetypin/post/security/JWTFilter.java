@@ -32,9 +32,15 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // Check token exists and is in the correct format,
-        if (authHeader == null || authHeader.isBlank() || !authHeader.startsWith("Bearer ")) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
+        // If token doesn't exist, continue as normal (without authentication)
+        if (authHeader == null || authHeader.isBlank()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Check token is in the correct format
+        if (!authHeader.startsWith("Bearer ")) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token must start with 'Bearer '");
             return;
         }
         String jwtToken = authHeader.substring(7);
@@ -51,7 +57,7 @@ public class JWTFilter extends OncePerRequestFilter {
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(
                     userDetails,
                     jwtToken, // credential (the token itself)
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userDetails.getRole()))
+                    Collections.singletonList(new SimpleGrantedAuthority(userDetails.getRole().toString()))
             );
 
             // Set authentication in context
