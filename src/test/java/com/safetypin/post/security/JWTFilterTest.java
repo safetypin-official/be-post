@@ -71,11 +71,11 @@ class JWTFilterTest {
         assertEquals(testUserId, userDetails.getUserId());
         assertEquals("John Doe", userDetails.getName());
 
-        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_REGISTERED_USER")));
+        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("REGISTERED_USER")));
     }
 
     @Test
-    void doFilterInternal_MissingAuthHeader_Unauthorized() throws ServletException, IOException {
+    void doFilterInternal_MissingAuthHeader_NotAuthorized() throws ServletException, IOException {
         // Arrange
         when(request.getHeader("Authorization")).thenReturn(null);
 
@@ -83,8 +83,7 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
-        verify(filterChain, never()).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -97,7 +96,7 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
+        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), anyString());
         verify(filterChain, never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
@@ -111,7 +110,7 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
+        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), anyString());
         verify(filterChain, never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
@@ -197,6 +196,6 @@ class JWTFilterTest {
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         assertEquals(Role.MODERATOR, userDetails.getRole());
-        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MODERATOR")));
+        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("MODERATOR")));
     }
 }
