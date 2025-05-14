@@ -14,8 +14,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)  // NOSONAR
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .csrf(AbstractHttpConfigurer::disable) // NOSONAR
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll())
                 .formLogin(AbstractHttpConfigurer::disable) // Disable login page
                 .httpBasic(AbstractHttpConfigurer::disable); // Disable basic authentication
 
