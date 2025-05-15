@@ -122,6 +122,7 @@ public class PostController {
     public ResponseEntity<PostResponse> getPostsFeedByDistance(
             @RequestParam Double lat,
             @RequestParam Double lon,
+            @RequestParam(required = false, defaultValue = "10000.0") Double radius,
             @RequestParam(required = false) List<String> categories,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
@@ -148,6 +149,7 @@ public class PostController {
                     .size(size)
                     .lat(lat)
                     .lon(lon)
+                    .radius(radius)
                     .build();
 
             // Convert to FeedQueryDTO

@@ -181,6 +181,7 @@ class PostControllerTest {
         List<String> categories = List.of("DANGER");
         LocalDate from = LocalDate.now().minusDays(7);
         LocalDate to = LocalDate.now();
+        Double radius = 15.0; // Custom radius value
 
         // Capture the QueryDTO that will be created
         ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
@@ -190,7 +191,7 @@ class PostControllerTest {
 
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                40.7128, -74.0060, categories, "test", from, to, 0, 10);
+                40.7128, -74.0060, radius, categories, "test", from, to, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -200,6 +201,7 @@ class PostControllerTest {
         FeedQueryDTO capturedQuery = queryCaptor.getValue();
         assertEquals(40.7128, capturedQuery.getUserLat());
         assertEquals(-74.0060, capturedQuery.getUserLon());
+        assertEquals(radius, capturedQuery.getRadius()); // Verify radius is passed correctly
         assertEquals(categories, capturedQuery.getCategories());
         assertEquals("test", capturedQuery.getKeyword());
         assertEquals(LocalDateTime.of(from, LocalTime.MIN), capturedQuery.getDateFrom());
@@ -210,10 +212,38 @@ class PostControllerTest {
     }
 
     @Test
+    void getPostsFeedByDistance_customRadius() {
+        // Arrange
+        PostData postData = PostData.fromPostAndUserId(testPost, testUserId, postedByData);
+        Map<String, Object> postMap = Map.of("post", postData, "distance", 2.5);
+        List<Map<String, Object>> posts = Collections.singletonList(postMap);
+        Page<Map<String, Object>> postsPage = new PageImpl<>(posts, pageable, posts.size());
+
+        // Capture the QueryDTO that will be created
+        ArgumentCaptor<FeedQueryDTO> queryCaptor = ArgumentCaptor.forClass(FeedQueryDTO.class);
+
+        when(postService.getFeed(queryCaptor.capture(), eq("distance")))
+                .thenReturn(postsPage);
+
+        // Act - use a large radius
+        Double radius = 50.0; 
+        ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
+                40.7128, -74.0060, radius, null, null, null, null, 0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+
+        // Verify the custom radius is passed correctly
+        FeedQueryDTO capturedQuery = queryCaptor.getValue();
+        assertEquals(radius, capturedQuery.getRadius());
+    }
+
+    @Test
     void getPostsFeedByDistance_nullLatitude() {
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                null, 10.0, null, null, null, null, 0, 10);
+                null, 10.0, 10.0, null, null, null, null, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -225,7 +255,7 @@ class PostControllerTest {
     void getPostsFeedByDistance_nullLongitude() {
         // Act
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                10.0, null, null, null, null, null, 0, 10);
+                10.0, null, 10.0, null, null, null, null, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -248,8 +278,9 @@ class PostControllerTest {
                 .thenReturn(postsPage);
 
         // Act
+        Double radius = 5.0;
         ResponseEntity<PostResponse> response = postController.getPostsFeedByDistance(
-                40.7128, -74.0060, null, "test", null, null, 0, 10);
+                40.7128, -74.0060, radius, null, "test", null, null, 0, 10);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -259,6 +290,7 @@ class PostControllerTest {
         FeedQueryDTO capturedQuery = queryCaptor.getValue();
         assertEquals(40.7128, capturedQuery.getUserLat());
         assertEquals(-74.0060, capturedQuery.getUserLon());
+        assertEquals(radius, capturedQuery.getRadius());
         assertNull(capturedQuery.getCategories());
         assertEquals("test", capturedQuery.getKeyword());
         assertNull(capturedQuery.getDateFrom());
