@@ -1,14 +1,20 @@
 package com.safetypin.post.dto;
 
-import com.safetypin.post.model.Role;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.RequiredTypeException;
-import io.jsonwebtoken.impl.DefaultClaims;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
+import com.safetypin.post.model.Role;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.RequiredTypeException;
+import io.jsonwebtoken.impl.DefaultClaims;
 
 class UserDetailsTest {
 
@@ -69,8 +75,11 @@ class UserDetailsTest {
         claims.put("userId", UUID.randomUUID().toString());
         claims.put("name", "John Doe");
 
-        // Act & Assert
-        assertThrows(NullPointerException.class, () -> UserDetails.fromClaims(claims));
+        // Act
+        UserDetails userDetails = UserDetails.fromClaims(claims);
+
+        // Assert - should default to false, not throw NullPointerException
+        assertFalse(userDetails.isVerified());
     }
 
     @Test

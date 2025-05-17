@@ -32,7 +32,6 @@ public class CommentController {
 
     private final CommentService commentService;
 
-
     @GetMapping("/postedby/{userId}")
     public ResponseEntity<PostResponse> getCommentsPostedBy(
             @PathVariable UUID userId,
@@ -111,11 +110,9 @@ public class CommentController {
             if (context == null || context.getAuthentication() == null) {
                 return ResponseEntity
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new PostResponse(false, "Error processing request: Security context not available", null));
+                        .body(new PostResponse(false, "Error processing request: Security context not available",
+                                null));
             }
-
-            // Get user details from security context
-            Authentication authentication = context.getAuthentication();
 
             // Create the comment
             CommentOnPost comment = commentService.createCommentOnPost(req);
@@ -137,9 +134,6 @@ public class CommentController {
     public ResponseEntity<PostResponse> createCommentOnComment(@RequestBody CommentRequest req) {
 
         return executeWithExceptionHandling(() -> {
-            // Get user details from security context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
             // Create the comment
             CommentOnComment comment = commentService.createCommentOnComment(req);
 
@@ -216,7 +210,6 @@ public class CommentController {
                     .body(response);
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 
     // Generic exception handler for controller methods
     private ResponseEntity<PostResponse> executeWithExceptionHandling(

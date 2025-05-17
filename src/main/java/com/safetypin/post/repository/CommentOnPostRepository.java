@@ -1,14 +1,17 @@
 package com.safetypin.post.repository;
 
-import com.safetypin.post.model.CommentOnPost;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.safetypin.post.model.CommentOnPost;
 
 @Repository
 public interface CommentOnPostRepository extends JpaRepository<CommentOnPost, UUID> {
@@ -24,4 +27,10 @@ public interface CommentOnPostRepository extends JpaRepository<CommentOnPost, UU
     // fetch comments in profile
     @Query("SELECT c FROM CommentOnPost c WHERE c.postedBy = :userId")
     List<CommentOnPost> findCommentsByPostedBy(@Param("userId") UUID userId);
+
+    // Delete all comments made by a specific user
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM CommentOnPost c WHERE c.postedBy = :userId")
+    int deleteByPostedBy(@Param("userId") UUID userId);
 }
