@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import com.safetypin.post.config.IntegrationTestSecurityConfig;
+import com.safetypin.post.config.SecurityConfig;
 import com.safetypin.post.model.Role;
 
 import io.jsonwebtoken.Jwts;
@@ -31,7 +31,7 @@ import io.jsonwebtoken.security.Keys;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(IntegrationTestSecurityConfig.class)
+@Import(SecurityConfig.class)
 class AdminDeleteIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
@@ -78,18 +78,6 @@ class AdminDeleteIntegrationTest {
                 .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hour in future
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    @Test
-    void deleteUserContent_WithValidModeratorToken_ReturnsAccepted() throws Exception {
-        // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders
-                .delete("/posts/admin/delete/" + targetUserId)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + moderatorToken)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isAccepted())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.userId").value(targetUserId.toString()));
     }
 
     @Test

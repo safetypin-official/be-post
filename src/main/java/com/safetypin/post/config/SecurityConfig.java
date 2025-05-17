@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // NOSONAR
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/posts/admin/delete/**").hasAuthority("ROLE_MODERATOR") // Add this line
+                        .requestMatchers("/posts/admin/delete/**").hasAuthority("MODERATOR") // Add this line
                         .requestMatchers("/post/**", "/posts/**").authenticated() // Protect all endpoints under /post
                         .anyRequest().permitAll() // Allow all other requests by default
                 )
