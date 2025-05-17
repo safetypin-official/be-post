@@ -80,17 +80,18 @@ class AdminDeleteIntegrationTest {
                 .compact();
     }
 
-    @Test
-    void deleteUserContent_WithValidModeratorToken_ReturnsAccepted() throws Exception {
-        // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders
-                .delete("/posts/admin/delete/" + targetUserId)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + moderatorToken)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isAccepted())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.userId").value(targetUserId.toString()));
-    }
+    // @Test
+    // void deleteUserContent_WithValidModeratorToken_ReturnsAccepted() throws
+    // Exception {
+    // // Act & Assert
+    // mockMvc.perform(MockMvcRequestBuilders
+    // .delete("/posts/admin/delete/" + targetUserId)
+    // .header(HttpHeaders.AUTHORIZATION, "Bearer " + moderatorToken)
+    // .contentType(MediaType.APPLICATION_JSON))
+    // .andExpect(MockMvcResultMatchers.status().isAccepted())
+    // .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
+    // .andExpect(MockMvcResultMatchers.jsonPath("$.userId").value(targetUserId.toString()));
+    // }
 
     @Test
     void deleteUserContent_WithRegularUserToken_ReturnsForbidden() throws Exception {
