@@ -3,6 +3,7 @@ package com.safetypin.post.controller;
 import java.util.Map;
 import java.util.UUID;
 
+import com.safetypin.post.dto.UserDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -40,11 +41,12 @@ public class AdminController {
         // Get the authentication details from the security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        // you could move this to security config
         if (authentication == null) {
             log.error("Authentication context is null");
             throw new UnauthorizedAccessException("Unauthorized access");
         } // Extract user details from the authentication principal
-        com.safetypin.post.dto.UserDetails userDetails = (com.safetypin.post.dto.UserDetails) authentication
+        UserDetails userDetails = (UserDetails) authentication
                 .getPrincipal();
 
         // Get user ID and role

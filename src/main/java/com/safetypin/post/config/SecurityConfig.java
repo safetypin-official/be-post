@@ -7,10 +7,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.safetypin.post.security.JWTFilter;
+import com.safetypin.post.model.Role;
 
 @Configuration
 public class SecurityConfig {
@@ -28,12 +30,15 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // NOSONAR
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/posts/admin/delete/**").hasAuthority("MODERATOR") // Add this line
+                        .requestMatchers("/posts/admin/**").hasAuthority(Role.MODERATOR.name()) // Add this line
                         .requestMatchers("/post/**", "/posts/**").authenticated() // Protect all endpoints under /post
                         .anyRequest().permitAll() // Allow all other requests by default
                 )
                 .formLogin(AbstractHttpConfigurer::disable) // Disable login page
-                .httpBasic(AbstractHttpConfigurer::disable); // Disable basic authentication
+                .httpBasic(AbstractHttpConfigurer::disable) // Disable basic authentication
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Use stateless session management
+
 
         return http.build();
     }

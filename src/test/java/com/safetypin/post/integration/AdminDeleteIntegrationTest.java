@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -78,6 +79,23 @@ class AdminDeleteIntegrationTest {
                 .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hour in future
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    @BeforeEach
+    void reset() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void deleteUserContent_WithValidModeratorToken_ReturnsAccepted() throws Exception {
+        // Act & Assert
+        mockMvc.perform(MockMvcRequestBuilders
+                        .delete("/posts/admin/delete/" + targetUserId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + moderatorToken)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isAccepted())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.userId").value(targetUserId.toString()));
     }
 
     @Test
