@@ -1,7 +1,17 @@
 package com.safetypin.post.security;
 
+import java.io.IOException;
+import java.util.Collections;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.InvalidCredentialsException;
+
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,14 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.Collections;
 
 @Slf4j
 @Component
@@ -54,13 +56,12 @@ public class JWTFilter extends OncePerRequestFilter {
             Claims claims = jwtUtil.verifyAndGetClaims(jwtToken);
 
             // Convert claims to UserDetails
-            UserDetails userDetails = UserDetails.fromClaims(claims);
-
-            // Create pre-authenticated token with authorities based on user role
+            UserDetails userDetails = UserDetails.fromClaims(claims); // Create pre-authenticated token with authorities
+                                                                      // based on user role
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(
                     userDetails,
                     jwtToken, // credential (the token itself)
-                    Collections.singletonList(new SimpleGrantedAuthority(userDetails.getRole().toString())));
+                    Collections.singletonList(new SimpleGrantedAuthority(userDetails.getRole().name())));
 
             // Set authentication in context
             SecurityContextHolder.getContext().setAuthentication(authentication);
