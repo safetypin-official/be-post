@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,21 +29,23 @@ public class JWTFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
 
-        // If token doesn't exist, continue as normal (without authentication)
+        // If token doesn't exist or is in wrong format, continue as unauthenticated
         if (authHeader == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Check token is in the correct format
         if (authHeader.isBlank() || !authHeader.startsWith("Bearer ")) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token is in the wrong format");
+            filterChain.doFilter(request, response);
             return;
         }
+
         String jwtToken = authHeader.substring(7);
 
         // Verify the JWT token
@@ -57,28 +60,26 @@ public class JWTFilter extends OncePerRequestFilter {
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(
                     userDetails,
                     jwtToken, // credential (the token itself)
-                    Collections.singletonList(new SimpleGrantedAuthority(userDetails.getRole().toString()))
-            );
+                    Collections.singletonList(new SimpleGrantedAuthority(userDetails.getRole().toString())));
 
             // Set authentication in context
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (InvalidCredentialsException e) {
-            // Send and log error if token is invalid
+            // Log error if token is invalid but don't send error response - let Spring
+            // Security handle it
             log.info("Invalid JWT token due to: {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-            return;
+            // Clear any existing authentication
+            SecurityContextHolder.clearContext();
         } catch (Exception e) {
-            // Other exceptions relating to setting the authentication in the security context
+            // Log other exceptions but don't send error response - let Spring Security
+            // handle it
             log.error("Could not set user authentication in security context", e);
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
-            return;
+            // Clear any existing authentication
+            SecurityContextHolder.clearContext();
         }
 
-        // Log the successful authentication
-        log.info("JWT token is valid for user: {}", SecurityContextHolder.getContext().getAuthentication().getName());
-
-        // Continue the filter chain if token is valid
+        // Continue the filter chain if token is processed (valid or not)
         filterChain.doFilter(request, response);
     }
 }
