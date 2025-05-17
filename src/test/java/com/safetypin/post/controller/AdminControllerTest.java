@@ -24,7 +24,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.web.servlet.MockMvc;
 
 import com.safetypin.post.config.TestSecurityConfig;
 import com.safetypin.post.dto.UserDetails;
@@ -35,8 +34,6 @@ import com.safetypin.post.service.AdminService;
 @WebMvcTest(AdminController.class)
 @Import(TestSecurityConfig.class)
 class AdminControllerTest {
-    @Autowired
-    private MockMvc mockMvc;
 
     @Autowired
     private AdminService adminService;

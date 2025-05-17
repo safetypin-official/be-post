@@ -123,7 +123,7 @@ class AdminServiceTest {
         when(voteRepository.deleteVotesByUserId(any())).thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             CompletableFuture<Void> result = adminService.deleteAllUserContent(
                     targetUserId,
                     moderatorId,
