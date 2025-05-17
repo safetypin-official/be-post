@@ -61,7 +61,7 @@ public class JWTFilter extends OncePerRequestFilter {
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(
                     userDetails,
                     jwtToken, // credential (the token itself)
-                    Collections.singletonList(new SimpleGrantedAuthority(userDetails.getRole().name())));
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userDetails.getRole().name())));
 
             // Set authentication in context
             SecurityContextHolder.getContext().setAuthentication(authentication);
