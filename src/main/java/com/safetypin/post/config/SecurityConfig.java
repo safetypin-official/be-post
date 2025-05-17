@@ -1,6 +1,5 @@
 package com.safetypin.post.config;
 
-import com.safetypin.post.security.JWTFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.safetypin.post.security.JWTFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -24,9 +25,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)  // NOSONAR
+                .csrf(AbstractHttpConfigurer::disable) // NOSONAR
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/posts/admin/delete/**").hasAuthority("MODERATOR") // Add this line
                         .requestMatchers("/post/**", "/posts/**").authenticated() // Protect all endpoints under /post
                         .anyRequest().permitAll() // Allow all other requests by default
                 )
