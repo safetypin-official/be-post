@@ -26,7 +26,7 @@ public class IntegrationTestSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/posts/admin/**").hasAuthority("MODERATOR")
+                        .requestMatchers("/posts/admin/**").hasRole("MODERATOR")
                         .requestMatchers("/posts/**").authenticated()
                         .anyRequest().permitAll());
 
