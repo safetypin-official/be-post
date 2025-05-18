@@ -44,13 +44,12 @@ public class AdminController {
         if (authentication == null) {
             log.error("Authentication context is null");
             throw new UnauthorizedAccessException("Unauthorized access");
-        } // Extract user details from the authentication principal
+        }
         UserDetails userDetails = (UserDetails) authentication
                 .getPrincipal();
 
-        // Get user ID and role
         UUID moderatorId = userDetails.getUserId();
-        Role moderatorRole = userDetails.getRole(); // Verify that the user has MODERATOR role
+        Role moderatorRole = userDetails.getRole();
         if (moderatorRole != Role.MODERATOR) {
             log.error("User {} attempted to access restricted admin endpoint with role {}", moderatorId, moderatorRole);
             throw new UnauthorizedAccessException("Only moderators can access this endpoint");
@@ -58,10 +57,8 @@ public class AdminController {
 
         log.info("Moderator {} requested deletion of all content for user {}", moderatorId, userId);
 
-        // Delegate the deletion to the service layer as an asynchronous operation
         adminService.deleteAllUserContent(userId, moderatorId, moderatorRole);
 
-        // Return immediately while the deletion happens in the background
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
                 .body(Map.of("message", "User content deletion initiated successfully",
