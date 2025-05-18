@@ -3,7 +3,6 @@ package com.safetypin.post.controller;
 import java.util.Map;
 import java.util.UUID;
 
-import com.safetypin.post.dto.UserDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.safetypin.post.dto.UserDetails;
 import com.safetypin.post.exception.UnauthorizedAccessException;
 import com.safetypin.post.model.Role;
 import com.safetypin.post.service.AdminService;
@@ -43,7 +43,6 @@ public class AdminController {
 
         if (authentication == null) {
             log.error("Authentication context is null");
-            throw new UnauthorizedAccessException("Unauthorized access");
             throw new UnauthorizedAccessException("Unauthorized access");
         } // Extract user details from the authentication principal
         UserDetails userDetails = (UserDetails) authentication
