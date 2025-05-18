@@ -1,5 +1,6 @@
 package com.safetypin.post.dto;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import com.safetypin.post.model.Role;
@@ -32,26 +33,32 @@ public class UserDetails {
     private String name;
 
     public static UserDetails fromClaims(Claims claims) {
-        String roleStr = claims.get("role", String.class);
-        Role role = (roleStr != null) ? Role.valueOf(roleStr) : Role.REGISTERED_USER;
+        // Parse role with default value if null
+        Role role = Optional.ofNullable(claims.get("role", String.class))
+                .map(Role::valueOf)
+                .orElse(Role.REGISTERED_USER);
 
-        Boolean isVerified = claims.get("isVerified", Boolean.class);
-        if (isVerified == null) {
-            isVerified = false;
-        }
+        // Parse isVerified with default value if null
+        boolean isVerified = Optional.ofNullable(claims.get("isVerified", Boolean.class))
+                .orElse(false);
+
+        // Get userId, which is required
         String userIdStr = claims.get("userId", String.class);
+        if (userIdStr == null) {
+            throw new IllegalArgumentException("User ID is missing from token claims");
+        }
+
+        // Parse userId as UUID
         UUID userId;
         try {
-            userId = (userIdStr != null) ? UUID.fromString(userIdStr) : UUID.randomUUID();
+            userId = UUID.fromString(userIdStr);
         } catch (IllegalArgumentException e) {
-            // If the userId is not a valid UUID format, throw an exception
             throw new IllegalArgumentException("Invalid UUID format: " + userIdStr);
         }
 
-        String name = claims.get("name", String.class);
-        if (name == null) {
-            name = "Anonymous User";
-        }
+        // Get name with default value if null
+        String name = Optional.ofNullable(claims.get("name", String.class))
+                .orElse("Anonymous User");
 
         return new UserDetails(role, isVerified, userId, name);
     }
