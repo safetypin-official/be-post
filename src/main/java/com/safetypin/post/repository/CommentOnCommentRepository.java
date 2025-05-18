@@ -35,6 +35,7 @@ public interface CommentOnCommentRepository extends JpaRepository<CommentOnComme
 
         // Delete all replies made by a specific user
         @Modifying
+        @Transactional
         @Query("DELETE FROM CommentOnComment c WHERE c.postedBy = :userId")
         int deleteByPostedBy(@Param("userId") UUID userId);
 }
