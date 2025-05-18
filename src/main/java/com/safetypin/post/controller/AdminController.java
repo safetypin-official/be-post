@@ -41,9 +41,9 @@ public class AdminController {
         // Get the authentication details from the security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // you could move this to security config
         if (authentication == null) {
             log.error("Authentication context is null");
+            throw new UnauthorizedAccessException("Unauthorized access");
             throw new UnauthorizedAccessException("Unauthorized access");
         } // Extract user details from the authentication principal
         UserDetails userDetails = (UserDetails) authentication
