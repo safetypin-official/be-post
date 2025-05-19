@@ -23,4 +23,5 @@ public class FeedRequestDTO {
     // Only for distance-based feed
     private Double lat;
     private Double lon;
+    private Double radius;
 }

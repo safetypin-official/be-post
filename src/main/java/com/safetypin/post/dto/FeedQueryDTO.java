@@ -23,7 +23,7 @@ public class FeedQueryDTO {
     // Only used for distance-based feed
     private Double userLat;
     private Double userLon;
-
+    private Double radius;
 
     // Static converter method
     public static FeedQueryDTO fromFeedRequestAndUserId(FeedRequestDTO request, UUID userId) {
@@ -46,6 +46,7 @@ public class FeedQueryDTO {
                 .pageable(page)
                 .userLat(request.getLat())
                 .userLon(request.getLon())
+                .radius(request.getRadius())
                 .build();
     }
 }
