@@ -1,12 +1,20 @@
 package com.safetypin.post.security;
 
-import com.safetypin.post.dto.UserDetails;
-import com.safetypin.post.model.Role;
-import io.jsonwebtoken.Claims;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -16,11 +24,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.io.IOException;
-import java.util.UUID;
+import com.safetypin.post.dto.UserDetails;
+import com.safetypin.post.model.Role;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 class JWTFilterTest {
 
@@ -71,11 +82,11 @@ class JWTFilterTest {
         assertEquals(testUserId, userDetails.getUserId());
         assertEquals("John Doe", userDetails.getName());
 
-        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_REGISTERED_USER")));
+        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("REGISTERED_USER")));
     }
 
     @Test
-    void doFilterInternal_MissingAuthHeader_Unauthorized() throws ServletException, IOException {
+    void doFilterInternal_MissingAuthHeader_NotAuthorized() throws ServletException, IOException {
         // Arrange
         when(request.getHeader("Authorization")).thenReturn(null);
 
@@ -83,8 +94,7 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
-        verify(filterChain, never()).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -97,8 +107,9 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
-        verify(filterChain, never()).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
+        // No error response sent since we continue filter chain
+        verify(response, never()).sendError(anyInt(), anyString());
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -111,8 +122,9 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication token required");
-        verify(filterChain, never()).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
+        // No error response sent since we continue filter chain
+        verify(response, never()).sendError(anyInt(), anyString());
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -128,8 +140,9 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-        verify(filterChain, never()).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
+        // No error response sent since we continue filter chain
+        verify(response, never()).sendError(anyInt(), anyString());
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -141,7 +154,8 @@ class JWTFilterTest {
 
         // Missing required claim
         when(claims.get("role", String.class)).thenReturn(Role.MODERATOR.name());
-        when(claims.get("isVerified", Boolean.class)).thenReturn(null); // This will cause NullPointerException
+        when(claims.get("isVerified", Boolean.class)).thenReturn(null); // This will be handled by UserDetails
+                                                                        // fromClaims
         when(claims.get("userId", String.class)).thenReturn(testUserId.toString());
         when(claims.get("name", String.class)).thenReturn("Moderator User");
 
@@ -149,9 +163,16 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
-        verify(filterChain, never()).doFilter(request, response);
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain).doFilter(request, response);
+        // No error response sent since we continue filter chain
+        verify(response, never()).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), eq("Authentication failed"));
+
+        // Authentication should succeed with default value for isVerified
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(authentication);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        assertEquals(Role.MODERATOR, userDetails.getRole());
+        assertFalse(userDetails.isVerified()); // Default value should be false
     }
 
     @Test
@@ -170,8 +191,7 @@ class JWTFilterTest {
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
-        verify(filterChain, never()).doFilter(request, response);
+        verify(filterChain).doFilter(request, response); // Filter chain continues
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -197,6 +217,6 @@ class JWTFilterTest {
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         assertEquals(Role.MODERATOR, userDetails.getRole());
-        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MODERATOR")));
+        assertTrue(authentication.getAuthorities().contains(new SimpleGrantedAuthority("MODERATOR")));
     }
 }
