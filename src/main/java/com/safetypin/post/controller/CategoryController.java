@@ -1,16 +1,24 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.model.Category;
-import com.safetypin.post.service.CategoryService;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.util.List;
+import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.model.Category;
+import com.safetypin.post.service.CategoryService;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -27,17 +35,12 @@ public class CategoryController {
         try {
             List<Category> categories = categoryService.getAllCategories();
 
-            // Convert categories to only include names
-            List<String> formattedCategories = categories.stream()
-                    .map(Category::getName)
-                    .toList();
-
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(new PostResponse(
                             true,
                             "Categories retrieved successfully",
-                            formattedCategories));
+                            categories));
         } catch (Exception e) {
             log.error("Error retrieving categories: {}", e.getMessage());
             return ResponseEntity
