@@ -1,8 +1,17 @@
 package com.safetypin.post.controller;
 
-import com.safetypin.post.dto.PostResponse;
-import com.safetypin.post.model.Category;
-import com.safetypin.post.service.CategoryService;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,15 +22,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.safetypin.post.dto.PostResponse;
+import com.safetypin.post.model.Category;
+import com.safetypin.post.service.CategoryService;
 
 class CategoryControllerTest {
 
@@ -43,10 +46,11 @@ class CategoryControllerTest {
 
         ResponseEntity<PostResponse> response = categoryController.getAllCategories();
 
-        assertEquals(200, response.getStatusCode().value());
-        assertTrue(Objects.requireNonNull(response.getBody()).isSuccess());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isSuccess());
         assertEquals("Categories retrieved successfully", response.getBody().getMessage());
-        assertEquals(Arrays.asList("Tech", "Health"), response.getBody().getData());
+        assertEquals(categories, response.getBody().getData());
     }
 
     @Test
@@ -108,7 +112,8 @@ class CategoryControllerTest {
     void testFailedToUpdateCategory() {
         String oldCategoryName = "Tech";
         String newCategoryName = "Technology";
-        when(categoryService.updateCategoryName(oldCategoryName, newCategoryName)).thenThrow(new RuntimeException("Error C"));
+        when(categoryService.updateCategoryName(oldCategoryName, newCategoryName))
+                .thenThrow(new RuntimeException("Error C"));
 
         ResponseEntity<PostResponse> response = categoryController.updateCategory(oldCategoryName, newCategoryName);
 
